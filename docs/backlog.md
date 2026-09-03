@@ -8,12 +8,11 @@ priority order itself may change as items get picked up.
 
 ## In progress / up next
 
-- [ ] **Stage C: pre-approval declaration + revoke path** (§5, §6) — the
-      logical next item now that approve/reject exists. Per-requirement
-      "already approved by a manager" declaration with named manager +
-      mandatory comment; signed, single-use revoke link with a
-      configurable window (default 72h); revoking returns the requirement
-      to pending and strips any issued Approval Code.
+- [ ] **Notifications** (§8 `notifications` table exists; the outbox rows
+      are now queued correctly by both createBrief and the revoke path,
+      but nothing sends them yet). Needed for real: pre-approval declared
+      → email the nominated manager with the revoke link; revoked → email
+      the submitter (line-manager half blocked — see open item below).
 
 ## Not started
 - [ ] **Notifications** (§8 `notifications` table exists, nothing sends
@@ -69,7 +68,7 @@ priority order itself may change as items get picked up.
 - [x] Branded, functional UI: dashboard, submission form with live score
       preview, outcome display, verify pages (Phase 5)
 - [x] Live deployment on Vercel + Supabase, confirmed working end-to-end
-- [x] **Approver queue + decide-requirement (approve/reject)** — a brief
+- [x] Approver queue + decide-requirement (approve/reject) — a brief
       can now actually move from pending to approved after submission.
       8/8 integration tests against real Postgres; confirmed live over
       HTTP: approved a real pending requirement, code issued at exactly
@@ -78,3 +77,20 @@ priority order itself may change as items get picked up.
       clear; confirmed self-approval and wrong-role attempts are blocked
       (403) and re-deciding an already-decided requirement is rejected
       (400) — all via real requests, not just unit tests.
+- [x] **Stage C: pre-approval declaration + revoke path** — the full
+      lifecycle proven live end-to-end, not just unit tested: submitted a
+      brief with an inline pre-approval declaration (real manager-role
+      validation against role_holders) → code issued immediately →
+      followed the actual public revoke confirmation page (no auth,
+      possession-of-token security model) → confirmed via `/verify` the
+      code genuinely stopped resolving → confirmed the same revoke link
+      used twice fails the second time (single-use) → approved the
+      resulting requirement through the real approver queue → a **new**
+      code issued. 12/12 + 8/8 integration tests against real Postgres.
+      Caught and fixed one real bug along the way during live
+      verification (not caught by the unit tests, which only checked the
+      service function directly): a revoked requirement didn't show up in
+      `listPendingRequirementsForRoles` (only queried `state='pending'`)
+      and `decideRequirement` rejected deciding anything not in state
+      `pending`, so a revoked requirement was invisible to approvers and
+      permanently undecidable — fixed both, added a regression test.

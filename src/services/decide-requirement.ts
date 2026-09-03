@@ -19,6 +19,8 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema.js";
 import { issueUniqueApprovalCode } from "./issue-approval-code.js";
+import { SATISFIED_REQUIREMENT_STATES } from "./satisfied-states.js";
+import { verifyRevokeToken } from "../engine/revoke-token.js";
 
 export class ValidationError extends Error {
   constructor(message: string) {
@@ -56,14 +58,6 @@ export interface DecideRequirementResult {
   codeJustIssued: boolean;
 }
 
-/** States that count as "satisfied" for Stage D's "any requirement not
- * satisfied -> PENDING" check (§5). Pending, rejected, and revoked are all
- * NOT satisfied — a rejected requirement blocks the brief from ever
- * reaching APPROVED on its own; there is no auto-decline-on-reject rule in
- * the spec, so this is a deliberate stuck state pending human
- * intervention (resubmission), not a bug. */
-const SATISFIED_STATES = new Set(["approved", "pre_approved"]);
-
 export async function decideRequirement(
   db: PostgresJsDatabase<typeof schema>,
   input: DecideRequirementInput,
@@ -82,7 +76,10 @@ export async function decideRequirement(
     if (!requirement) {
       throw new NotFoundError(`No requirement with id ${input.requirementId}`);
     }
-    if (requirement.state !== "pending") {
+    // A previously-revoked requirement is actionable again, same as
+    // plain pending — "revoked" only exists as a distinct state for audit
+    // clarity (see satisfied-states.ts), not to block a fresh decision.
+    if (requirement.state !== "pending" && requirement.state !== "revoked") {
       throw new ValidationError(
         `Requirement is already "${requirement.state}", not pending`,
       );
@@ -116,7 +113,7 @@ export async function decideRequirement(
       .where(eq(schema.approvalRequirements.decisionId, decision.id));
 
     const allSatisfied = allRequirements.every((r) =>
-      SATISFIED_STATES.has(r.state),
+      SATISFIED_REQUIREMENT_STATES.has(r.state),
     );
 
     const newFinalStatus: "pending" | "approved" | "declined" =
@@ -172,8 +169,149 @@ export async function decideRequirement(
   });
 }
 
+/** §5 Stage C revoke path: "If the manager revokes, the requirement
+ * returns to pending, the brief loses any issued Approval Code, and the
+ * submitter and their line manager are both notified."
+ *
+ * No session/authz check here by design — the security model for this
+ * path is possession of the raw token (like a password-reset link), not
+ * being signed in (see engine/revoke-token.ts's docstring). The caller
+ * (the revoke page) passes whatever token came in the URL; this function
+ * is what actually verifies it.
+ */
+export interface RevokeRequirementResult {
+  requirementId: string;
+  briefId: string;
+  decisionId: string;
+  finalStatus: "pending" | "declined";
+  /** Always null — revoking strips any issued code unconditionally (§5). */
+  approvalCode: null;
+}
+
+export async function revokeRequirement(
+  db: PostgresJsDatabase<typeof schema>,
+  input: { requirementId: string; rawToken: string },
+  now: Date = new Date(),
+): Promise<RevokeRequirementResult> {
+  return db.transaction(async (tx) => {
+    const [requirement] = await tx
+      .select()
+      .from(schema.approvalRequirements)
+      .where(eq(schema.approvalRequirements.id, input.requirementId));
+
+    if (!requirement) {
+      throw new NotFoundError(`No requirement with id ${input.requirementId}`);
+    }
+    if (requirement.state !== "pre_approved") {
+      throw new ValidationError(
+        `Requirement is "${requirement.state}", not pre_approved — nothing to revoke`,
+      );
+    }
+    if (!requirement.revokeTokenHash) {
+      throw new ValidationError("This requirement has no active revoke token");
+    }
+    if (
+      requirement.revokeWindowExpiresAt &&
+      now > requirement.revokeWindowExpiresAt
+    ) {
+      throw new ValidationError("The revoke window has expired");
+    }
+    if (!verifyRevokeToken(input.rawToken, requirement.revokeTokenHash)) {
+      throw new ValidationError("Invalid revoke token");
+    }
+
+    // "Returns to pending" functionally (§5) — recorded as the distinct
+    // `revoked` state so the audit trail shows this was pre-approved and
+    // then revoked, not indistinguishable from never having been declared
+    // (see satisfied-states.ts's docstring for the same reasoning).
+    // Single-use: revokeTokenHash is cleared so this exact token can never
+    // be replayed, even before the window would otherwise expire.
+    await tx
+      .update(schema.approvalRequirements)
+      .set({
+        state: "revoked",
+        revokeTokenHash: null,
+        revokeWindowExpiresAt: null,
+      })
+      .where(eq(schema.approvalRequirements.id, input.requirementId));
+
+    const [decision] = await tx
+      .select()
+      .from(schema.decisions)
+      .where(eq(schema.decisions.id, requirement.decisionId));
+    if (!decision) {
+      throw new Error(
+        `Requirement ${input.requirementId} references a missing decision ${requirement.decisionId}`,
+      );
+    }
+
+    // The brief was fully clear only if this was its last unsatisfied
+    // requirement being pre-approved — revoking it can only ever move
+    // finalStatus from approved back to pending (or leave it pending if
+    // something else was already outstanding), never touch "declined".
+    const newFinalStatus: "pending" | "approved" | "declined" =
+      decision.commercialDecision === "declined" ? "declined" : "pending";
+
+    // "the brief loses any issued Approval Code" (§5) — unconditionally,
+    // even though in principle a NEW code could be regenerated later once
+    // re-approved; the spec is explicit the code is stripped on revoke.
+    await tx
+      .update(schema.decisions)
+      .set({
+        finalStatus: newFinalStatus,
+        approvalCode: null,
+        codeIssuedAt: null,
+      })
+      .where(eq(schema.decisions.id, decision.id));
+
+    await tx.insert(schema.auditEvents).values({
+      actorId: null, // revoker acts via a signed link, not a session — no user id to attribute to
+      action: "requirement.revoked",
+      entityType: "approval_requirement",
+      entityId: requirement.id,
+      before: { state: "pre_approved" },
+      after: { state: "revoked", briefFinalStatus: newFinalStatus },
+      requestCorrelationId: crypto.randomUUID(),
+    });
+
+    const [brief] = await tx
+      .select({ submittedBy: schema.briefs.submittedBy })
+      .from(schema.briefs)
+      .where(eq(schema.briefs.id, requirement.briefId));
+    if (!brief) {
+      throw new Error(`Requirement ${requirement.id} references a missing brief`);
+    }
+
+    // Both the submitter and their line manager should be notified (§5).
+    // The line-manager half is blocked on docs/open-questions.md item 2
+    // (no line-manager relationship modeled yet) — queuing only the
+    // submitter notification for now rather than guessing a recipient for
+    // the other half.
+    await tx.insert(schema.notifications).values({
+      recipientId: brief.submittedBy,
+      channel: "email",
+      template: "pre_approval_revoked",
+      payload: {
+        requirementId: requirement.id,
+        briefId: requirement.briefId,
+      },
+      deliveryStatus: "queued",
+    });
+
+    return {
+      requirementId: requirement.id,
+      briefId: requirement.briefId,
+      decisionId: decision.id,
+      finalStatus: newFinalStatus,
+      approvalCode: null,
+    };
+  });
+}
+
 /** Requirements currently assigned to any of the given approval-authority
- * roles, still pending. Used by the approver queue (§9). */
+ * roles that are actionable — pending, or revoked (a revoked pre-approval
+ * needs a fresh human decision, same as pending; see the state-check note
+ * in decideRequirement above). Used by the approver queue (§9). */
 export async function listPendingRequirementsForRoles(
   db: PostgresJsDatabase<typeof schema>,
   roleKeys: string[],
@@ -185,6 +323,7 @@ export async function listPendingRequirementsForRoles(
       requirementId: schema.approvalRequirements.id,
       requirementTypeKind: schema.approvalRequirements.requirementType,
       requiredRoleKey: schema.approvalRequirements.requiredRoleKey,
+      state: schema.approvalRequirements.state,
       createdAt: schema.approvalRequirements.createdAt,
       briefId: schema.briefs.id,
       customerReference: schema.briefs.customerReference,
@@ -204,7 +343,7 @@ export async function listPendingRequirementsForRoles(
     )
     .where(
       and(
-        eq(schema.approvalRequirements.state, "pending"),
+        inArray(schema.approvalRequirements.state, ["pending", "revoked"]),
         inArray(schema.approvalRequirements.requiredRoleKey, roleKeys),
       ),
     );

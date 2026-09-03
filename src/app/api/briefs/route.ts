@@ -104,6 +104,7 @@ export async function POST(request: Request) {
       pvReference: (body.pvReference as string) ?? null,
       submittedBy: session.userId,
       onBehalfOf: (body.onBehalfOf as string) ?? null,
+      preApprovals: (body.preApprovals as Record<string, { nominatedManagerId: string; comment: string }>) ?? undefined,
     });
     return NextResponse.json(result, { status: 201 });
   } catch (err) {

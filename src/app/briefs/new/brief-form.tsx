@@ -83,7 +83,13 @@ const DECISION_LABEL: Record<string, string> = {
 
 export function BriefForm() {
   const [ruleSet, setRuleSet] = useState<RuleSetPayload | null>(null);
+  const [roleHolders, setRoleHolders] = useState<
+    { roleKey: string; userId: string; displayName: string }[]
+  >([]);
   const [form, setForm] = useState<FormState>(initialState);
+  const [preApprovals, setPreApprovals] = useState<
+    Record<string, { enabled: boolean; nominatedManagerId: string; comment: string }>
+  >({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
 
@@ -92,6 +98,10 @@ export function BriefForm() {
       .then((r) => r.json())
       .then((data) => setRuleSet(data.payload))
       .catch(() => setRuleSet(null));
+    fetch("/api/role-holders/current")
+      .then((r) => r.json())
+      .then((data) => setRoleHolders(data.holders ?? []))
+      .catch(() => setRoleHolders([]));
   }, []);
 
   const daysUntilDeadline = useMemo(() => {
@@ -164,6 +174,14 @@ export function BriefForm() {
           nicheFfRationale: form.nicheFfRationale || null,
           strategicPriorityRationale: form.strategicPriorityRationale || null,
           pvReference: form.pvReference || null,
+          preApprovals: Object.fromEntries(
+            Object.entries(preApprovals)
+              .filter(([, v]) => v.enabled && v.nominatedManagerId && v.comment.trim())
+              .map(([type, v]) => [
+                type,
+                { nominatedManagerId: v.nominatedManagerId, comment: v.comment },
+              ]),
+          ),
         }),
       });
       const data = await res.json();
@@ -495,16 +513,97 @@ export function BriefForm() {
               <div className="helptext" style={{ marginBottom: "0.4em" }}>
                 Will require approval from
               </div>
-              <ul style={{ margin: 0, paddingLeft: "1.2em" }}>
-                {preview.requirements.map((r) => (
-                  <li key={r.requirementType} style={{ fontSize: "0.875rem" }}>
-                    {REQUIREMENT_LABELS[r.requirementType] ?? r.requirementType} —{" "}
-                    <span style={{ color: "var(--cpl-ink-soft)" }}>
-                      {ROLE_LABELS[r.role] ?? r.role}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <div style={{ display: "grid", gap: "0.75rem" }}>
+                {preview.requirements.map((r) => {
+                  const decl = preApprovals[r.requirementType] ?? {
+                    enabled: false,
+                    nominatedManagerId: "",
+                    comment: "",
+                  };
+                  const eligibleManagers = roleHolders.filter(
+                    (h) => h.roleKey === r.role,
+                  );
+                  return (
+                    <div
+                      key={r.requirementType}
+                      style={{
+                        border: "1px solid var(--cpl-border)",
+                        borderRadius: 4,
+                        padding: "0.75rem",
+                      }}
+                    >
+                      <div style={{ fontSize: "0.875rem", marginBottom: "0.4em" }}>
+                        {REQUIREMENT_LABELS[r.requirementType] ?? r.requirementType} —{" "}
+                        <span style={{ color: "var(--cpl-ink-soft)" }}>
+                          {ROLE_LABELS[r.role] ?? r.role}
+                        </span>
+                      </div>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5em",
+                          fontWeight: 400,
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          style={{ width: "auto" }}
+                          checked={decl.enabled}
+                          onChange={(e) =>
+                            setPreApprovals((prev) => ({
+                              ...prev,
+                              [r.requirementType]: { ...decl, enabled: e.target.checked },
+                            }))
+                          }
+                        />
+                        Already approved by a manager
+                      </label>
+                      {decl.enabled && (
+                        <div style={{ marginTop: "0.5em", display: "grid", gap: "0.5em" }}>
+                          <select
+                            value={decl.nominatedManagerId}
+                            onChange={(e) =>
+                              setPreApprovals((prev) => ({
+                                ...prev,
+                                [r.requirementType]: {
+                                  ...decl,
+                                  nominatedManagerId: e.target.value,
+                                },
+                              }))
+                            }
+                          >
+                            <option value="">Select the manager who approved this</option>
+                            {eligibleManagers.map((m) => (
+                              <option key={m.userId} value={m.userId}>
+                                {m.displayName}
+                              </option>
+                            ))}
+                          </select>
+                          {eligibleManagers.length === 0 && (
+                            <div className="field-error">
+                              No one currently holds {ROLE_LABELS[r.role] ?? r.role} —
+                              pre-approval isn&apos;t available for this requirement.
+                            </div>
+                          )}
+                          <textarea
+                            placeholder="Comment explaining the circumstances (required)"
+                            rows={2}
+                            value={decl.comment}
+                            onChange={(e) =>
+                              setPreApprovals((prev) => ({
+                                ...prev,
+                                [r.requirementType]: { ...decl, comment: e.target.value },
+                              }))
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

@@ -20,6 +20,19 @@ import * as schema from "../db/schema.js";
 import { computeStageA, computeStageB } from "../engine/decision.js";
 import type { RuleSetPayload } from "../engine/scoring.js";
 import { issueUniqueApprovalCode } from "./issue-approval-code.js";
+import { generateRevokeToken } from "../engine/revoke-token.js";
+import { SATISFIED_REQUIREMENT_STATES } from "./satisfied-states.js";
+
+/** §5 Stage C: a per-requirement pre-approval declaration, made inline at
+ * submission time (the spec's step-2-of-the-wizard concept, folded into
+ * this single-page form). Keyed by requirement type (e.g.
+ * "marketing_resource") since that's what the submitter sees on the live
+ * preview before the brief — and therefore its requirements' real ids —
+ * exist yet. */
+export interface PreApprovalDeclaration {
+  nominatedManagerId: string;
+  comment: string;
+}
 
 export interface BriefSubmissionInput {
   customerReference: string;
@@ -43,6 +56,15 @@ export interface BriefSubmissionInput {
   pvReference?: string | null;
   submittedBy: string;
   onBehalfOf?: string | null;
+  /** Per-requirement pre-approval declarations, keyed by requirement type.
+   * A key with no matching requirement raised by Stage B is silently
+   * ignored — declaring pre-approval for a requirement that was never
+   * going to be raised isn't an error, it's a no-op (the submitter can't
+   * know in advance exactly which requirement types apply without
+   * checking the live preview first, and the preview and the actual
+   * Stage B computation are guaranteed to agree since they're the same
+   * function). */
+  preApprovals?: Record<string, PreApprovalDeclaration>;
 }
 
 export class ValidationError extends Error {
@@ -73,6 +95,13 @@ function validateInput(input: BriefSubmissionInput, now: Date): void {
     throw new ValidationError(
       "A rationale is required when Strategic Priority is set",
     );
+  }
+  for (const [requirementType, decl] of Object.entries(input.preApprovals ?? {})) {
+    if (!decl.nominatedManagerId || !decl.comment?.trim()) {
+      throw new ValidationError(
+        `Pre-approval for "${requirementType}" requires both a nominated manager and a comment`,
+      );
+    }
   }
 }
 
@@ -113,6 +142,33 @@ async function resolveSingleCurrentHolder(
       ),
     );
   return holders.length === 1 ? holders[0]!.userId : null;
+}
+
+/** §5 Stage C: "the named manager who gave the go-ahead, selected from
+ * the people currently holding the relevant role" — a real check, not
+ * just trusting whatever user id the client sends. */
+async function userCurrentlyHoldsRole(
+  db: PostgresJsDatabase<typeof schema>,
+  userId: string,
+  roleKey: string,
+  asOf: Date,
+): Promise<boolean> {
+  const asOfDay = asOf.toISOString().slice(0, 10);
+  const rows = await db
+    .select({ id: schema.roleHolders.id })
+    .from(schema.roleHolders)
+    .where(
+      and(
+        eq(schema.roleHolders.roleKey, roleKey),
+        eq(schema.roleHolders.userId, userId),
+        lte(schema.roleHolders.effectiveFrom, asOfDay),
+        or(
+          isNull(schema.roleHolders.effectiveTo),
+          gte(schema.roleHolders.effectiveTo, asOfDay),
+        ),
+      ),
+    );
+  return rows.length > 0;
 }
 
 async function getCurrentPublishedRuleSet(db: PostgresJsDatabase<typeof schema>) {
@@ -197,14 +253,105 @@ export async function createBrief(
       .returning();
     if (!brief) throw new Error("Failed to insert brief");
 
-    // §5 Stage D, computed from what Stage B just produced: declined wins
-    // outright; otherwise any outstanding requirement means pending; only
-    // zero outstanding requirements (which includes the common case of zero
-    // requirements at all) means fully clear.
+    // §5 Stage D can't be fully computed until we know which requirements
+    // were satisfied by an inline pre-approval declaration (Stage C) — so
+    // the decision row is inserted with a placeholder finalStatus first,
+    // then finalized after the requirements loop below, the same pattern
+    // decideRequirement.ts uses for a later approve/reject.
+    const [decision] = await tx
+      .insert(schema.decisions)
+      .values({
+        briefId: brief.id,
+        ruleSetId: ruleSetRow.id,
+        computedScore: String(stageA.score),
+        scoreBreakdown: stageA.scoreBreakdown,
+        commercialDecision: stageA.commercialDecision,
+        finalStatus: "pending",
+        approvalCode: null,
+        codeIssuedAt: null,
+      })
+      .returning();
+    if (!decision) throw new Error("Failed to insert decision");
+
+    // §5 Stage C: for each requirement, the submitter may have declared
+    // it pre-approved inline. Insert accordingly and track whether the
+    // brief is fully clear right now (Stage D needs "satisfied", not
+    // "zero requirements" — a pre-approved requirement counts as
+    // satisfied even though it exists).
+    let allRequirementsSatisfied = true;
+    for (const requirement of requirements) {
+      const declaration = input.preApprovals?.[requirement.requirementType];
+
+      if (declaration) {
+        const managerHoldsRole = await userCurrentlyHoldsRole(
+          tx,
+          declaration.nominatedManagerId,
+          requirement.role,
+          now,
+        );
+        if (!managerHoldsRole) {
+          throw new ValidationError(
+            `The nominated manager for "${requirement.requirementType}" does not currently hold the required role "${requirement.role}"`,
+          );
+        }
+
+        const revokeToken = generateRevokeToken(now);
+        await tx.insert(schema.approvalRequirements).values({
+          briefId: brief.id,
+          decisionId: decision.id,
+          requirementType: requirement.requirementType,
+          requiredRoleKey: requirement.role,
+          assignedHolderId: declaration.nominatedManagerId,
+          state: "pre_approved",
+          preApprovalNominatedManagerId: declaration.nominatedManagerId,
+          preApprovalSubmitterComment: declaration.comment,
+          revokeTokenHash: revokeToken.hash,
+          revokeWindowExpiresAt: revokeToken.expiresAt,
+        });
+
+        // Queued for whenever real email sending exists (backlog item);
+        // storing the raw token here (not just its hash) is the outbox
+        // pattern — the eventual send step reads this row, builds the
+        // link, emails it, and never persists the token anywhere else.
+        // The submitter's own API response never sees this raw token.
+        await tx.insert(schema.notifications).values({
+          recipientId: declaration.nominatedManagerId,
+          channel: "email",
+          template: "pre_approval_declared",
+          payload: {
+            briefId: brief.id,
+            requirementType: requirement.requirementType,
+            submitterComment: declaration.comment,
+            rawRevokeToken: revokeToken.rawToken,
+            revokeWindowExpiresAt: revokeToken.expiresAt.toISOString(),
+          },
+          deliveryStatus: "queued",
+        });
+      } else {
+        allRequirementsSatisfied = false;
+        const assignedHolderId = await resolveSingleCurrentHolder(
+          tx,
+          requirement.role,
+          now,
+        );
+        await tx.insert(schema.approvalRequirements).values({
+          briefId: brief.id,
+          decisionId: decision.id,
+          requirementType: requirement.requirementType,
+          requiredRoleKey: requirement.role,
+          assignedHolderId,
+          state: "pending",
+        });
+      }
+    }
+
+    // Now finalize Stage D: declined wins outright regardless of anything
+    // above; otherwise fully clear only if EVERY requirement (zero of
+    // them, or all pre-approved) is satisfied.
     const finalStatus: "pending" | "approved" | "declined" =
       stageA.commercialDecision === "declined"
         ? "declined"
-        : requirements.length === 0
+        : allRequirementsSatisfied
           ? "approved"
           : "pending";
 
@@ -215,36 +362,10 @@ export async function createBrief(
       codeIssuedAt = now;
     }
 
-    const [decision] = await tx
-      .insert(schema.decisions)
-      .values({
-        briefId: brief.id,
-        ruleSetId: ruleSetRow.id,
-        computedScore: String(stageA.score),
-        scoreBreakdown: stageA.scoreBreakdown,
-        commercialDecision: stageA.commercialDecision,
-        finalStatus,
-        approvalCode,
-        codeIssuedAt,
-      })
-      .returning();
-    if (!decision) throw new Error("Failed to insert decision");
-
-    for (const requirement of requirements) {
-      const assignedHolderId = await resolveSingleCurrentHolder(
-        tx,
-        requirement.role,
-        now,
-      );
-      await tx.insert(schema.approvalRequirements).values({
-        briefId: brief.id,
-        decisionId: decision.id,
-        requirementType: requirement.requirementType,
-        requiredRoleKey: requirement.role,
-        assignedHolderId,
-        state: "pending",
-      });
-    }
+    await tx
+      .update(schema.decisions)
+      .set({ finalStatus, approvalCode, codeIssuedAt })
+      .where(eq(schema.decisions.id, decision.id));
 
     await tx.insert(schema.auditEvents).values({
       actorId: input.submittedBy,
