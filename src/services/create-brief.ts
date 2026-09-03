@@ -19,7 +19,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema.js";
 import { computeStageA, computeStageB } from "../engine/decision.js";
 import type { RuleSetPayload } from "../engine/scoring.js";
-import { generateApprovalCode } from "../engine/approval-code.js";
+import { issueUniqueApprovalCode } from "./issue-approval-code.js";
 
 export interface BriefSubmissionInput {
   customerReference: string;
@@ -140,8 +140,6 @@ export interface CreateBriefResult {
   requirementCount: number;
 }
 
-const MAX_CODE_COLLISION_RETRIES = 10;
-
 export async function createBrief(
   db: PostgresJsDatabase<typeof schema>,
   input: BriefSubmissionInput,
@@ -213,25 +211,7 @@ export async function createBrief(
     let approvalCode: string | null = null;
     let codeIssuedAt: Date | null = null;
     if (finalStatus === "approved") {
-      // Regenerate on collision (§6) — collisions should be astronomically
-      // rare (32^5 ≈ 33.5M combinations per month), so a small retry bound
-      // is a sanity backstop, not an expected code path.
-      for (let attempt = 0; attempt < MAX_CODE_COLLISION_RETRIES; attempt++) {
-        const candidate = generateApprovalCode(now);
-        const [clash] = await tx
-          .select({ id: schema.decisions.id })
-          .from(schema.decisions)
-          .where(eq(schema.decisions.approvalCode, candidate));
-        if (!clash) {
-          approvalCode = candidate;
-          break;
-        }
-      }
-      if (!approvalCode) {
-        throw new Error(
-          `Failed to generate a unique Approval Code after ${MAX_CODE_COLLISION_RETRIES} attempts`,
-        );
-      }
+      approvalCode = await issueUniqueApprovalCode(tx, now);
       codeIssuedAt = now;
     }
 

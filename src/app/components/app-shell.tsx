@@ -72,6 +72,11 @@ export function AppShell({
               <a href="/briefs/new" style={{ color: "#fff", opacity: 0.92 }}>
                 New brief
               </a>
+              {session.accessRoles.includes("approver") && (
+                <a href="/approvals" style={{ color: "#fff", opacity: 0.92 }}>
+                  Your approvals
+                </a>
+              )}
               {(session.accessRoles.includes("auditor") ||
                 session.accessRoles.includes("admin")) && (
                 <a href="/verify" style={{ color: "#fff", opacity: 0.92 }}>
