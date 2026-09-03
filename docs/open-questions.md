@@ -40,3 +40,39 @@ documenting this is in `src/engine/decision.test.ts`.
 **Needs:** A decision from Simon (or whoever owns tier definitions) on
 whether tier T is being reintroduced as a distinct input, and if so, what
 distinguishes it from tier A other than the historical note.
+
+## 2. "Reassign to their line manager role" has no line-manager relationship in the data model
+
+**Where:** Build Prompt §2 ("An approver may not approve a brief they
+themselves submitted. Reassign to their line manager role and flag it in
+the audit trail.")
+
+**The ambiguity:** The instruction assumes a resolvable "line manager"
+relationship for any approver. But the schema (§8) has no field or table
+capturing "who manages whom" — `role_holders` records role assignments
+(who currently holds `ppd_manager`, etc.), not a reporting hierarchy. There
+is no `manager_of` relationship, no `line_manager_id` on `users`, nothing.
+
+**Candidate interpretations:**
+1. Add a reporting-hierarchy concept to the schema (e.g. `users.line_manager_id`
+   self-referencing FK), populated from Entra's manager field or entered
+   manually.
+2. Treat "line manager" loosely as "whoever holds the next role up in that
+   specific approval chain" (e.g. PPD Manager's conflict reassigns to
+   whoever holds a more senior role) — but no such seniority ordering is
+   defined either.
+3. Treat this as an escalation to Admin rather than an automatic reassignment
+   — i.e. "flag it and let a human decide who acts instead," which needs no
+   new schema at all.
+
+**What's implemented:** `checkSelfApproval()` and
+`requireCanDecideRequirement()` in `src/auth/authz.ts` reliably *detect*
+the self-approval conflict and block the action, but deliberately do not
+attempt to resolve or auto-assign a reassignment target — that part is left
+for whoever answers this question. The function's docstring and error
+message point back here.
+
+**Needs:** A decision from Simon on which of the three interpretations (or
+another) is intended, before the reassignment half of this rule can be
+built.
+

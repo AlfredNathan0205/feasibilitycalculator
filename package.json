@@ -9,20 +9,29 @@
     "seed:generate-ruleset": "tsx src/db/seed/generate-ruleset-v1.ts",
     "seed:apply": "tsx src/db/seed/apply-seed.ts",
     "test": "vitest run",
-    "tier-tipping-points": "tsx src/engine/tier-tipping-points.ts"
+    "tier-tipping-points": "tsx src/engine/tier-tipping-points.ts",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "drizzle-orm": "^0.45.2",
-    "postgres": "^3.4.9"
+    "next": "^15.5.25",
+    "next-auth": "^5.0.0-beta.32",
+    "postgres": "^3.4.9",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.23.13",
-    "typescript": "^7.0.2",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.11",
     "xlsx": "^0.18.5"
   },

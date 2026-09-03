@@ -170,3 +170,183 @@ soffice --headless --accept="socket,host=localhost,port=2002;urp;" &
 python3 parity/generate_golden_dataset.py /path/to/workbook.xlsx parity/golden-dataset.csv
 ```
 
+---
+
+# Phase 3 — Auth, roles, and the authorization layer (§14 step 4)
+
+## Layout
+
+```
+src/auth/authz.ts                  Pure authorization layer — every role boundary from §2
+src/auth/authz.test.ts             18 tests covering every boundary, including self-approval
+src/auth/resolve-session-roles.ts  The ONLY DB-touching piece: resolves role_holders -> session roles
+src/auth.ts                        NextAuth v5 config: Entra ID (prod) + gated dev-login (local testing)
+src/types/next-auth.d.ts           Type augmentation for session.accessRoles / approvalAuthorityRoles
+src/app/page.tsx                   Dev-login form (local only) / signed-in status page
+src/app/api/auth/[...nextauth]/    NextAuth route handler
+src/app/api/whoami/route.ts        Protected route proving the whole chain works
+src/db/seed/dev-test-users.ts      Seeds 3 test users with distinct roles for local dev-login testing
+```
+
+## Two sign-in paths, one authorization layer
+
+- **Production**: Microsoft Entra ID via NextAuth's provider, PKCE, only
+  registered when `AUTH_MICROSOFT_ENTRA_ID_ID/SECRET/ISSUER` are all set.
+- **Local testing** (what you asked for): a Credentials provider that's
+  **only ever registered when `ALLOW_DEV_LOGIN=true` is explicitly set** —
+  deliberately a separate flag from `NODE_ENV`, so a misconfigured
+  deployment can't silently expose it. It has no password: you pick one of
+  the seeded test users from a dropdown. This is fine for local-only
+  testing and must never be set in any deployed environment — the page
+  itself displays a warning to that effect.
+
+Both paths feed the exact same `jwt` callback, which calls
+`resolveSessionRoles()` — the only place role information is read from the
+database — and bakes the result into the session token server-side. The
+`authz.ts` functions never see a client-supplied claim, only this
+server-resolved session (§2: "Never trust a role claim read on the
+client").
+
+## What's verified (not just written)
+
+- **All 41 unit/parity tests pass** (1 documented skip), including 18 tests
+  in `authz.test.ts` covering every role boundary in §2: the Admin-only
+  threshold-editing gate, the "approver access role AND the specific
+  approval-authority role" double-check, and 8 dedicated tests for the
+  self-approval prohibition (submitter, on-behalf-of Account Manager,
+  unrelated approver, wrong-authority approver, and the combined gate).
+- **Ran the actual dev server and signed in as two different seeded test
+  users via real HTTP requests** (curl, following NextAuth's real
+  CSRF-token + credentials-callback flow — not a mocked client):
+  - `ppd@cpl.example` → session correctly resolved to
+    `accessRoles: ["approver"], approvalAuthorityRoles: ["ppd_manager"]`.
+  - `admin@cpl.example` → correctly resolved to `accessRoles: ["admin"]`,
+    empty approval-authority roles.
+  - The two sessions were independently verified via `/api/whoami` to
+    confirm no role leakage between them.
+  - An unauthenticated request to `/api/whoami` correctly got `401 {"error":
+    "Not signed in"}`.
+
+## A real environment issue found and fixed along the way
+
+`npm install` pulled TypeScript 7.0.2 (the newest tag), which Next.js 15
+doesn't support ("the native compiler does not provide the JavaScript
+compiler API Next.js requires") — pinned to `typescript@^6`. Separately,
+Next's webpack bundler doesn't resolve the `.js`-extension relative imports
+the rest of this package uses (required for Node's native ESM loader when
+scripts run directly via `tsx`, e.g. the seed scripts) — fixed with a
+`resolve.extensionAlias` entry in `next.config.mjs` rather than restructuring
+every import, so both consumption paths (Next's bundler and direct
+`tsx`/`node` execution) work from the same source files.
+
+## Genuinely open — carried over, not resolved here
+
+`docs/open-questions.md` item 2: the spec says a self-approval conflict
+should "reassign to their line manager role," but no line-manager
+relationship exists anywhere in the data model. `checkSelfApproval()` /
+`requireCanDecideRequirement()` reliably **detect** the conflict and block
+the action (with a message pointing at this doc); they deliberately do not
+attempt to guess a reassignment target. This needs a decision from Simon
+before the reassignment half of the rule can be built.
+
+## Running it locally
+
+```bash
+export DATABASE_URL=postgresql://user:pass@localhost:5432/cpl_feasibility
+export ALLOW_DEV_LOGIN=true
+export AUTH_SECRET=$(openssl rand -hex 32)   # any random string works locally
+npm install
+npm run db:migrate
+npm run seed:apply
+npx tsx src/db/seed/dev-test-users.ts        # seeds 3 test users with roles
+npm run dev
+```
+
+Then open **http://localhost:3000** — pick a test user from the dropdown,
+sign in, and visit `/api/whoami` to see the resolved session as JSON.
+
+**Before deploying to Azure:** remove `ALLOW_DEV_LOGIN` entirely and set
+the three `AUTH_MICROSOFT_ENTRA_ID_*` env vars instead — the dev-login
+provider is never registered unless that flag is explicitly `true`, so
+simply not setting it is sufficient to disable it in production.
+
+---
+
+# Phase 4 — Approval Code, brief submission, and the verify endpoint (§14 step 5, partial)
+
+## Layout
+
+```
+src/engine/approval-code.ts         Generation, check-character, normalization (§6)
+src/engine/approval-code.test.ts    16 tests: format, tolerance, and mistyped-code detection
+src/services/create-brief.ts        Orchestrates Stage A + Stage B -> persists -> Stage D (§5)
+src/services/create-brief.test.ts   8 integration tests against a real Postgres
+src/app/api/briefs/route.ts         POST /api/briefs — authz-gated submission endpoint
+src/app/verify/[code]/page.tsx      GET /verify/[code] — the §6 audit entry point
+```
+
+## What's verified (not just written)
+
+- **16/16 Approval Code tests**, including proof that a single mistyped
+  character, a mistyped check character, and an adjacent-character
+  transposition are all rejected — and that Crockford's I/L→1, O→0
+  look-alike tolerance and case/separator-insensitivity work as specified.
+- **8/8 integration tests against a real Postgres**, not mocks — the one
+  that matters most: a brief that's commercially Auto-Approved but has an
+  outstanding resource-sign-off requirement gets `finalStatus: "pending"`
+  and **no Approval Code**, proving §5's central rule ("the UI must never
+  show a bare Auto-Approved when resource sign-offs are outstanding") holds
+  all the way down to the database, not just in the pure engine.
+- **Ran the actual dev server and submitted a real brief over HTTP** as the
+  seeded `am@cpl.example` Account Manager: a £200k/A/T/New/Exclusive/Direct/
+  Library Only brief scored exactly 900 (matching the hand-verified engine
+  test from Phase 2) and got Approval Code `FC-2609-01ZD9-Z` issued
+  immediately.
+- **Confirmed authorization boundaries live, not just in unit tests**:
+  submitting as `admin@cpl.example` (wrong role) → `403`; the same user
+  hitting `/verify/[code]` (right role, Admin has audit access) → full
+  brief/decision/history rendered; the Account Manager who submitted the
+  brief hitting the same `/verify/[code]` URL (no Auditor/Admin role) →
+  blocked, even though they own the brief — access here is role-based, not
+  ownership-based, exactly as §6 specifies.
+- **Confirmed the lookup tolerance live**: `fc-2609-o1zd9-z` (lowercase,
+  `O` typed instead of `0`) resolved to the same brief as the canonical
+  `FC-2609-01ZD9-Z`.
+- Manually cross-checked the resulting rows directly in `psql` rather than
+  trusting only the test/HTTP output — `commercial_decision`,
+  `final_status`, `approval_code`, and `requirement_count` all lined up
+  exactly as expected across auto-approved/zero-requirements,
+  auto-approved/pending-requirement, and declined cases.
+
+## What's NOT in this phase (still to come)
+
+This covers submission through to Approval Code issuance for the
+zero-or-immediately-clear case. Still needed for the full §14 step 5 scope:
+the actual 3-step wizard UI with live score preview (currently there's only
+a raw JSON API + a bare server-rendered verify page), the outcome page's
+two-part display, and — from step 6 — the approver queue, notifications,
+and the Stage C pre-approval/revoke path that moves a *pending* brief
+through to fully clear and issues its code at that later point.
+
+## Running it locally
+
+Same setup as Phase 3, plus:
+
+```bash
+# after signing in as an Account Manager or Sales Coordinator test user:
+curl -b cookies.txt -X POST http://localhost:3000/api/briefs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerReference": "ACME-001", "tier": "A/T", "valuePotentialGbp": 200000,
+    "newRework": "New", "briefType": "Exclusive", "customerApproval": "Direct",
+    "nicheFfPreApproved": false, "strategicPriority": false,
+    "creativeApproach": "Library Only",
+    "marketingFlag": false, "ppdFlag": false, "gcmsFlag": false,
+    "deadline": "2027-01-01"
+  }'
+```
+Then visit `/verify/FC-...` (signed in as the Admin or Auditor test user) to
+see the full audit record.
+
+
+
