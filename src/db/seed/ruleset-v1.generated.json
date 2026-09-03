@@ -1,0 +1,72 @@
+{
+  "sourceWorkbook": {
+    "fileName": "Project-Feasibility-Calculator.xlsx",
+    "referenceSheetRead": true,
+    "generatedAt": "2026-09-03T06:56:58.753Z"
+  },
+  "tierWeights": {
+    "A/T": 100,
+    "B": 50,
+    "C": 25,
+    "D": 10
+  },
+  "newReworkMultipliers": {
+    "New": 1,
+    "Rework (Of Selling)": 1,
+    "Rework (Non-Selling)": 0
+  },
+  "briefTypeMultipliers": {
+    "Exclusive": 1,
+    "Competitive": 0,
+    "ProActive": -0.5
+  },
+  "customerApprovalMultipliers": {
+    "Direct": 0.5,
+    "Deferred/Unknown": 0
+  },
+  "creativeApproachScores": {
+    "Library Only": 100,
+    "Starting Point": 65,
+    "Creation/Unknown": 0
+  },
+  "strategicPriorityBonus": 100,
+  "thresholds": {
+    "autoApproveAbove": 115,
+    "declineAtOrBelow": 30
+  },
+  "deadlineWindowDays": 14,
+  "routingTable": {
+    "short_deadline": {
+      "role": "development_director",
+      "enabled": true
+    },
+    "creative_creation": {
+      "role": "development_director",
+      "enabled": true
+    },
+    "creative_starting_point": {
+      "role": "development_director",
+      "enabled": true
+    },
+    "marketing_resource": {
+      "role": "divisional_head_marketing",
+      "enabled": true
+    },
+    "ppd_resource": {
+      "role": "ppd_manager",
+      "enabled": true
+    },
+    "gcms_resource": {
+      "role": "analytical_manager",
+      "enabled": true
+    },
+    "tier_auto_approval": {
+      "role": "commercial_director",
+      "enabled": false
+    },
+    "strategic_priority_deferral": {
+      "role": "commercial_director",
+      "enabled": false
+    }
+  }
+}
