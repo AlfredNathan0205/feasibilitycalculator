@@ -1,3 +1,9 @@
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "./globals.css";
+
 export default function RootLayout({
   children,
 }: {
@@ -5,9 +11,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body style={{ fontFamily: "system-ui, sans-serif", padding: "2rem" }}>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

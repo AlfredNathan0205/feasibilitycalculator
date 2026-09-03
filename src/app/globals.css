@@ -1,0 +1,228 @@
+/**
+ * Design tokens, grounded in CPL Aromas' actual brand:
+ *  - Brand indigo #331AF0, sampled directly from the CPL logo file.
+ *  - The amber accent is drawn from CPL's own fragrance library — rows of
+ *    amber glass sample bottles on white shelving (from the office photos
+ *    supplied) — used sparingly, the way a specimen label uses color: to
+ *    mark status, not to decorate.
+ *  - Everything else (ink, paper, borders) stays quiet and precise, the
+ *    way their actual lab space reads: white, glass, steel, one bold color.
+ */
+
+:root {
+  /* Brand */
+  --cpl-indigo: #331af0;
+  --cpl-indigo-ink: #241099; /* darker, for text-on-white at AA contrast */
+  --cpl-indigo-tint: #eeebfe; /* pale wash for selected/hover backgrounds */
+  --cpl-indigo-border: #d3caf9;
+
+  /* Amber — status/accent, used the way a specimen label is used */
+  --cpl-amber: #b5651d;
+  --cpl-amber-tint: #fbf1e6;
+  --cpl-amber-border: #e8cba3;
+
+  /* Status */
+  --cpl-green: #1f7a4d;
+  --cpl-green-tint: #eaf6f0;
+  --cpl-green-border: #b9e2cd;
+  --cpl-red: #b02a2a;
+  --cpl-red-tint: #fbebeb;
+  --cpl-red-border: #f0bcbc;
+
+  /* Neutrals */
+  --cpl-ink: #16141f;
+  --cpl-ink-soft: #4d4a5c;
+  --cpl-paper: #fafafc;
+  --cpl-white: #ffffff;
+  --cpl-border: #e3e1ea;
+  --cpl-border-strong: #c8c5d6;
+
+  /* Type */
+  --font-display: "Inter", -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Inter", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background: var(--cpl-paper);
+  color: var(--cpl-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.5em;
+  color: var(--cpl-ink);
+}
+
+h1 {
+  font-size: 1.75rem;
+}
+h2 {
+  font-size: 1.125rem;
+}
+h3 {
+  font-size: 0.95rem;
+}
+
+a {
+  color: var(--cpl-indigo-ink);
+}
+
+label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cpl-ink-soft);
+  margin-bottom: 0.3em;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 0.9375rem;
+  padding: 0.55em 0.7em;
+  border: 1px solid var(--cpl-border-strong);
+  border-radius: 4px;
+  background: var(--cpl-white);
+  color: var(--cpl-ink);
+  width: 100%;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--cpl-indigo);
+  outline-offset: 1px;
+}
+
+button {
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.6em 1.1em;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.btn-primary {
+  background: var(--cpl-indigo);
+  color: var(--cpl-white);
+  border-color: var(--cpl-indigo);
+}
+.btn-primary:hover {
+  background: #2814c9;
+}
+.btn-primary:disabled {
+  background: var(--cpl-border-strong);
+  border-color: var(--cpl-border-strong);
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--cpl-white);
+  color: var(--cpl-ink);
+  border-color: var(--cpl-border-strong);
+}
+.btn-secondary:hover {
+  background: var(--cpl-paper);
+}
+
+.field-error {
+  color: var(--cpl-red);
+  font-size: 0.8125rem;
+  margin-top: 0.3em;
+}
+
+.helptext {
+  color: var(--cpl-ink-soft);
+  font-size: 0.8125rem;
+  margin-top: 0.3em;
+}
+
+.card {
+  background: var(--cpl-white);
+  border: 1px solid var(--cpl-border);
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+}
+
+/* Status pill — reads like a specimen/sample label, matching the amber
+ * glass bottle labels in CPL's own lab. One accent color per state, a
+ * left rule rather than a filled badge, so it reads as information (this
+ * row's status) rather than decoration. */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.25em 0.7em 0.25em 0.6em;
+  border-radius: 3px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-left: 3px solid;
+}
+.status-approved {
+  background: var(--cpl-green-tint);
+  border-color: var(--cpl-green);
+  color: var(--cpl-green);
+}
+.status-declined {
+  background: var(--cpl-red-tint);
+  border-color: var(--cpl-red);
+  color: var(--cpl-red);
+}
+.status-pending {
+  background: var(--cpl-amber-tint);
+  border-color: var(--cpl-amber);
+  color: var(--cpl-amber);
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.container-wide {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
