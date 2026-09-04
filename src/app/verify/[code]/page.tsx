@@ -144,36 +144,26 @@ export default async function VerifyPage({
           <span className="helptext">rule set v{ruleSet?.version}</span>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+        <div className="panel-grid">
           <div className="card">
             <h2>Brief</h2>
-            <dl
-              style={{
-                margin: 0,
-                display: "grid",
-                gridTemplateColumns: "auto 1fr",
-                gap: "0.4em 1em",
-                fontSize: "0.875rem",
-              }}
-            >
-              <dt style={{ color: "var(--cpl-ink-soft)" }}>Customer</dt>
-              <dd style={{ margin: 0 }}>{brief?.customerReference}</dd>
-              <dt style={{ color: "var(--cpl-ink-soft)" }}>Tier</dt>
-              <dd style={{ margin: 0 }}>{brief?.tier}</dd>
-              <dt style={{ color: "var(--cpl-ink-soft)" }}>Value potential</dt>
-              <dd style={{ margin: 0 }}>
-                £{Number(brief?.valuePotentialGbp).toLocaleString("en-GB")}
-              </dd>
-              <dt style={{ color: "var(--cpl-ink-soft)" }}>New/Rework</dt>
-              <dd style={{ margin: 0 }}>{brief?.newRework}</dd>
-              <dt style={{ color: "var(--cpl-ink-soft)" }}>Brief type</dt>
-              <dd style={{ margin: 0 }}>{brief?.briefType}</dd>
-              <dt style={{ color: "var(--cpl-ink-soft)" }}>Creative approach</dt>
-              <dd style={{ margin: 0 }}>{brief?.creativeApproach}</dd>
-              <dt style={{ color: "var(--cpl-ink-soft)" }}>Deadline</dt>
-              <dd style={{ margin: 0 }}>{brief?.deadline}</dd>
-              <dt style={{ color: "var(--cpl-ink-soft)" }}>Submitted</dt>
-              <dd style={{ margin: 0 }}>
+            <dl className="detail-list">
+              <dt>Customer</dt>
+              <dd>{brief?.customerReference}</dd>
+              <dt>Tier</dt>
+              <dd>{brief?.tier}</dd>
+              <dt>Value potential</dt>
+              <dd>£{Number(brief?.valuePotentialGbp).toLocaleString("en-GB")}</dd>
+              <dt>New/Rework</dt>
+              <dd>{brief?.newRework}</dd>
+              <dt>Brief type</dt>
+              <dd>{brief?.briefType}</dd>
+              <dt>Creative approach</dt>
+              <dd>{brief?.creativeApproach}</dd>
+              <dt>Deadline</dt>
+              <dd>{brief?.deadline}</dd>
+              <dt>Submitted</dt>
+              <dd>
                 {brief?.submittedAt
                   ? new Date(brief.submittedAt).toLocaleString("en-GB")
                   : "—"}
@@ -195,36 +185,19 @@ export default async function VerifyPage({
                 commercial: {DECISION_LABEL[decision.commercialDecision]}
               </span>
             </div>
-            <table
-              style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}
-            >
+            <table className="data-table">
               <tbody>
                 {Object.entries(breakdown).map(([k, v]) => (
-                  <tr key={k} style={{ borderTop: "1px solid var(--cpl-border)" }}>
-                    <td style={{ padding: "0.35em 0", color: "var(--cpl-ink-soft)" }}>
+                  <tr key={k}>
+                    <td style={{ color: "var(--cpl-ink-soft)" }}>
                       {k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())}
                     </td>
-                    <td
-                      style={{
-                        padding: "0.35em 0",
-                        textAlign: "right",
-                        fontFamily: "var(--font-mono)",
-                      }}
-                    >
-                      {Number(v).toFixed(1)}
-                    </td>
+                    <td className="num">{Number(v).toFixed(1)}</td>
                   </tr>
                 ))}
                 <tr style={{ borderTop: "2px solid var(--cpl-ink)" }}>
-                  <td style={{ padding: "0.4em 0", fontWeight: 700 }}>Total</td>
-                  <td
-                    style={{
-                      padding: "0.4em 0",
-                      textAlign: "right",
-                      fontFamily: "var(--font-mono)",
-                      fontWeight: 700,
-                    }}
-                  >
+                  <td style={{ fontWeight: 700 }}>Total</td>
+                  <td className="num" style={{ fontWeight: 700 }}>
                     {Number(decision.computedScore).toFixed(1)}
                   </td>
                 </tr>
@@ -240,38 +213,21 @@ export default async function VerifyPage({
               No approval requirements were raised for this brief.
             </p>
           ) : (
-            <table
-              style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}
-            >
+            <table className="data-table">
               <thead>
                 <tr>
                   {["Requirement", "Role", "State", "Decided"].map((h) => (
-                    <th
-                      key={h}
-                      style={{
-                        textAlign: "left",
-                        padding: "0.5em 0",
-                        color: "var(--cpl-ink-soft)",
-                        fontWeight: 600,
-                        borderBottom: "1px solid var(--cpl-border)",
-                      }}
-                    >
-                      {h}
-                    </th>
+                    <th key={h}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {requirements.map((r) => (
-                  <tr key={r.id} style={{ borderBottom: "1px solid var(--cpl-border)" }}>
-                    <td style={{ padding: "0.5em 0" }}>
-                      {r.requirementType.replace(/_/g, " ")}
-                    </td>
-                    <td style={{ padding: "0.5em 0" }}>
-                      {r.requiredRoleKey.replace(/_/g, " ")}
-                    </td>
-                    <td style={{ padding: "0.5em 0" }}>{r.state}</td>
-                    <td style={{ padding: "0.5em 0", color: "var(--cpl-ink-soft)" }}>
+                  <tr key={r.id}>
+                    <td>{r.requirementType.replace(/_/g, " ")}</td>
+                    <td>{r.requiredRoleKey.replace(/_/g, " ")}</td>
+                    <td>{r.state}</td>
+                    <td style={{ color: "var(--cpl-ink-soft)" }}>
                       {r.decidedAt ? new Date(r.decidedAt).toLocaleString("en-GB") : "—"}
                     </td>
                   </tr>

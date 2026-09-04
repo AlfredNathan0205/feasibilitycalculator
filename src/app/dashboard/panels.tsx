@@ -13,7 +13,12 @@ function SimpleTable({
   columns,
   rows,
 }: {
-  columns: { key: string; label: string; format?: (v: unknown) => string }[];
+  columns: {
+    key: string;
+    label: string;
+    format?: (v: unknown) => string;
+    num?: boolean;
+  }[];
   rows: Record<string, unknown>[];
 }) {
   if (rows.length === 0) {
@@ -24,20 +29,11 @@ function SimpleTable({
     );
   }
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+    <table className="data-table">
       <thead>
         <tr>
           {columns.map((c) => (
-            <th
-              key={c.key}
-              style={{
-                textAlign: "left",
-                padding: "0.4em 0.6em 0.4em 0",
-                color: "var(--cpl-ink-soft)",
-                fontWeight: 600,
-                borderBottom: "1px solid var(--cpl-border)",
-              }}
-            >
+            <th key={c.key} className={c.num ? "num" : undefined}>
               {c.label}
             </th>
           ))}
@@ -45,9 +41,9 @@ function SimpleTable({
       </thead>
       <tbody>
         {rows.map((row, i) => (
-          <tr key={i} style={{ borderTop: "1px solid var(--cpl-border)" }}>
+          <tr key={i}>
             {columns.map((c) => (
-              <td key={c.key} style={{ padding: "0.4em 0.6em 0.4em 0" }}>
+              <td key={c.key} className={c.num ? "num" : undefined}>
                 {c.format ? c.format(row[c.key]) : String(row[c.key] ?? "")}
               </td>
             ))}
@@ -64,30 +60,12 @@ function SimpleTable({
 function BarRow({ label, count, max }: { label: string; count: number; max: number }) {
   const pct = max > 0 ? Math.round((count / max) * 100) : 0;
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "140px 1fr 40px",
-        alignItems: "center",
-        gap: "0.6rem",
-        fontSize: "0.8125rem",
-        marginBottom: "0.35rem",
-      }}
-    >
-      <span>{label}</span>
-      <div
-        style={{
-          background: "var(--cpl-border)",
-          borderRadius: 3,
-          overflow: "hidden",
-          height: 10,
-        }}
-      >
-        <div
-          style={{ width: `${pct}%`, background: "var(--cpl-indigo)", height: "100%" }}
-        />
-      </div>
-      <span style={{ textAlign: "right", fontFamily: "var(--font-mono)" }}>{count}</span>
+    <div className="bar-row">
+      <span className="bar-row-label">{label}</span>
+      <span className="bar-track">
+        <span className="bar-fill" style={{ width: `${pct}%` }} />
+      </span>
+      <span className="bar-value">{count}</span>
     </div>
   );
 }
@@ -102,7 +80,7 @@ export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
   );
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+    <div className="panel-grid">
       <Panel title="Volume by customer tier">
         {summary.volumeByTier.map((r) => (
           <BarRow key={r.dimension} label={r.dimension} count={r.count} max={tierMax} />
@@ -125,7 +103,7 @@ export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
           columns={[
             { key: "month", label: "Month" },
             { key: "finalStatus", label: "Status" },
-            { key: "count", label: "Count" },
+            { key: "count", label: "Count", num: true },
           ]}
           rows={summary.volumeOutcomeMixByMonth as unknown as Record<string, unknown>[]}
         />
@@ -135,16 +113,18 @@ export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
         <SimpleTable
           columns={[
             { key: "requiredRoleKey", label: "Role" },
-            { key: "approvedCount", label: "Approved" },
-            { key: "rejectedCount", label: "Rejected" },
+            { key: "approvedCount", label: "Approved", num: true },
+            { key: "rejectedCount", label: "Rejected", num: true },
             {
               key: "approvalRate",
               label: "Approval rate",
+              num: true,
               format: (v) => (v === null ? "—" : `${(Number(v) * 100).toFixed(0)}%`),
             },
             {
               key: "medianHoursToDecision",
               label: "Median time",
+              num: true,
               format: (v) => (v === null ? "—" : `${Number(v).toFixed(1)}h`),
             },
           ]}
@@ -179,15 +159,16 @@ export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
         )}
       </Panel>
 
-      <div style={{ gridColumn: "1 / -1" }}>
+      <div className="panel-grid-full">
         <Panel title="Pre-approval usage by submitter (revocations highlighted)">
           <SimpleTable
             columns={[
               { key: "submitterName", label: "Submitter" },
-              { key: "preApprovalCount", label: "Pre-approvals declared" },
+              { key: "preApprovalCount", label: "Pre-approvals declared", num: true },
               {
                 key: "revokedCount",
                 label: "Revoked",
+                num: true,
                 format: (v) => (Number(v) > 0 ? `⚠ ${v}` : "0"),
               },
             ]}

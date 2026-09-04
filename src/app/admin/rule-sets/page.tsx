@@ -60,14 +60,7 @@ export default async function RuleSetsListPage() {
   return (
     <AppShell session={session}>
       <div className="container-wide">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "baseline",
-            marginBottom: "1.5rem",
-          }}
-        >
+        <div className="page-header">
           <h1>Rule sets</h1>
           <form action={createDraft}>
             <button type="submit" className="btn btn-primary">
@@ -77,41 +70,29 @@ export default async function RuleSetsListPage() {
         </div>
 
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table className="data-table data-table-flush">
             <thead>
-              <tr style={{ background: "var(--cpl-paper)" }}>
+              <tr>
                 {["Version", "Status", "Created", "Published"].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      textAlign: "left",
-                      padding: "0.7em 1em",
-                      fontSize: "0.75rem",
-                      fontWeight: 600,
-                      color: "var(--cpl-ink-soft)",
-                      borderBottom: "1px solid var(--cpl-border)",
-                    }}
-                  >
-                    {h}
-                  </th>
+                  <th key={h}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {ruleSets.map((rs) => (
-                <tr key={rs.id} style={{ borderBottom: "1px solid var(--cpl-border)" }}>
-                  <td style={{ padding: "0.7em 1em" }}>
+                <tr key={rs.id}>
+                  <td>
                     <a href={`/admin/rule-sets/${rs.id}`}>v{rs.version}</a>
                   </td>
-                  <td style={{ padding: "0.7em 1em" }}>
+                  <td>
                     <span className={`status-pill ${STATUS_CLASS[rs.status]}`}>
                       {rs.status}
                     </span>
                   </td>
-                  <td style={{ padding: "0.7em 1em", color: "var(--cpl-ink-soft)" }}>
+                  <td style={{ color: "var(--cpl-ink-soft)" }}>
                     {new Date(rs.createdAt).toLocaleDateString("en-GB")}
                   </td>
-                  <td style={{ padding: "0.7em 1em", color: "var(--cpl-ink-soft)" }}>
+                  <td style={{ color: "var(--cpl-ink-soft)" }}>
                     {rs.publishedAt
                       ? new Date(rs.publishedAt).toLocaleDateString("en-GB")
                       : "—"}

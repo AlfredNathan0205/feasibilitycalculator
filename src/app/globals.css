@@ -363,6 +363,159 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* Page header — a title with optional trailing actions, used at the top
+ * of every internal page instead of ad hoc flex containers each time. */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.page-header-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+/* Data table — used across the dashboard and admin views. Rows read as
+ * rulings on a ledger (hairline top borders), not a bordered grid. */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.data-table th {
+  text-align: left;
+  padding: 0.5em 0.75em 0.5em 0;
+  color: var(--cpl-ink-soft);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  border-bottom: 1.5px solid var(--cpl-border-strong);
+}
+.data-table td {
+  padding: 0.55em 0.75em 0.55em 0;
+  border-top: 1px solid var(--cpl-border);
+}
+.data-table tbody tr:hover {
+  background: var(--cpl-paper);
+}
+.data-table .num {
+  font-family: var(--font-mono);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Modifier for a table that IS the card (card padding: 0) rather than
+ * sitting inside one — full-bleed rows with their own horizontal padding
+ * and a tinted header row. */
+.data-table-flush th,
+.data-table-flush td {
+  padding: 0.75em 1.25rem;
+}
+.data-table-flush thead tr {
+  background: var(--cpl-paper);
+}
+.data-table-flush th {
+  border-bottom: 1px solid var(--cpl-border);
+}
+.data-table-flush td {
+  border-top: 1px solid var(--cpl-border);
+}
+
+/* Bar row — the dashboard's distribution rows (volume by tier, score
+ * distribution, etc.) share this with the readout's breakdown bars. */
+.bar-row {
+  display: grid;
+  grid-template-columns: 9rem 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+  padding: 0.3em 0;
+}
+.bar-row-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bar-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--cpl-paper);
+  border: 1px solid var(--cpl-border);
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  background: var(--cpl-indigo);
+  border-radius: 3px;
+}
+.bar-value {
+  font-family: var(--font-mono);
+  text-align: right;
+  min-width: 2.5em;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+.panel-grid-full {
+  grid-column: 1 / -1;
+}
+@media (max-width: 780px) {
+  .panel-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* A queue/list item — the approvals queue and pre-approval requirement
+ * cards both read as a requisition ticket: a clear top line of identity,
+ * a quiet metadata line, actions along the bottom. */
+.ticket {
+  border: 1px solid var(--cpl-border);
+  border-radius: 7px;
+  padding: 1rem 1.25rem;
+}
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+.ticket-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--cpl-ink);
+  margin-bottom: 0.15em;
+}
+.ticket-meta {
+  color: var(--cpl-ink-soft);
+  font-size: 0.8125rem;
+}
+.ticket-meta .num {
+  font-family: var(--font-mono);
+}
+
+/* A definition list of read-only facts — verify/audit pages. */
+.detail-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.45em 1.25em;
+  font-size: 0.875rem;
+}
+.detail-list dt {
+  color: var(--cpl-ink-soft);
+}
+.detail-list dd {
+  margin: 0;
+}
+
 /* Status pill — reads like a specimen/sample label, matching the amber
  * glass bottle labels in CPL's own lab. One accent color per state, a
  * left rule rather than a filled badge, so it reads as information (this

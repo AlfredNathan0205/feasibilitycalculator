@@ -104,11 +104,15 @@ export default async function ApprovalsPage() {
   return (
     <AppShell session={session}>
       <div className="container-wide">
-        <h1>Your approvals</h1>
-        <p className="helptext">
-          Requirements assigned to:{" "}
-          {session.approvalAuthorityRoles.join(", ") || "(none)"}
-        </p>
+        <div className="page-header">
+          <div>
+            <h1 style={{ marginBottom: "0.2em" }}>Your approvals</h1>
+            <p className="helptext" style={{ margin: 0 }}>
+              Requirements assigned to:{" "}
+              {session.approvalAuthorityRoles.join(", ") || "(none)"}
+            </p>
+          </div>
+        </div>
 
         {items.length === 0 ? (
           <div className="card">
@@ -117,24 +121,18 @@ export default async function ApprovalsPage() {
         ) : (
           <div style={{ display: "grid", gap: "1rem" }}>
             {items.map((item) => (
-              <div key={item.requirementId} className="card">
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    marginBottom: "0.75rem",
-                  }}
-                >
+              <div key={item.requirementId} className="card ticket">
+                <div className="ticket-header">
                   <div>
-                    <h3 style={{ marginBottom: "0.2em" }}>
+                    <div className="ticket-title">
                       {item.customerReference} — {item.tier}, £
                       {Number(item.valuePotentialGbp).toLocaleString("en-GB")}
-                    </h3>
-                    <span className="helptext">
+                    </div>
+                    <span className="ticket-meta">
                       {REQUIREMENT_LABELS[item.requirementTypeKind] ??
                         item.requirementTypeKind}{" "}
-                      · score {Number(item.score).toFixed(1)} ·{" "}
+                      · score <span className="num">{Number(item.score).toFixed(1)}</span>{" "}
+                      ·{" "}
                       {item.commercialDecision === "auto_approved"
                         ? "commercially Auto-Approved"
                         : item.commercialDecision === "declined"

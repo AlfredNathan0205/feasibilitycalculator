@@ -45,16 +45,9 @@ export default async function DashboardPage() {
   return (
     <AppShell session={session}>
       <div className="container-wide">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "baseline",
-            marginBottom: "1.5rem",
-          }}
-        >
+        <div className="page-header">
           <h1>Dashboard</h1>
-          <div style={{ display: "flex", gap: "0.6rem" }}>
+          <div className="page-header-actions">
             <a className="btn btn-secondary" href="/api/reports/export/csv">
               Export CSV
             </a>

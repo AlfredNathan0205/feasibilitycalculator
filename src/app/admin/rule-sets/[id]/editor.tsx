@@ -181,7 +181,7 @@ export function RuleSetEditor({
 
       <div className="card">
         <h2>Multipliers &amp; scores</h2>
-        <div style={{ display: "grid", gap: "0.9rem" }}>
+        <div style={{ display: "grid", gap: "1.25rem" }}>
           {(
             [
               ["newReworkMultipliers", "New / Rework"],
@@ -191,7 +191,7 @@ export function RuleSetEditor({
             ] as const
           ).map(([key, label]) => (
             <div key={key}>
-              <div className="helptext" style={{ marginBottom: "0.3em" }}>
+              <div className="field-group-label" style={{ marginBottom: "0.6em" }}>
                 {label}
               </div>
               <div
@@ -253,30 +253,19 @@ export function RuleSetEditor({
 
       <div className="card">
         <h2>Routing table</h2>
-        <table
-          style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}
-        >
+        <table className="data-table">
           <thead>
             <tr>
               {["Requirement", "Role", "Enabled"].map((h) => (
-                <th
-                  key={h}
-                  style={{
-                    textAlign: "left",
-                    padding: "0.4em 0",
-                    color: "var(--cpl-ink-soft)",
-                  }}
-                >
-                  {h}
-                </th>
+                <th key={h}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {Object.entries(payload.routingTable).map(([reqType, routing]) => (
-              <tr key={reqType} style={{ borderTop: "1px solid var(--cpl-border)" }}>
-                <td style={{ padding: "0.4em 0" }}>{reqType.replace(/_/g, " ")}</td>
-                <td style={{ padding: "0.4em 0" }}>
+              <tr key={reqType}>
+                <td>{reqType.replace(/_/g, " ")}</td>
+                <td>
                   <input
                     value={routing.role}
                     onChange={(e) => {
@@ -292,10 +281,9 @@ export function RuleSetEditor({
                     }}
                   />
                 </td>
-                <td style={{ padding: "0.4em 0" }}>
+                <td>
                   <input
                     type="checkbox"
-                    style={{ width: "auto" }}
                     checked={routing.enabled}
                     onChange={(e) => {
                       setPayload((p) => ({
@@ -369,39 +357,21 @@ export function RuleSetEditor({
                   );
                 })}
               </ul>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: "0.8125rem",
-                }}
-              >
+              <table className="data-table">
                 <thead>
                   <tr>
                     {["Customer", "From", "To", "Score"].map((h) => (
-                      <th
-                        key={h}
-                        style={{
-                          textAlign: "left",
-                          padding: "0.4em 0",
-                          color: "var(--cpl-ink-soft)",
-                        }}
-                      >
-                        {h}
-                      </th>
+                      <th key={h}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {replayResult.transitions.map((t) => (
-                    <tr
-                      key={t.briefId}
-                      style={{ borderTop: "1px solid var(--cpl-border)" }}
-                    >
-                      <td style={{ padding: "0.4em 0" }}>{t.customerReference}</td>
-                      <td style={{ padding: "0.4em 0" }}>{t.fromDecision}</td>
-                      <td style={{ padding: "0.4em 0" }}>{t.toDecision}</td>
-                      <td style={{ padding: "0.4em 0", fontFamily: "var(--font-mono)" }}>
+                    <tr key={t.briefId}>
+                      <td>{t.customerReference}</td>
+                      <td>{t.fromDecision}</td>
+                      <td>{t.toDecision}</td>
+                      <td style={{ fontFamily: "var(--font-mono)" }}>
                         {t.fromScore.toFixed(1)} → {t.toScore.toFixed(1)}
                       </td>
                     </tr>
