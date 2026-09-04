@@ -297,225 +297,207 @@ export function BriefForm() {
   return (
     <form onSubmit={handleSubmit}>
       <div className="card" style={{ marginBottom: "1.25rem" }}>
-        <h2>Brief details</h2>
-
-        <div style={{ display: "grid", gap: "0.9rem" }}>
-          <div>
-            <label htmlFor="customerReference">Customer reference</label>
-            <input
-              id="customerReference"
-              required
-              value={form.customerReference}
-              onChange={(e) => set("customerReference", e.target.value)}
-            />
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.9rem" }}>
+        <div className="field-group">
+          <div className="field-group-label">Commercial details</div>
+          <div className="field-row">
             <div>
-              <label htmlFor="tier">Customer tier</label>
-              <select
-                id="tier"
-                value={form.tier}
-                onChange={(e) => set("tier", e.target.value)}
-              >
-                {TIERS.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="valuePotentialGbp">Value potential (£)</label>
+              <label htmlFor="customerReference">Customer reference</label>
               <input
-                id="valuePotentialGbp"
-                type="number"
-                min="0"
-                step="1"
-                value={form.valuePotentialGbp}
-                onChange={(e) => set("valuePotentialGbp", e.target.value)}
+                id="customerReference"
+                required
+                value={form.customerReference}
+                onChange={(e) => set("customerReference", e.target.value)}
               />
             </div>
-          </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.9rem" }}>
+            <div className="field-row-2">
+              <div>
+                <label htmlFor="tier">Customer tier</label>
+                <select
+                  id="tier"
+                  value={form.tier}
+                  onChange={(e) => set("tier", e.target.value)}
+                >
+                  {TIERS.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="valuePotentialGbp">Value potential (£)</label>
+                <input
+                  id="valuePotentialGbp"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={form.valuePotentialGbp}
+                  onChange={(e) => set("valuePotentialGbp", e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="field-row-2">
+              <div>
+                <label htmlFor="newRework">New / Rework</label>
+                <select
+                  id="newRework"
+                  value={form.newRework}
+                  onChange={(e) => set("newRework", e.target.value)}
+                >
+                  {NEW_REWORK.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="briefType">Brief type</label>
+                <select
+                  id="briefType"
+                  value={form.briefType}
+                  onChange={(e) => set("briefType", e.target.value)}
+                >
+                  {BRIEF_TYPES.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="field-row-2">
+              <div>
+                <label htmlFor="customerApproval">Customer approval</label>
+                <select
+                  id="customerApproval"
+                  value={form.customerApproval}
+                  onChange={(e) => set("customerApproval", e.target.value)}
+                >
+                  {CUSTOMER_APPROVALS.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="creativeApproach">Creative approach</label>
+                <select
+                  id="creativeApproach"
+                  value={form.creativeApproach}
+                  onChange={(e) => set("creativeApproach", e.target.value)}
+                >
+                  {CREATIVE_APPROACHES.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="field-group">
+          <div className="field-group-label">Timing &amp; reference</div>
+          <div className="field-row-2">
             <div>
-              <label htmlFor="newRework">New / Rework</label>
-              <select
-                id="newRework"
-                value={form.newRework}
-                onChange={(e) => set("newRework", e.target.value)}
-              >
-                {NEW_REWORK.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
+              <label htmlFor="deadline">Deadline</label>
+              <input
+                id="deadline"
+                type="date"
+                required
+                value={form.deadline}
+                onChange={(e) => set("deadline", e.target.value)}
+              />
+              {daysUntilDeadline !== null && daysUntilDeadline <= 0 && (
+                <div className="field-error">check this date</div>
+              )}
             </div>
             <div>
-              <label htmlFor="briefType">Brief type</label>
-              <select
-                id="briefType"
-                value={form.briefType}
-                onChange={(e) => set("briefType", e.target.value)}
-              >
-                {BRIEF_TYPES.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
+              <label htmlFor="pvReference">PV reference (optional)</label>
+              <input
+                id="pvReference"
+                value={form.pvReference}
+                onChange={(e) => set("pvReference", e.target.value)}
+              />
             </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.9rem" }}>
-            <div>
-              <label htmlFor="customerApproval">Customer approval</label>
-              <select
-                id="customerApproval"
-                value={form.customerApproval}
-                onChange={(e) => set("customerApproval", e.target.value)}
-              >
-                {CUSTOMER_APPROVALS.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="creativeApproach">Creative approach</label>
-              <select
-                id="creativeApproach"
-                value={form.creativeApproach}
-                onChange={(e) => set("creativeApproach", e.target.value)}
-              >
-                {CREATIVE_APPROACHES.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="deadline">Deadline</label>
-            <input
-              id="deadline"
-              type="date"
-              required
-              value={form.deadline}
-              onChange={(e) => set("deadline", e.target.value)}
-            />
-            {daysUntilDeadline !== null && daysUntilDeadline <= 0 && (
-              <div className="field-error">check this date</div>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="pvReference">PV reference (optional)</label>
-            <input
-              id="pvReference"
-              value={form.pvReference}
-              onChange={(e) => set("pvReference", e.target.value)}
-            />
           </div>
         </div>
       </div>
 
       <div className="card" style={{ marginBottom: "1.25rem" }}>
-        <h2>Flags</h2>
-        <div style={{ display: "grid", gap: "0.9rem" }}>
-          <div>
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5em",
-                fontWeight: 400,
-              }}
-            >
-              <input
-                type="checkbox"
-                style={{ width: "auto" }}
-                checked={form.nicheFfPreApproved}
-                onChange={(e) => set("nicheFfPreApproved", e.target.checked)}
-              />
-              Niche / Fine Fragrance pre-approved
-            </label>
-            {form.nicheFfPreApproved && (
-              <div style={{ marginTop: "0.5em" }}>
-                <label htmlFor="nicheFfRationale">Rationale (required)</label>
-                <textarea
-                  id="nicheFfRationale"
-                  required
-                  rows={2}
-                  value={form.nicheFfRationale}
-                  onChange={(e) => set("nicheFfRationale", e.target.value)}
-                />
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5em",
-                fontWeight: 400,
-              }}
-            >
-              <input
-                type="checkbox"
-                style={{ width: "auto" }}
-                checked={form.strategicPriority}
-                onChange={(e) => set("strategicPriority", e.target.checked)}
-              />
-              Strategic priority
-            </label>
-            {form.strategicPriority && (
-              <div style={{ marginTop: "0.5em" }}>
-                <label htmlFor="strategicPriorityRationale">Rationale (required)</label>
-                <textarea
-                  id="strategicPriorityRationale"
-                  required
-                  rows={2}
-                  value={form.strategicPriorityRationale}
-                  onChange={(e) => set("strategicPriorityRationale", e.target.value)}
-                />
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
-            {(
-              [
-                ["marketingFlag", "Marketing resource"],
-                ["ppdFlag", "PPD resource"],
-                ["gcmsFlag", "GCMS / analytical resource"],
-              ] as const
-            ).map(([key, label]) => (
-              <label
-                key={key}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5em",
-                  fontWeight: 400,
-                }}
-              >
+        <div className="field-group">
+          <div className="field-group-label">Flags &amp; exceptions</div>
+          <div className="field-row">
+            <div>
+              <label>
                 <input
                   type="checkbox"
-                  style={{ width: "auto" }}
-                  checked={form[key]}
-                  onChange={(e) => set(key, e.target.checked)}
+                  checked={form.nicheFfPreApproved}
+                  onChange={(e) => set("nicheFfPreApproved", e.target.checked)}
                 />
-                {label}
+                Niche / Fine Fragrance pre-approved
               </label>
-            ))}
+              {form.nicheFfPreApproved && (
+                <div style={{ marginTop: "0.5em" }}>
+                  <label htmlFor="nicheFfRationale">Rationale (required)</label>
+                  <textarea
+                    id="nicheFfRationale"
+                    required
+                    rows={2}
+                    value={form.nicheFfRationale}
+                    onChange={(e) => set("nicheFfRationale", e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={form.strategicPriority}
+                  onChange={(e) => set("strategicPriority", e.target.checked)}
+                />
+                Strategic priority
+              </label>
+              {form.strategicPriority && (
+                <div style={{ marginTop: "0.5em" }}>
+                  <label htmlFor="strategicPriorityRationale">Rationale (required)</label>
+                  <textarea
+                    id="strategicPriorityRationale"
+                    required
+                    rows={2}
+                    value={form.strategicPriorityRationale}
+                    onChange={(e) => set("strategicPriorityRationale", e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: "1.75rem", flexWrap: "wrap" }}>
+              {(
+                [
+                  ["marketingFlag", "Marketing resource"],
+                  ["ppdFlag", "PPD resource"],
+                  ["gcmsFlag", "GCMS / analytical resource"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} style={{ width: "auto" }}>
+                  <input
+                    type="checkbox"
+                    checked={form[key]}
+                    onChange={(e) => set(key, e.target.checked)}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -525,25 +507,19 @@ export function BriefForm() {
           as fields change, showing the running total and each component's
           contribution." */}
       {preview && (
-        <div className="card" style={{ marginBottom: "1.25rem" }}>
-          <h2>Live preview</h2>
+        <div className="readout" style={{ marginBottom: "1.25rem" }}>
+          <div className="helptext" style={{ marginBottom: "0.5em" }}>
+            Live score preview
+          </div>
           <div
             style={{
               display: "flex",
               alignItems: "baseline",
-              gap: "0.75rem",
-              marginBottom: "0.75rem",
+              gap: "0.85rem",
+              marginBottom: "1.25rem",
             }}
           >
-            <span
-              style={{
-                fontSize: "1.75rem",
-                fontWeight: 700,
-                fontFamily: "var(--font-mono)",
-              }}
-            >
-              {preview.stageA.score.toFixed(1)}
-            </span>
+            <span className="readout-score">{preview.stageA.score.toFixed(1)}</span>
             <span
               className={`status-pill status-${
                 preview.stageA.commercialDecision === "declined"
@@ -557,28 +533,29 @@ export function BriefForm() {
             </span>
           </div>
 
-          <table
-            style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}
-          >
-            <tbody>
-              {Object.entries(preview.stageA.scoreBreakdown).map(([k, v]) => (
-                <tr key={k} style={{ borderTop: "1px solid var(--cpl-border)" }}>
-                  <td style={{ padding: "0.4em 0", color: "var(--cpl-ink-soft)" }}>
+          <div>
+            {(() => {
+              const breakdown = Object.entries(preview.stageA.scoreBreakdown) as [
+                string,
+                number,
+              ][];
+              const maxAbs = Math.max(1, ...breakdown.map(([, v]) => Math.abs(v)));
+              return breakdown.map(([k, v]) => (
+                <div className="readout-breakdown-row" key={k}>
+                  <span style={{ color: "var(--cpl-ink-soft)" }}>
                     {k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())}
-                  </td>
-                  <td
-                    style={{
-                      padding: "0.4em 0",
-                      textAlign: "right",
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
-                    {(v as number).toFixed(1)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </span>
+                  <span className="readout-bar-track">
+                    <span
+                      className="readout-bar-fill"
+                      style={{ width: `${(Math.abs(v) / maxAbs) * 100}%` }}
+                    />
+                  </span>
+                  <span className="readout-value">{v.toFixed(1)}</span>
+                </div>
+              ));
+            })()}
+          </div>
 
           {preview.requirements.length > 0 && (
             <div style={{ marginTop: "1rem" }}>
@@ -599,29 +576,24 @@ export function BriefForm() {
                     <div
                       key={r.requirementType}
                       style={{
-                        border: "1px solid var(--cpl-border)",
-                        borderRadius: 4,
-                        padding: "0.75rem",
+                        border: "1px solid var(--cpl-indigo-border)",
+                        background: "var(--cpl-indigo-tint)",
+                        borderRadius: 6,
+                        padding: "0.85rem 1rem",
                       }}
                     >
-                      <div style={{ fontSize: "0.875rem", marginBottom: "0.4em" }}>
-                        {REQUIREMENT_LABELS[r.requirementType] ?? r.requirementType} —{" "}
+                      <div style={{ fontSize: "0.875rem", marginBottom: "0.5em" }}>
+                        <strong>
+                          {REQUIREMENT_LABELS[r.requirementType] ?? r.requirementType}
+                        </strong>
+                        {" — "}
                         <span style={{ color: "var(--cpl-ink-soft)" }}>
                           {ROLE_LABELS[r.role] ?? r.role}
                         </span>
                       </div>
-                      <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5em",
-                          fontWeight: 400,
-                          fontSize: "0.875rem",
-                        }}
-                      >
+                      <label style={{ fontSize: "0.875rem" }}>
                         <input
                           type="checkbox"
-                          style={{ width: "auto" }}
                           checked={decl.enabled}
                           onChange={(e) =>
                             setPreApprovals((prev) => ({

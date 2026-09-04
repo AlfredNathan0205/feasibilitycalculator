@@ -41,6 +41,14 @@
   --font-display: "Inter", -apple-system, "Segoe UI", sans-serif;
   --font-body: "Inter", -apple-system, "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Elevation — tinted with the brand indigo rather than flat grey, so
+   * depth reads as "this instrument's surface" rather than generic
+   * SaaS-card drop-shadow. Two steps: resting cards, and the one
+   * "instrument readout" surface (the live score preview) that carries
+   * slightly more lift, per the single-bold-moment principle. */
+  --shadow-card: 0 1px 2px rgba(51, 26, 240, 0.045), 0 6px 20px rgba(51, 26, 240, 0.055);
+  --shadow-readout: 0 2px 4px rgba(51, 26, 240, 0.07), 0 16px 40px rgba(51, 26, 240, 0.1);
 }
 
 * {
@@ -91,7 +99,18 @@ label {
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--cpl-ink-soft);
-  margin-bottom: 0.3em;
+  margin-bottom: 0.35em;
+}
+
+/* A label wrapping a checkbox reads as one clickable row, not a form
+ * label sitting above a field — different layout, same element. */
+label:has(> input[type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  gap: 0.65em;
+  font-weight: 400;
+  color: var(--cpl-ink);
+  cursor: pointer;
 }
 
 input,
@@ -99,12 +118,21 @@ select,
 textarea {
   font-family: inherit;
   font-size: 0.9375rem;
-  padding: 0.55em 0.7em;
+  padding: 0.6em 0.75em;
   border: 1px solid var(--cpl-border-strong);
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--cpl-white);
   color: var(--cpl-ink);
   width: 100%;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--cpl-ink-soft);
 }
 
 input:focus,
@@ -112,8 +140,68 @@ select:focus,
 textarea:focus,
 button:focus-visible,
 a:focus-visible {
+  outline: none;
+  border-color: var(--cpl-indigo);
+  box-shadow: 0 0 0 3px var(--cpl-indigo-tint);
+}
+
+button:focus-visible,
+a:focus-visible {
   outline: 2px solid var(--cpl-indigo);
-  outline-offset: 1px;
+  outline-offset: 2px;
+}
+
+/* Native <select>, given a real chevron and breathing room instead of
+ * each browser's inconsistent default arrow — this alone is most of what
+ * makes a form read as "built" rather than "unstyled HTML". */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%234d4a5c' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7em center;
+  background-size: 15px;
+  padding-right: 2.3em;
+  cursor: pointer;
+}
+
+/* Native checkbox, redrawn — a real checkmark on a brand-indigo fill
+ * when checked, rather than each OS's own default control. Still a real
+ * <input type="checkbox">: automation (Playwright's .check()) and
+ * assistive tech both see the same native element underneath. */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.2em;
+  height: 1.2em;
+  min-width: 1.2em;
+  border: 1.5px solid var(--cpl-border-strong);
+  border-radius: 4px;
+  background: var(--cpl-white);
+  display: inline-grid;
+  place-content: center;
+  cursor: pointer;
+  margin: 0;
+}
+input[type="checkbox"]:hover {
+  border-color: var(--cpl-indigo);
+}
+input[type="checkbox"]::before {
+  content: "";
+  width: 0.7em;
+  height: 0.7em;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  transform: scale(0);
+  transform-origin: center;
+  transition: transform 0.1s ease-in-out;
+  background: var(--cpl-white);
+}
+input[type="checkbox"]:checked {
+  background: var(--cpl-indigo);
+  border-color: var(--cpl-indigo);
+}
+input[type="checkbox"]:checked::before {
+  transform: scale(1);
 }
 
 button {
@@ -127,19 +215,29 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 0.4em;
-  padding: 0.6em 1.1em;
-  border-radius: 4px;
+  padding: 0.65em 1.2em;
+  border-radius: 6px;
   border: 1px solid transparent;
   font-weight: 600;
   font-size: 0.9375rem;
   text-decoration: none;
   line-height: 1;
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.12s ease,
+    background 0.12s ease;
+}
+.btn:active {
+  transform: translateY(1px);
 }
 
 .btn-primary {
   background: var(--cpl-indigo);
   color: var(--cpl-white);
   border-color: var(--cpl-indigo);
+  box-shadow:
+    0 1px 2px rgba(51, 26, 240, 0.15),
+    0 6px 16px rgba(51, 26, 240, 0.18);
 }
 .btn-primary:hover {
   background: #2814c9;
@@ -147,6 +245,7 @@ button {
 .btn-primary:disabled {
   background: var(--cpl-border-strong);
   border-color: var(--cpl-border-strong);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
@@ -157,6 +256,7 @@ button {
 }
 .btn-secondary:hover {
   background: var(--cpl-paper);
+  border-color: var(--cpl-ink-soft);
 }
 
 .field-error {
@@ -174,8 +274,93 @@ button {
 .card {
   background: var(--cpl-white);
   border: 1px solid var(--cpl-border);
-  border-radius: 6px;
-  padding: 1.25rem 1.5rem;
+  border-radius: 8px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: var(--shadow-card);
+}
+
+/* A grouped set of fields within a card — a left rule stands in for a
+ * fieldset boundary, so related inputs read as one unit without another
+ * nested box. The label is a real heading of the group, sentence case,
+ * not a tracked-out eyebrow. */
+.field-group + .field-group {
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--cpl-border);
+}
+.field-group-label {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--cpl-ink);
+  margin-bottom: 1rem;
+  padding-left: 0.85rem;
+  border-left: 3px solid var(--cpl-indigo-border);
+}
+
+.field-row {
+  display: grid;
+  gap: 0.9rem;
+}
+.field-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+@media (max-width: 560px) {
+  .field-row-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The "instrument readout" — the one surface in the form allowed extra
+ * lift and a top accent, since the live score preview is the single
+ * thing every field on the page feeds into. Everything else on the page
+ * stays at --shadow-card. */
+.readout {
+  background: var(--cpl-white);
+  border: 1px solid var(--cpl-indigo-border);
+  border-top: 3px solid var(--cpl-indigo);
+  border-radius: 8px;
+  padding: 1.75rem;
+  box-shadow: var(--shadow-readout);
+}
+.readout-score {
+  font-family: var(--font-mono);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--cpl-indigo-ink);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.readout-breakdown-row {
+  display: grid;
+  grid-template-columns: 9rem 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4em 0;
+  font-size: 0.875rem;
+}
+.readout-breakdown-row + .readout-breakdown-row {
+  border-top: 1px solid var(--cpl-border);
+}
+.readout-bar-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--cpl-paper);
+  overflow: hidden;
+}
+.readout-bar-fill {
+  height: 100%;
+  background: var(--cpl-indigo);
+  border-radius: 3px;
+  transition: width 0.15s ease;
+}
+.readout-value {
+  font-family: var(--font-mono);
+  text-align: right;
+  min-width: 3.5em;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Status pill — reads like a specimen/sample label, matching the amber
@@ -206,6 +391,75 @@ button {
   background: var(--cpl-amber-tint);
   border-color: var(--cpl-amber);
   color: var(--cpl-amber);
+}
+
+/* App shell / top nav — a slim instrument bezel, not a marketing header.
+ * The wordmark stays quiet; the one accent is the bottom rule picking up
+ * the amber used everywhere else as a status/specimen marker. */
+.shell-header {
+  background: var(--cpl-indigo);
+  border-bottom: 3px solid var(--cpl-amber);
+}
+.shell-header-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0.85rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.shell-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  text-decoration: none;
+  color: #fff;
+}
+.shell-brand-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+.shell-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+}
+.shell-nav-link {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  padding: 0.45em 0.75em;
+  border-radius: 5px;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+.shell-nav-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.shell-user {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8125rem;
+  padding-left: 0.5rem;
+  margin-left: 0.25rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+}
+.shell-signout {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  padding: 0.45em 0.85em;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: background 0.12s ease;
+}
+.shell-signout:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .container {

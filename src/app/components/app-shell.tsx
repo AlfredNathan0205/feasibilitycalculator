@@ -13,33 +13,9 @@ export function AppShell({
 }) {
   return (
     <>
-      <header
-        style={{
-          background: "var(--cpl-indigo)",
-          color: "#fff",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1080,
-            margin: "0 auto",
-            padding: "0.75rem 1.5rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "1rem",
-          }}
-        >
-          <a
-            href="/"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.65rem",
-              textDecoration: "none",
-              color: "#fff",
-            }}
-          >
+      <header className="shell-header">
+        <div className="shell-header-inner">
+          <a href="/" className="shell-brand">
             <Image
               src="/cpl-logo.jpg"
               alt="CPL Aromas"
@@ -48,53 +24,37 @@ export function AppShell({
               style={{ borderRadius: 4, display: "block" }}
               priority
             />
-            <span
-              style={{
-                fontFamily: "var(--font-display)",
-                fontWeight: 700,
-                fontSize: "1rem",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              Project Feasibility
-            </span>
+            <span className="shell-brand-name">Project Feasibility</span>
           </a>
 
           {session && (
-            <nav
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "1.25rem",
-                fontSize: "0.875rem",
-              }}
-            >
-              <a href="/briefs/new" style={{ color: "#fff", opacity: 0.92 }}>
+            <nav className="shell-nav">
+              <a href="/briefs/new" className="shell-nav-link">
                 New brief
               </a>
               {session.accessRoles.includes("approver") && (
-                <a href="/approvals" style={{ color: "#fff", opacity: 0.92 }}>
+                <a href="/approvals" className="shell-nav-link">
                   Your approvals
                 </a>
               )}
               {(session.accessRoles.includes("admin") ||
                 session.accessRoles.includes("auditor")) && (
-                <a href="/dashboard" style={{ color: "#fff", opacity: 0.92 }}>
+                <a href="/dashboard" className="shell-nav-link">
                   Dashboard
                 </a>
               )}
               {session.accessRoles.includes("admin") && (
-                <a href="/admin/rule-sets" style={{ color: "#fff", opacity: 0.92 }}>
+                <a href="/admin/rule-sets" className="shell-nav-link">
                   Rule sets
                 </a>
               )}
               {(session.accessRoles.includes("auditor") ||
                 session.accessRoles.includes("admin")) && (
-                <a href="/verify" style={{ color: "#fff", opacity: 0.92 }}>
+                <a href="/verify" className="shell-nav-link">
                   Verify a code
                 </a>
               )}
-              <span style={{ opacity: 0.75 }}>
+              <span className="shell-user">
                 {session.user?.name ?? session.user?.email}
               </span>
               <form
@@ -103,18 +63,7 @@ export function AppShell({
                   await signOut({ redirectTo: "/" });
                 }}
               >
-                <button
-                  type="submit"
-                  style={{
-                    background: "rgba(255,255,255,0.12)",
-                    color: "#fff",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                    borderRadius: 4,
-                    padding: "0.4em 0.8em",
-                    fontSize: "0.8125rem",
-                    fontWeight: 600,
-                  }}
-                >
+                <button type="submit" className="shell-signout">
                   Sign out
                 </button>
               </form>
