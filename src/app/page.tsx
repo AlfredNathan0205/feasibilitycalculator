@@ -58,9 +58,8 @@ export default async function Home() {
             <div className="card" style={{ marginTop: "3rem" }}>
               <h1>CPL Project Feasibility Calculator</h1>
               <p className="helptext">
-                No sign-in method is configured. Set the
-                AUTH_MICROSOFT_ENTRA_ID_* env vars for production, or
-                ALLOW_DEV_LOGIN=true for local testing.
+                No sign-in method is configured. Set the AUTH_MICROSOFT_ENTRA_ID_* env
+                vars for production, or ALLOW_DEV_LOGIN=true for local testing.
               </p>
             </div>
           </div>
@@ -85,8 +84,8 @@ export default async function Home() {
                 color: "var(--cpl-ink)",
               }}
             >
-              Local testing only — no password. This must never be enabled
-              in a deployed production environment.
+              Local testing only — no password. This must never be enabled in a deployed
+              production environment.
             </p>
             <form
               action={async (formData: FormData) => {
@@ -121,9 +120,7 @@ export default async function Home() {
     session.accessRoles.includes("account_manager") ||
     session.accessRoles.includes("sales_coordinator");
 
-  const recentBriefs = canSubmitBriefs
-    ? await getRecentBriefsFor(session.userId)
-    : [];
+  const recentBriefs = canSubmitBriefs ? await getRecentBriefsFor(session.userId) : [];
 
   return (
     <AppShell session={session}>
@@ -147,14 +144,14 @@ export default async function Home() {
         {!canSubmitBriefs && (
           <div className="card">
             <p style={{ margin: 0 }}>
-              Signed in as <strong>{session.user?.name}</strong>. Your role
-              ({session.accessRoles.join(", ") || "none"}) doesn&apos;t
-              submit briefs directly —{" "}
+              Signed in as <strong>{session.user?.name}</strong>. Your role (
+              {session.accessRoles.join(", ") || "none"}) doesn&apos;t submit briefs
+              directly —{" "}
               {(session.accessRoles.includes("auditor") ||
                 session.accessRoles.includes("admin")) && (
                 <>
-                  use <a href="/verify">Verify a code</a> to look up any
-                  brief by its Approval Code.
+                  use <a href="/verify">Verify a code</a> to look up any brief by its
+                  Approval Code.
                 </>
               )}
             </p>
@@ -164,8 +161,7 @@ export default async function Home() {
         {canSubmitBriefs && recentBriefs.length === 0 && (
           <div className="card">
             <p style={{ margin: 0 }}>
-              No briefs submitted yet.{" "}
-              <a href="/briefs/new">Submit your first brief</a>.
+              No briefs submitted yet. <a href="/briefs/new">Submit your first brief</a>.
             </p>
           </div>
         )}
@@ -196,18 +192,29 @@ export default async function Home() {
               </thead>
               <tbody>
                 {recentBriefs.map((b) => (
-                  <tr key={b.briefId} style={{ borderBottom: "1px solid var(--cpl-border)" }}>
+                  <tr
+                    key={b.briefId}
+                    style={{ borderBottom: "1px solid var(--cpl-border)" }}
+                  >
                     <td style={{ padding: "0.7em 1em" }}>{b.customerReference}</td>
                     <td style={{ padding: "0.7em 1em", color: "var(--cpl-ink-soft)" }}>
                       {new Date(b.submittedAt).toLocaleDateString("en-GB")}
                     </td>
-                    <td style={{ padding: "0.7em 1em", fontVariantNumeric: "tabular-nums" }}>
+                    <td
+                      style={{ padding: "0.7em 1em", fontVariantNumeric: "tabular-nums" }}
+                    >
                       {Number(b.score).toFixed(1)}
                     </td>
                     <td style={{ padding: "0.7em 1em" }}>
                       <StatusPill status={b.finalStatus} />
                     </td>
-                    <td style={{ padding: "0.7em 1em", fontFamily: "var(--font-mono)", fontSize: "0.8125rem" }}>
+                    <td
+                      style={{
+                        padding: "0.7em 1em",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "0.8125rem",
+                      }}
+                    >
                       {b.approvalCode ?? "—"}
                     </td>
                   </tr>

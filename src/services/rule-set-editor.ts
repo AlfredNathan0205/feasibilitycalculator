@@ -164,7 +164,11 @@ export async function replayRuleSet(
     const submittedAt = new Date(row.submittedAt);
     const deadline = new Date(row.deadline + "T00:00:00Z");
     const daysUntilDeadline = Math.round(
-      (Date.UTC(deadline.getUTCFullYear(), deadline.getUTCMonth(), deadline.getUTCDate()) -
+      (Date.UTC(
+        deadline.getUTCFullYear(),
+        deadline.getUTCMonth(),
+        deadline.getUTCDate(),
+      ) -
         Date.UTC(
           submittedAt.getUTCFullYear(),
           submittedAt.getUTCMonth(),
@@ -262,8 +266,5 @@ export async function publishRuleSet(
 }
 
 export async function listRuleSets(db: PostgresJsDatabase<typeof schema>) {
-  return db
-    .select()
-    .from(schema.ruleSets)
-    .orderBy(desc(schema.ruleSets.version));
+  return db.select().from(schema.ruleSets).orderBy(desc(schema.ruleSets.version));
 }

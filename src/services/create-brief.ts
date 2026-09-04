@@ -21,7 +21,6 @@ import { computeStageA, computeStageB } from "../engine/decision.js";
 import type { RuleSetPayload } from "../engine/scoring.js";
 import { issueUniqueApprovalCode } from "./issue-approval-code.js";
 import { generateRevokeToken } from "../engine/revoke-token.js";
-import { SATISFIED_REQUIREMENT_STATES } from "./satisfied-states.js";
 
 /** §5 Stage C: a per-requirement pre-approval declaration, made inline at
  * submission time (the spec's step-2-of-the-wizard concept, folded into
@@ -92,9 +91,7 @@ function validateInput(input: BriefSubmissionInput, now: Date): void {
     );
   }
   if (input.strategicPriority && !input.strategicPriorityRationale?.trim()) {
-    throw new ValidationError(
-      "A rationale is required when Strategic Priority is set",
-    );
+    throw new ValidationError("A rationale is required when Strategic Priority is set");
   }
   for (const [requirementType, decl] of Object.entries(input.preApprovals ?? {})) {
     if (!decl.nominatedManagerId || !decl.comment?.trim()) {
@@ -179,9 +176,7 @@ async function getCurrentPublishedRuleSet(db: PostgresJsDatabase<typeof schema>)
     .orderBy(desc(schema.ruleSets.version))
     .limit(1);
   if (!ruleSet) {
-    throw new Error(
-      "No published rule set found — has the version 1 seed been applied?",
-    );
+    throw new Error("No published rule set found — has the version 1 seed been applied?");
   }
   return ruleSet;
 }

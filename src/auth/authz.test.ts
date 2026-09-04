@@ -22,11 +22,15 @@ function session(overrides: Partial<AuthSession> = {}): AuthSession {
 
 describe("hasAccessRole / requireAccessRole", () => {
   it("recognises a held role", () => {
-    expect(hasAccessRole(session({ accessRoles: ["account_manager"] }), "account_manager")).toBe(true);
+    expect(
+      hasAccessRole(session({ accessRoles: ["account_manager"] }), "account_manager"),
+    ).toBe(true);
   });
 
   it("rejects an unheld role", () => {
-    expect(hasAccessRole(session({ accessRoles: ["account_manager"] }), "admin")).toBe(false);
+    expect(hasAccessRole(session({ accessRoles: ["account_manager"] }), "admin")).toBe(
+      false,
+    );
   });
 
   it("requireAccessRole throws AuthorizationError when missing", () => {
@@ -34,14 +38,18 @@ describe("hasAccessRole / requireAccessRole", () => {
   });
 
   it("requireAccessRole does not throw when held", () => {
-    expect(() => requireAccessRole(session({ accessRoles: ["admin"] }), "admin")).not.toThrow();
+    expect(() =>
+      requireAccessRole(session({ accessRoles: ["admin"] }), "admin"),
+    ).not.toThrow();
   });
 });
 
 describe("requireAdmin — §2 'editing thresholds requires Admin, deliberately narrow'", () => {
   it("blocks every other access role from admin actions", () => {
     for (const role of ["account_manager", "sales_coordinator", "approver", "auditor"]) {
-      expect(() => requireAdmin(session({ accessRoles: [role] }))).toThrow(AuthorizationError);
+      expect(() => requireAdmin(session({ accessRoles: [role] }))).toThrow(
+        AuthorizationError,
+      );
     }
   });
 
@@ -65,7 +73,10 @@ describe("canActOnRequirement — §2 'an approver may never approve a requireme
     // Has the general Approver access role but not this specific authority.
     expect(
       canActOnRequirement(
-        session({ accessRoles: ["approver"], approvalAuthorityRoles: ["analytical_manager"] }),
+        session({
+          accessRoles: ["approver"],
+          approvalAuthorityRoles: ["analytical_manager"],
+        }),
         requirement,
       ),
     ).toBe(false);
@@ -92,8 +103,12 @@ describe("canActOnRequirement — §2 'an approver may never approve a requireme
       accessRoles: ["approver"],
       approvalAuthorityRoles: ["ppd_manager"],
     });
-    expect(canActOnRequirement(ppdManager, { requiredRoleKey: "analytical_manager" })).toBe(false);
-    expect(canActOnRequirement(ppdManager, { requiredRoleKey: "ppd_manager" })).toBe(true);
+    expect(
+      canActOnRequirement(ppdManager, { requiredRoleKey: "analytical_manager" }),
+    ).toBe(false);
+    expect(canActOnRequirement(ppdManager, { requiredRoleKey: "ppd_manager" })).toBe(
+      true,
+    );
   });
 });
 

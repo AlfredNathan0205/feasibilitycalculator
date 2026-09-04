@@ -25,7 +25,9 @@ export default async function RuleSetsListPage() {
     return (
       <AppShell session={null}>
         <div className="container">
-          <p style={{ marginTop: "3rem" }}><a href="/">Sign in</a> first.</p>
+          <p style={{ marginTop: "3rem" }}>
+            <a href="/">Sign in</a> first.
+          </p>
         </div>
       </AppShell>
     );
@@ -58,7 +60,14 @@ export default async function RuleSetsListPage() {
   return (
     <AppShell session={session}>
       <div className="container-wide">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "1.5rem" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            marginBottom: "1.5rem",
+          }}
+        >
           <h1>Rule sets</h1>
           <form action={createDraft}>
             <button type="submit" className="btn btn-primary">
@@ -72,7 +81,17 @@ export default async function RuleSetsListPage() {
             <thead>
               <tr style={{ background: "var(--cpl-paper)" }}>
                 {["Version", "Status", "Created", "Published"].map((h) => (
-                  <th key={h} style={{ textAlign: "left", padding: "0.7em 1em", fontSize: "0.75rem", fontWeight: 600, color: "var(--cpl-ink-soft)", borderBottom: "1px solid var(--cpl-border)" }}>
+                  <th
+                    key={h}
+                    style={{
+                      textAlign: "left",
+                      padding: "0.7em 1em",
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      color: "var(--cpl-ink-soft)",
+                      borderBottom: "1px solid var(--cpl-border)",
+                    }}
+                  >
                     {h}
                   </th>
                 ))}
@@ -85,13 +104,17 @@ export default async function RuleSetsListPage() {
                     <a href={`/admin/rule-sets/${rs.id}`}>v{rs.version}</a>
                   </td>
                   <td style={{ padding: "0.7em 1em" }}>
-                    <span className={`status-pill ${STATUS_CLASS[rs.status]}`}>{rs.status}</span>
+                    <span className={`status-pill ${STATUS_CLASS[rs.status]}`}>
+                      {rs.status}
+                    </span>
                   </td>
                   <td style={{ padding: "0.7em 1em", color: "var(--cpl-ink-soft)" }}>
                     {new Date(rs.createdAt).toLocaleDateString("en-GB")}
                   </td>
                   <td style={{ padding: "0.7em 1em", color: "var(--cpl-ink-soft)" }}>
-                    {rs.publishedAt ? new Date(rs.publishedAt).toLocaleDateString("en-GB") : "—"}
+                    {rs.publishedAt
+                      ? new Date(rs.publishedAt).toLocaleDateString("en-GB")
+                      : "—"}
                   </td>
                 </tr>
               ))}

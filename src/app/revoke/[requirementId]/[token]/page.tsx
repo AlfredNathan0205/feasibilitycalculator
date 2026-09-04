@@ -2,7 +2,11 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
 import * as schema from "../../../../db/schema.js";
-import { revokeRequirement, ValidationError, NotFoundError } from "../../../../services/decide-requirement.js";
+import {
+  revokeRequirement,
+  ValidationError,
+  NotFoundError,
+} from "../../../../services/decide-requirement.js";
 import { AppShell } from "../../../components/app-shell.js";
 
 function getDb() {
@@ -29,42 +33,53 @@ export default async function RevokePage({
   const db = getDb();
 
   if (confirmed === "1") {
+    // JSX is constructed AFTER the try/catch resolves, not inside it —
+    // React doesn't synchronously render JSX at the point it's written,
+    // so constructing it inside a try block doesn't actually catch
+    // rendering errors the way it looks like it would (caught by
+    // react-hooks/error-boundaries).
+    let outcome:
+      { kind: "revoked"; finalStatus: string } | { kind: "error"; message: string };
     try {
       const result = await revokeRequirement(db, {
         requirementId,
         rawToken: decodeURIComponent(token),
       });
+      outcome = { kind: "revoked", finalStatus: result.finalStatus };
+    } catch (err) {
+      const message =
+        err instanceof ValidationError || err instanceof NotFoundError
+          ? err.message
+          : "Something went wrong revoking this pre-approval.";
+      outcome = { kind: "error", message };
+    }
+
+    if (outcome.kind === "revoked") {
       return (
         <AppShell session={null}>
           <div className="container">
             <div className="card" style={{ marginTop: "3rem" }}>
               <h1>Revoked</h1>
               <p style={{ margin: 0 }}>
-                This pre-approval has been revoked. The brief has returned
-                to pending ({result.finalStatus}) and its Approval Code, if
-                one had been issued, has been withdrawn. The submitter has
-                been notified.
+                This pre-approval has been revoked. The brief has returned to pending (
+                {outcome.finalStatus}) and its Approval Code, if one had been issued, has
+                been withdrawn. The submitter has been notified.
               </p>
             </div>
           </div>
         </AppShell>
       );
-    } catch (err) {
-      const message =
-        err instanceof ValidationError || err instanceof NotFoundError
-          ? err.message
-          : "Something went wrong revoking this pre-approval.";
-      return (
-        <AppShell session={null}>
-          <div className="container">
-            <div className="card" style={{ marginTop: "3rem" }}>
-              <h1>Unable to revoke</h1>
-              <p style={{ margin: 0 }}>{message}</p>
-            </div>
-          </div>
-        </AppShell>
-      );
     }
+    return (
+      <AppShell session={null}>
+        <div className="container">
+          <div className="card" style={{ marginTop: "3rem" }}>
+            <h1>Unable to revoke</h1>
+            <p style={{ margin: 0 }}>{outcome.message}</p>
+          </div>
+        </div>
+      </AppShell>
+    );
   }
 
   // Look up enough detail for a meaningful confirmation prompt without
@@ -82,8 +97,8 @@ export default async function RevokePage({
           <div className="card" style={{ marginTop: "3rem" }}>
             <h1>Nothing to revoke</h1>
             <p style={{ margin: 0 }}>
-              This link is no longer valid — the pre-approval it refers to
-              has already been decided, revoked, or doesn&apos;t exist.
+              This link is no longer valid — the pre-approval it refers to has already
+              been decided, revoked, or doesn&apos;t exist.
             </p>
           </div>
         </div>
@@ -102,11 +117,11 @@ export default async function RevokePage({
         <div className="card" style={{ marginTop: "3rem" }}>
           <h1>Revoke this pre-approval?</h1>
           <p>
-            You pre-approved <strong>{requirement.requirementType.replace(/_/g, " ")}</strong>{" "}
-            for <strong>{brief?.customerReference}</strong>. Revoking will return
-            this requirement to pending and withdraw any Approval Code
-            already issued for this brief. This cannot be undone, and this
-            link can only be used once.
+            You pre-approved{" "}
+            <strong>{requirement.requirementType.replace(/_/g, " ")}</strong> for{" "}
+            <strong>{brief?.customerReference}</strong>. Revoking will return this
+            requirement to pending and withdraw any Approval Code already issued for this
+            brief. This cannot be undone, and this link can only be used once.
           </p>
           <form
             action={async () => {

@@ -173,9 +173,7 @@ describeIfDb("rule-set-editor (integration)", () => {
 
     const draft = await createDraftRuleSet(db, { createdBy: adminId });
     const replay = await replayRuleSet(db, draft.id);
-    expect(replay.transitions.some((t) => t.briefId === submitted.briefId)).toBe(
-      false,
-    );
+    expect(replay.transitions.some((t) => t.briefId === submitted.briefId)).toBe(false);
   });
 
   it("publish supersedes the previously-published rule set and there is always exactly one published row", async () => {

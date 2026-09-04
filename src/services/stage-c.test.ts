@@ -44,7 +44,10 @@ describeIfDb("Stage C: pre-approval declaration + revoke (integration)", () => {
 
     submitterId = await upsertUser("stage-c-submitter@cpl.example", "Stage C Submitter");
     ppdManagerId = await upsertUser("stage-c-ppd@cpl.example", "Stage C PPD Manager");
-    wrongRoleUserId = await upsertUser("stage-c-wrong-role@cpl.example", "Stage C Wrong Role User");
+    wrongRoleUserId = await upsertUser(
+      "stage-c-wrong-role@cpl.example",
+      "Stage C Wrong Role User",
+    );
 
     const existing = await db
       .select()
@@ -131,11 +134,13 @@ describeIfDb("Stage C: pre-approval declaration + revoke (integration)", () => {
       .from(schema.notifications)
       .where(eq(schema.notifications.recipientId, ppdManagerId));
     const match = notifications.find(
-      (n) => (n.payload as any)?.briefId === result.briefId,
+      (n) => (n.payload as Record<string, unknown>)?.briefId === result.briefId,
     );
     expect(match).toBeDefined();
     expect(match!.template).toBe("pre_approval_declared");
-    expect(typeof (match!.payload as any).rawRevokeToken).toBe("string");
+    expect(typeof (match!.payload as Record<string, unknown>).rawRevokeToken).toBe(
+      "string",
+    );
   });
 
   it("rejects a pre-approval declaration when the nominated manager doesn't currently hold the required role", async () => {
@@ -184,7 +189,10 @@ describeIfDb("Stage C: pre-approval declaration + revoke (integration)", () => {
         db,
         baseInput({
           preApprovals: {
-            ppd_resource: { nominatedManagerId: ppdManagerId, comment: "Cleared verbally" },
+            ppd_resource: {
+              nominatedManagerId: ppdManagerId,
+              comment: "Cleared verbally",
+            },
           },
         }),
       );
@@ -200,9 +208,14 @@ describeIfDb("Stage C: pre-approval declaration + revoke (integration)", () => {
         .from(schema.notifications)
         .where(eq(schema.notifications.template, "pre_approval_declared"));
       const match = notifications
-        .filter((n) => (n.payload as any)?.briefId === requirement!.briefId)
+        .filter(
+          (n) => (n.payload as Record<string, unknown>)?.briefId === requirement!.briefId,
+        )
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
-      return { requirement: requirement!, rawToken: (match!.payload as any).rawRevokeToken as string };
+      return {
+        requirement: requirement!,
+        rawToken: (match!.payload as Record<string, unknown>).rawRevokeToken as string,
+      };
     }
 
     it("revoking strips the Approval Code and returns the brief to pending", async () => {
@@ -298,7 +311,7 @@ describeIfDb("Stage C: pre-approval declaration + revoke (integration)", () => {
       const match = notifications.find(
         (n) =>
           n.template === "pre_approval_revoked" &&
-          (n.payload as any)?.requirementId === requirement.id,
+          (n.payload as Record<string, unknown>)?.requirementId === requirement.id,
       );
       expect(match).toBeDefined();
     });

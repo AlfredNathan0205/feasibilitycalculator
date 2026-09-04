@@ -11,15 +11,15 @@ together. Six of them only count if the brief has a value potential above
 £0 — a brief with no value potential attached only scores on tier and
 creative approach.
 
-| Ingredient | How it's worked out |
-|---|---|
-| Customer tier | A/T scores 100, B scores 50, C scores 25, D scores 10 |
-| Value potential | The value in thousands (a £200,000 brief contributes 200 points) |
-| New / Rework | Multiplies the value-potential points by 1 for New or Rework of a selling reference, by 0 for rework of a non-selling reference |
-| Brief type | Multiplies the value-potential points by 1 for Exclusive, 0 for Competitive, or **minus 0.5** for ProActive — a speculative brief actively drags the score down |
-| Customer approval | Multiplies the value-potential points by 0.5 if the customer has directly approved, 0 if it's deferred or unknown |
-| Strategic priority | Adds a flat 100 points if flagged, regardless of anything else |
-| Creative approach | Library Only adds 100, Starting Point adds 65, Creation/Unknown adds 0 |
+| Ingredient         | How it's worked out                                                                                                                                             |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Customer tier      | A/T scores 100, B scores 50, C scores 25, D scores 10                                                                                                           |
+| Value potential    | The value in thousands (a £200,000 brief contributes 200 points)                                                                                                |
+| New / Rework       | Multiplies the value-potential points by 1 for New or Rework of a selling reference, by 0 for rework of a non-selling reference                                 |
+| Brief type         | Multiplies the value-potential points by 1 for Exclusive, 0 for Competitive, or **minus 0.5** for ProActive — a speculative brief actively drags the score down |
+| Customer approval  | Multiplies the value-potential points by 0.5 if the customer has directly approved, 0 if it's deferred or unknown                                               |
+| Strategic priority | Adds a flat 100 points if flagged, regardless of anything else                                                                                                  |
+| Creative approach  | Library Only adds 100, Starting Point adds 65, Creation/Unknown adds 0                                                                                          |
 
 A worked example: a £200,000, A/T-tier, New, Exclusive brief with direct
 customer approval and a Library Only creative approach scores
@@ -56,14 +56,14 @@ the old spreadsheet worked:
 These fire independently of the commercial decision and independently of
 each other:
 
-| Trigger | Condition | Who signs off |
-|---|---|---|
-| Short deadline | Deadline is within 14 days of submission | Development Director* |
-| Creative — creation | Creative approach is Creation/Unknown, and tier isn't A/T | Development Director* |
-| Creative — starting point | Creative approach is Starting Point, and tier is C or D | Development Director* |
-| Marketing resource | Marketing flagged | Divisional Head of Marketing |
-| PPD resource | PPD flagged | PPD Manager |
-| GCMS / analytical resource | GCMS flagged | Analytical Manager |
+| Trigger                    | Condition                                                 | Who signs off                |
+| -------------------------- | --------------------------------------------------------- | ---------------------------- |
+| Short deadline             | Deadline is within 14 days of submission                  | Development Director*        |
+| Creative — creation        | Creative approach is Creation/Unknown, and tier isn't A/T | Development Director*        |
+| Creative — starting point  | Creative approach is Starting Point, and tier is C or D   | Development Director*        |
+| Marketing resource         | Marketing flagged                                         | Divisional Head of Marketing |
+| PPD resource               | PPD flagged                                               | PPD Manager                  |
+| GCMS / analytical resource | GCMS flagged                                              | Analytical Manager           |
 
 *Provisional, pending Pauline's routing guidance — see "Still needs your
 input" below.

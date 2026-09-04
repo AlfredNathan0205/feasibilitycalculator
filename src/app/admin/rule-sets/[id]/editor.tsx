@@ -34,11 +34,7 @@ export function RuleSetEditor({
 
   const isDraft = status === "draft";
 
-  function updateNumberMap(
-    key: keyof RuleSetPayload,
-    innerKey: string,
-    value: number,
-  ) {
+  function updateNumberMap(key: keyof RuleSetPayload, innerKey: string, value: number) {
     setPayload((p) => ({
       ...p,
       [key]: { ...(p[key] as Record<string, number>), [innerKey]: value },
@@ -105,9 +101,8 @@ export function RuleSetEditor({
     return (
       <div className="card">
         <p style={{ margin: 0 }}>
-          This rule set is <strong>{status}</strong> and immutable. Create a
-          new draft from <a href="/admin/rule-sets">the rule sets list</a> to
-          make changes.
+          This rule set is <strong>{status}</strong> and immutable. Create a new draft
+          from <a href="/admin/rule-sets">the rule sets list</a> to make changes.
         </p>
         <pre style={{ marginTop: "1rem", fontSize: "0.8125rem", overflow: "auto" }}>
           {JSON.stringify(payload, null, 2)}
@@ -120,14 +115,22 @@ export function RuleSetEditor({
     <div style={{ display: "grid", gap: "1.25rem" }}>
       <div className="card">
         <h2>Tier weights</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.75rem" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "0.75rem",
+          }}
+        >
           {Object.entries(payload.tierWeights).map(([tier, value]) => (
             <div key={tier}>
               <label>{tier}</label>
               <input
                 type="number"
                 value={value}
-                onChange={(e) => updateNumberMap("tierWeights", tier, Number(e.target.value))}
+                onChange={(e) =>
+                  updateNumberMap("tierWeights", tier, Number(e.target.value))
+                }
               />
             </div>
           ))}
@@ -145,7 +148,10 @@ export function RuleSetEditor({
               onChange={(e) => {
                 setPayload((p) => ({
                   ...p,
-                  thresholds: { ...p.thresholds, autoApproveAbove: Number(e.target.value) },
+                  thresholds: {
+                    ...p.thresholds,
+                    autoApproveAbove: Number(e.target.value),
+                  },
                 }));
                 setDirty(true);
                 setHasReplayedCurrentSave(false);
@@ -160,7 +166,10 @@ export function RuleSetEditor({
               onChange={(e) => {
                 setPayload((p) => ({
                   ...p,
-                  thresholds: { ...p.thresholds, declineAtOrBelow: Number(e.target.value) },
+                  thresholds: {
+                    ...p.thresholds,
+                    declineAtOrBelow: Number(e.target.value),
+                  },
                 }));
                 setDirty(true);
                 setHasReplayedCurrentSave(false);
@@ -182,8 +191,16 @@ export function RuleSetEditor({
             ] as const
           ).map(([key, label]) => (
             <div key={key}>
-              <div className="helptext" style={{ marginBottom: "0.3em" }}>{label}</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.6rem" }}>
+              <div className="helptext" style={{ marginBottom: "0.3em" }}>
+                {label}
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                  gap: "0.6rem",
+                }}
+              >
                 {Object.entries(payload[key] as Record<string, number>).map(([k, v]) => (
                   <div key={k}>
                     <label style={{ fontWeight: 400 }}>{k}</label>
@@ -210,7 +227,10 @@ export function RuleSetEditor({
               type="number"
               value={payload.strategicPriorityBonus}
               onChange={(e) => {
-                setPayload((p) => ({ ...p, strategicPriorityBonus: Number(e.target.value) }));
+                setPayload((p) => ({
+                  ...p,
+                  strategicPriorityBonus: Number(e.target.value),
+                }));
                 setDirty(true);
                 setHasReplayedCurrentSave(false);
               }}
@@ -233,11 +253,22 @@ export function RuleSetEditor({
 
       <div className="card">
         <h2>Routing table</h2>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+        <table
+          style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}
+        >
           <thead>
             <tr>
               {["Requirement", "Role", "Enabled"].map((h) => (
-                <th key={h} style={{ textAlign: "left", padding: "0.4em 0", color: "var(--cpl-ink-soft)" }}>{h}</th>
+                <th
+                  key={h}
+                  style={{
+                    textAlign: "left",
+                    padding: "0.4em 0",
+                    color: "var(--cpl-ink-soft)",
+                  }}
+                >
+                  {h}
+                </th>
               ))}
             </tr>
           </thead>
@@ -288,10 +319,18 @@ export function RuleSetEditor({
       {message && <p className="helptext">{message}</p>}
 
       <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-        <button className="btn btn-primary" onClick={handleSave} disabled={saving || !dirty}>
+        <button
+          className="btn btn-primary"
+          onClick={handleSave}
+          disabled={saving || !dirty}
+        >
           {saving ? "Saving…" : "Save draft"}
         </button>
-        <button className="btn btn-secondary" onClick={handleReplay} disabled={replaying || dirty}>
+        <button
+          className="btn btn-secondary"
+          onClick={handleReplay}
+          disabled={replaying || dirty}
+        >
           {replaying ? "Running…" : "Run replay"}
         </button>
         <button
@@ -330,17 +369,35 @@ export function RuleSetEditor({
                   );
                 })}
               </ul>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: "0.8125rem",
+                }}
+              >
                 <thead>
                   <tr>
                     {["Customer", "From", "To", "Score"].map((h) => (
-                      <th key={h} style={{ textAlign: "left", padding: "0.4em 0", color: "var(--cpl-ink-soft)" }}>{h}</th>
+                      <th
+                        key={h}
+                        style={{
+                          textAlign: "left",
+                          padding: "0.4em 0",
+                          color: "var(--cpl-ink-soft)",
+                        }}
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {replayResult.transitions.map((t) => (
-                    <tr key={t.briefId} style={{ borderTop: "1px solid var(--cpl-border)" }}>
+                    <tr
+                      key={t.briefId}
+                      style={{ borderTop: "1px solid var(--cpl-border)" }}
+                    >
                       <td style={{ padding: "0.4em 0" }}>{t.customerReference}</td>
                       <td style={{ padding: "0.4em 0" }}>{t.fromDecision}</td>
                       <td style={{ padding: "0.4em 0" }}>{t.toDecision}</td>

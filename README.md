@@ -225,7 +225,7 @@ client").
   - The two sessions were independently verified via `/api/whoami` to
     confirm no role leakage between them.
   - An unauthenticated request to `/api/whoami` correctly got `401 {"error":
-    "Not signed in"}`.
+"Not signed in"}`.
 
 ## A real environment issue found and fixed along the way
 
@@ -325,7 +325,7 @@ zero-or-immediately-clear case. Still needed for the full §14 step 5 scope:
 the actual 3-step wizard UI with live score preview (currently there's only
 a raw JSON API + a bare server-rendered verify page), the outcome page's
 two-part display, and — from step 6 — the approver queue, notifications,
-and the Stage C pre-approval/revoke path that moves a *pending* brief
+and the Stage C pre-approval/revoke path that moves a _pending_ brief
 through to fully clear and issues its code at that later point.
 
 ## Running it locally
@@ -345,8 +345,6 @@ curl -b cookies.txt -X POST http://localhost:3000/api/briefs \
     "deadline": "2027-01-01"
   }'
 ```
+
 Then visit `/verify/FC-...` (signed in as the Admin or Auditor test user) to
 see the full audit record.
-
-
-

@@ -5,13 +5,13 @@ for the why, `docs/backlog.md` for what's not built yet.
 
 ## Environment variables
 
-| Variable | Required | Purpose |
-|---|---|---|
-| `DATABASE_URL` | Always | Postgres connection string. On Supabase, use the **Transaction pooler** connection (port 6543) with the IPv4 add-on/toggle enabled — the direct connection and the IPv6-only dedicated pooler both fail to resolve from Vercel's serverless functions. Get it from Supabase's "Connect" dialog, not Project Settings → Database (that page shows the direct connection by default). |
-| `AUTH_SECRET` | Always | Any random string (`openssl rand -hex 32`). Used by NextAuth to sign session tokens. |
-| `NEXTAUTH_URL` | Always | The deployment's own URL. |
-| `ALLOW_DEV_LOGIN` | Testing only | Set to exactly `true` to enable the password-less dev-login provider. **Must not be set in any environment real users can reach** — there is no password on this provider, only a dropdown of seeded test users. |
-| `AUTH_MICROSOFT_ENTRA_ID_ID` / `_SECRET` / `_ISSUER` | Production | Entra ID app registration credentials. The Entra provider only registers when all three are present. Untested against a real tenant as of this writing. |
+| Variable                                             | Required     | Purpose                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                       | Always       | Postgres connection string. On Supabase, use the **Transaction pooler** connection (port 6543) with the IPv4 add-on/toggle enabled — the direct connection and the IPv6-only dedicated pooler both fail to resolve from Vercel's serverless functions. Get it from Supabase's "Connect" dialog, not Project Settings → Database (that page shows the direct connection by default). |
+| `AUTH_SECRET`                                        | Always       | Any random string (`openssl rand -hex 32`). Used by NextAuth to sign session tokens.                                                                                                                                                                                                                                                                                                |
+| `NEXTAUTH_URL`                                       | Always       | The deployment's own URL.                                                                                                                                                                                                                                                                                                                                                           |
+| `ALLOW_DEV_LOGIN`                                    | Testing only | Set to exactly `true` to enable the password-less dev-login provider. **Must not be set in any environment real users can reach** — there is no password on this provider, only a dropdown of seeded test users.                                                                                                                                                                    |
+| `AUTH_MICROSOFT_ENTRA_ID_ID` / `_SECRET` / `_ISSUER` | Production   | Entra ID app registration credentials. The Entra provider only registers when all three are present. Untested against a real tenant as of this writing.                                                                                                                                                                                                                             |
 
 ## Running locally
 
@@ -51,7 +51,7 @@ Manager), `ppd@cpl.example` (Approver + PPD Manager), `admin@cpl.example`
   is still there before assuming the import itself is wrong.
 - **The `xlsx` npm package's default-export resolution is inconsistent
   between Node's native ESM loader and Next's webpack bundler — in
-  *opposite* directions.** Scripts run via `tsx`/`node` need
+  _opposite_ directions.** Scripts run via `tsx`/`node` need
   `import XLSX from "xlsx"`. Code bundled by Next (API routes, pages) needs
   `import * as XLSX from "xlsx"`. Getting it backwards fails silently at
   the type level and throws at runtime ("does not contain a default

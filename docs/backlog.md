@@ -15,15 +15,7 @@ priority order itself may change as items get picked up.
       the submitter (line-manager half blocked — see open item below).
 
 ## Not started
-- [ ] **Notifications** (§8 `notifications` table exists, nothing sends
-      anything yet). Needed for: pre-approval declared (notify nominated
-      manager with revoke link), revoked (notify submitter + line
-      manager — blocked on the same line-manager gap as
-      `docs/open-questions.md` item 2).
-- [ ] **Quality gates**: no ESLint/Prettier config exists yet. No test
-      coverage measurement. No Playwright e2e suite covering the three
-      primary journeys the spec names (submit→auto-approve; submit→route
-      for approval→approve; submit→pre-approval→revoke).
+
 - [ ] Bulk-approve for multiple items of the same requirement type in one
       action (§9) — the approver queue built handles one-at-a-time only.
 - [ ] **3-step submission wizard** (§9) — currently one page. Not wrong,
@@ -45,6 +37,44 @@ priority order itself may change as items get picked up.
 - [ ] Who holds Admin in practice (§12 item 4).
 
 ## Done and verified
+
+- [x] **Quality gates: ESLint, Prettier, coverage measurement** — all
+      clean/passing, confirmed by actually running them, not just adding
+      config files. ESLint required working around a real ESLint 9 /
+      `eslint-config-next` incompatibility (circular JSON in the
+      FlatCompat translation layer) — switched to a native flat-config
+      with `typescript-eslint` + `eslint-plugin-react-hooks` directly.
+      Caught and fixed a genuine bug in the process: the revoke page
+      constructed JSX inside a `try` block, which doesn't actually catch
+      rendering errors the way it looks like it would
+      (`react-hooks/error-boundaries`). Coverage: `src/engine/` is now
+      **100% statements/branches/functions/lines**, matching the spec's
+      explicit "100% branch coverage" requirement for the engine — closed
+      via 6 new tests for real gaps, not coverage-gaming, the most
+      notable being that **the GCMS resource-approval trigger had never
+      been tested at all, anywhere**, before this pass. `services/` sits
+      at ~86% branch, which is fine — the spec's 100% mandate was
+      specific to the engine. Also fixed a real Vitest/Playwright config
+      collision along the way (Vitest's default glob also matches
+      `*.spec.ts`, so it was trying — and failing — to collect the
+      Playwright e2e files as its own tests).
+
+## Written but NOT verified (a real, flagged limitation)
+
+- [ ] **Playwright e2e suite** — `playwright.config.ts` +
+      `e2e/*.spec.ts` cover the exact three journeys the spec names
+      (submit→auto-approve; submit→route for approval→approve;
+      submit→pre-approval→revoke), written carefully against the actual
+      component markup (exact selectors, exact copy). **`cdn.playwright.dev`
+      is blocked by this sandbox's network egress allowlist, so the
+      browser binary cannot be downloaded here and these tests have never
+      actually been run.** This is called out prominently in
+      `playwright.config.ts`'s docstring and in each spec file's comment
+      block. Unlike everything else in this project, these are NOT
+      confirmed passing — the first real run (on a machine with normal
+      internet access, e.g. via Claude Code) should be treated as the
+      actual verification step, and some selector/timing fixes on that
+      first run would not be surprising.
 
 - [x] **docs/**: architecture note (`architecture.md`), operational
       runbook (`runbook.md`), and a plain-English rules document for Simon
@@ -73,7 +103,7 @@ priority order itself may change as items get picked up.
       correctly blocked (403).
       **Caught and fixed a real bug during live verification**: the XLSX
       export threw a 500 (`Cannot read properties of undefined
-      (reading 'utils')`) — the `xlsx` package's default-export
+  (reading 'utils')`) — the `xlsx` package's default-export
       resolution is inconsistent between Next's webpack bundler and
       Node's native ESM loader (the opposite failure mode from the one
       hit in Phase 1's `generate-ruleset-v1.ts`, which needed the

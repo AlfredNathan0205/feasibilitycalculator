@@ -75,8 +75,8 @@ export default async function VerifyPage({
               <code style={{ fontFamily: "var(--font-mono)" }}>
                 {verification.formatted ?? code}
               </code>{" "}
-              is not a valid code — structurally invalid, or the check
-              character doesn&apos;t match (it may have been mistyped).
+              is not a valid code — structurally invalid, or the check character
+              doesn&apos;t match (it may have been mistyped).
             </p>
           </div>
         </div>
@@ -100,8 +100,7 @@ export default async function VerifyPage({
               <code style={{ fontFamily: "var(--font-mono)" }}>
                 {verification.formatted}
               </code>{" "}
-              is a structurally valid code, but no brief with this code
-              exists.
+              is a structurally valid code, but no brief with this code exists.
             </p>
           </div>
         </div>
@@ -129,9 +128,18 @@ export default async function VerifyPage({
   return (
     <AppShell session={session}>
       <div className="container-wide">
-        <div style={{ display: "flex", alignItems: "baseline", gap: "1rem", marginBottom: "1.5rem" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: "1rem",
+            marginBottom: "1.5rem",
+          }}
+        >
           <h1 style={{ marginBottom: 0 }}>
-            <code style={{ fontFamily: "var(--font-mono)" }}>{verification.formatted}</code>
+            <code style={{ fontFamily: "var(--font-mono)" }}>
+              {verification.formatted}
+            </code>
           </h1>
           <span className="helptext">rule set v{ruleSet?.version}</span>
         </div>
@@ -139,13 +147,23 @@ export default async function VerifyPage({
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
           <div className="card">
             <h2>Brief</h2>
-            <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.4em 1em", fontSize: "0.875rem" }}>
+            <dl
+              style={{
+                margin: 0,
+                display: "grid",
+                gridTemplateColumns: "auto 1fr",
+                gap: "0.4em 1em",
+                fontSize: "0.875rem",
+              }}
+            >
               <dt style={{ color: "var(--cpl-ink-soft)" }}>Customer</dt>
               <dd style={{ margin: 0 }}>{brief?.customerReference}</dd>
               <dt style={{ color: "var(--cpl-ink-soft)" }}>Tier</dt>
               <dd style={{ margin: 0 }}>{brief?.tier}</dd>
               <dt style={{ color: "var(--cpl-ink-soft)" }}>Value potential</dt>
-              <dd style={{ margin: 0 }}>£{Number(brief?.valuePotentialGbp).toLocaleString("en-GB")}</dd>
+              <dd style={{ margin: 0 }}>
+                £{Number(brief?.valuePotentialGbp).toLocaleString("en-GB")}
+              </dd>
               <dt style={{ color: "var(--cpl-ink-soft)" }}>New/Rework</dt>
               <dd style={{ margin: 0 }}>{brief?.newRework}</dd>
               <dt style={{ color: "var(--cpl-ink-soft)" }}>Brief type</dt>
@@ -156,7 +174,9 @@ export default async function VerifyPage({
               <dd style={{ margin: 0 }}>{brief?.deadline}</dd>
               <dt style={{ color: "var(--cpl-ink-soft)" }}>Submitted</dt>
               <dd style={{ margin: 0 }}>
-                {brief?.submittedAt ? new Date(brief.submittedAt).toLocaleString("en-GB") : "—"}
+                {brief?.submittedAt
+                  ? new Date(brief.submittedAt).toLocaleString("en-GB")
+                  : "—"}
               </dd>
             </dl>
           </div>
@@ -175,21 +195,36 @@ export default async function VerifyPage({
                 commercial: {DECISION_LABEL[decision.commercialDecision]}
               </span>
             </div>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+            <table
+              style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}
+            >
               <tbody>
                 {Object.entries(breakdown).map(([k, v]) => (
                   <tr key={k} style={{ borderTop: "1px solid var(--cpl-border)" }}>
                     <td style={{ padding: "0.35em 0", color: "var(--cpl-ink-soft)" }}>
                       {k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())}
                     </td>
-                    <td style={{ padding: "0.35em 0", textAlign: "right", fontFamily: "var(--font-mono)" }}>
+                    <td
+                      style={{
+                        padding: "0.35em 0",
+                        textAlign: "right",
+                        fontFamily: "var(--font-mono)",
+                      }}
+                    >
                       {Number(v).toFixed(1)}
                     </td>
                   </tr>
                 ))}
                 <tr style={{ borderTop: "2px solid var(--cpl-ink)" }}>
                   <td style={{ padding: "0.4em 0", fontWeight: 700 }}>Total</td>
-                  <td style={{ padding: "0.4em 0", textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
+                  <td
+                    style={{
+                      padding: "0.4em 0",
+                      textAlign: "right",
+                      fontFamily: "var(--font-mono)",
+                      fontWeight: 700,
+                    }}
+                  >
                     {Number(decision.computedScore).toFixed(1)}
                   </td>
                 </tr>
@@ -201,13 +236,26 @@ export default async function VerifyPage({
         <div className="card" style={{ marginTop: "1.25rem" }}>
           <h2>Approval history</h2>
           {requirements.length === 0 ? (
-            <p className="helptext" style={{ margin: 0 }}>No approval requirements were raised for this brief.</p>
+            <p className="helptext" style={{ margin: 0 }}>
+              No approval requirements were raised for this brief.
+            </p>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+            <table
+              style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}
+            >
               <thead>
                 <tr>
                   {["Requirement", "Role", "State", "Decided"].map((h) => (
-                    <th key={h} style={{ textAlign: "left", padding: "0.5em 0", color: "var(--cpl-ink-soft)", fontWeight: 600, borderBottom: "1px solid var(--cpl-border)" }}>
+                    <th
+                      key={h}
+                      style={{
+                        textAlign: "left",
+                        padding: "0.5em 0",
+                        color: "var(--cpl-ink-soft)",
+                        fontWeight: 600,
+                        borderBottom: "1px solid var(--cpl-border)",
+                      }}
+                    >
                       {h}
                     </th>
                   ))}
@@ -216,8 +264,12 @@ export default async function VerifyPage({
               <tbody>
                 {requirements.map((r) => (
                   <tr key={r.id} style={{ borderBottom: "1px solid var(--cpl-border)" }}>
-                    <td style={{ padding: "0.5em 0" }}>{r.requirementType.replace(/_/g, " ")}</td>
-                    <td style={{ padding: "0.5em 0" }}>{r.requiredRoleKey.replace(/_/g, " ")}</td>
+                    <td style={{ padding: "0.5em 0" }}>
+                      {r.requirementType.replace(/_/g, " ")}
+                    </td>
+                    <td style={{ padding: "0.5em 0" }}>
+                      {r.requiredRoleKey.replace(/_/g, " ")}
+                    </td>
                     <td style={{ padding: "0.5em 0" }}>{r.state}</td>
                     <td style={{ padding: "0.5em 0", color: "var(--cpl-ink-soft)" }}>
                       {r.decidedAt ? new Date(r.decidedAt).toLocaleString("en-GB") : "—"}

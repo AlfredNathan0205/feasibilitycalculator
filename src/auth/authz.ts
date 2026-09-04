@@ -35,10 +35,7 @@ export function hasAccessRole(session: AuthSession, roleKey: string): boolean {
   return session.accessRoles.includes(roleKey);
 }
 
-export function requireAccessRole(
-  session: AuthSession,
-  roleKey: string,
-): void {
+export function requireAccessRole(session: AuthSession, roleKey: string): void {
   if (!hasAccessRole(session, roleKey)) {
     throw new AuthorizationError(
       `User ${session.userId} does not hold required access role "${roleKey}"`,

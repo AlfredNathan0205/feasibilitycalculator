@@ -215,9 +215,7 @@ describe("parity: engine vs the actual workbook (§10)", () => {
       }
 
       counts.unexpectedMismatch++;
-      unexpected.push(
-        `${JSON.stringify(row)} => engine=${engineText}, score=${score}`,
-      );
+      unexpected.push(`${JSON.stringify(row)} => engine=${engineText}, score=${score}`);
     }
 
     console.log("Parity decision classification:", counts);

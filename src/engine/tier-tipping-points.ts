@@ -33,9 +33,7 @@ export interface TippingPoint {
   tippingPointGbp: number;
 }
 
-export function computeTierTippingPoints(
-  ruleSet: RuleSetPayload,
-): TippingPoint[] {
+export function computeTierTippingPoints(ruleSet: RuleSetPayload): TippingPoint[] {
   const tiers = Object.keys(ruleSet.tierWeights);
   const results: TippingPoint[] = [];
 
@@ -89,9 +87,13 @@ export function computeTierTippingPoints(
   return results;
 }
 
+/* v8 ignore start -- CLI entry point guard; only runs when this file is
+ * executed directly (`tsx src/engine/tier-tipping-points.ts`), never when
+ * imported by tests or application code. */
 if (import.meta.url === `file://${process.argv[1]}`) {
   const ruleSet = rulesetV1 as unknown as RuleSetPayload;
   const table = computeTierTippingPoints(ruleSet);
   console.log("Tier tipping points (worst-case qualitative signals):");
   console.table(table);
 }
+/* v8 ignore stop */

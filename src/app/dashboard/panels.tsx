@@ -17,7 +17,11 @@ function SimpleTable({
   rows: Record<string, unknown>[];
 }) {
   if (rows.length === 0) {
-    return <p className="helptext" style={{ margin: 0 }}>No data yet.</p>;
+    return (
+      <p className="helptext" style={{ margin: 0 }}>
+        No data yet.
+      </p>
+    );
   }
   return (
     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
@@ -60,10 +64,28 @@ function SimpleTable({
 function BarRow({ label, count, max }: { label: string; count: number; max: number }) {
   const pct = max > 0 ? Math.round((count / max) * 100) : 0;
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "140px 1fr 40px", alignItems: "center", gap: "0.6rem", fontSize: "0.8125rem", marginBottom: "0.35rem" }}>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "140px 1fr 40px",
+        alignItems: "center",
+        gap: "0.6rem",
+        fontSize: "0.8125rem",
+        marginBottom: "0.35rem",
+      }}
+    >
       <span>{label}</span>
-      <div style={{ background: "var(--cpl-border)", borderRadius: 3, overflow: "hidden", height: 10 }}>
-        <div style={{ width: `${pct}%`, background: "var(--cpl-indigo)", height: "100%" }} />
+      <div
+        style={{
+          background: "var(--cpl-border)",
+          borderRadius: 3,
+          overflow: "hidden",
+          height: 10,
+        }}
+      >
+        <div
+          style={{ width: `${pct}%`, background: "var(--cpl-indigo)", height: "100%" }}
+        />
       </div>
       <span style={{ textAlign: "right", fontFamily: "var(--font-mono)" }}>{count}</span>
     </div>
@@ -74,7 +96,10 @@ export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
   const tierMax = Math.max(1, ...summary.volumeByTier.map((r) => r.count));
   const reqTypeMax = Math.max(1, ...summary.volumeByRequirementType.map((r) => r.count));
   const scoreMax = Math.max(1, ...summary.scoreDistribution.map((b) => b.count));
-  const deadlineMax = Math.max(1, ...summary.shortDeadlineVolumeByMonth.map((r) => r.count));
+  const deadlineMax = Math.max(
+    1,
+    ...summary.shortDeadlineVolumeByMonth.map((r) => r.count),
+  );
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
@@ -129,7 +154,12 @@ export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
 
       <Panel title="Score distribution vs. current thresholds">
         {summary.scoreDistribution.map((b) => (
-          <BarRow key={b.bucketLabel} label={b.bucketLabel} count={b.count} max={scoreMax} />
+          <BarRow
+            key={b.bucketLabel}
+            label={b.bucketLabel}
+            count={b.count}
+            max={scoreMax}
+          />
         ))}
         <p className="helptext" style={{ marginTop: "0.6rem", marginBottom: 0 }}>
           Current thresholds: decline ≤30, auto-approve &gt;115.
@@ -158,8 +188,7 @@ export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
               {
                 key: "revokedCount",
                 label: "Revoked",
-                format: (v) =>
-                  Number(v) > 0 ? `⚠ ${v}` : "0",
+                format: (v) => (Number(v) > 0 ? `⚠ ${v}` : "0"),
               },
             ]}
             rows={summary.preApprovalUsage as unknown as Record<string, unknown>[]}

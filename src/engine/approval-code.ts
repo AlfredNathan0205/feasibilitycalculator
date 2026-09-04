@@ -22,13 +22,16 @@ import { randomInt } from "node:crypto";
 
 export const CROCKFORD_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
+/* v8 ignore start -- self-check invariant on a hardcoded constant; can
+ * only ever be false if someone edits CROCKFORD_ALPHABET itself, which
+ * would need to happen before this module loads. Not a real runtime
+ * branch reachable by any test input. */
 if (CROCKFORD_ALPHABET.length !== 32) {
   throw new Error("CROCKFORD_ALPHABET must be exactly 32 characters");
 }
+/* v8 ignore stop */
 
-const CHAR_VALUE = new Map<string, number>(
-  [...CROCKFORD_ALPHABET].map((c, i) => [c, i]),
-);
+const CHAR_VALUE = new Map<string, number>([...CROCKFORD_ALPHABET].map((c, i) => [c, i]));
 
 // Crockford's own decoding-tolerance substitutions for characters that are
 // easy to misread/mistype but aren't in the alphabet themselves.

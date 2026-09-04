@@ -9,7 +9,10 @@ import {
   requireCanDecideRequirement,
   AuthorizationError,
 } from "../../auth/authz.js";
-import { decideRequirement, listPendingRequirementsForRoles } from "../../services/decide-requirement.js";
+import {
+  decideRequirement,
+  listPendingRequirementsForRoles,
+} from "../../services/decide-requirement.js";
 import { AppShell } from "../components/app-shell.js";
 
 function getDb() {
@@ -34,7 +37,9 @@ export default async function ApprovalsPage() {
     return (
       <AppShell session={null}>
         <div className="container">
-          <p style={{ marginTop: "3rem" }}><a href="/">Sign in</a> first.</p>
+          <p style={{ marginTop: "3rem" }}>
+            <a href="/">Sign in</a> first.
+          </p>
         </div>
       </AppShell>
     );
@@ -53,10 +58,7 @@ export default async function ApprovalsPage() {
   }
 
   const db = getDb();
-  const items = await listPendingRequirementsForRoles(
-    db,
-    session.approvalAuthorityRoles,
-  );
+  const items = await listPendingRequirementsForRoles(db, session.approvalAuthorityRoles);
 
   async function decide(formData: FormData) {
     "use server";
@@ -104,7 +106,8 @@ export default async function ApprovalsPage() {
       <div className="container-wide">
         <h1>Your approvals</h1>
         <p className="helptext">
-          Requirements assigned to: {session.approvalAuthorityRoles.join(", ") || "(none)"}
+          Requirements assigned to:{" "}
+          {session.approvalAuthorityRoles.join(", ") || "(none)"}
         </p>
 
         {items.length === 0 ? (
@@ -129,7 +132,8 @@ export default async function ApprovalsPage() {
                       {Number(item.valuePotentialGbp).toLocaleString("en-GB")}
                     </h3>
                     <span className="helptext">
-                      {REQUIREMENT_LABELS[item.requirementTypeKind] ?? item.requirementTypeKind}{" "}
+                      {REQUIREMENT_LABELS[item.requirementTypeKind] ??
+                        item.requirementTypeKind}{" "}
                       · score {Number(item.score).toFixed(1)} ·{" "}
                       {item.commercialDecision === "auto_approved"
                         ? "commercially Auto-Approved"
@@ -140,7 +144,10 @@ export default async function ApprovalsPage() {
                   </div>
                 </div>
 
-                <form action={decide} style={{ display: "flex", gap: "0.6rem", alignItems: "flex-start" }}>
+                <form
+                  action={decide}
+                  style={{ display: "flex", gap: "0.6rem", alignItems: "flex-start" }}
+                >
                   <input type="hidden" name="requirementId" value={item.requirementId} />
                   <textarea
                     name="comment"

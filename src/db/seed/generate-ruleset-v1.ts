@@ -33,8 +33,7 @@ import path from "node:path";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const workbookPath =
-  process.argv[2] ??
-  "/mnt/user-data/uploads/Project-Feasibility-Calculator.xlsx";
+  process.argv[2] ?? "/mnt/user-data/uploads/Project-Feasibility-Calculator.xlsx";
 
 const workbook = XLSX.readFile(workbookPath);
 

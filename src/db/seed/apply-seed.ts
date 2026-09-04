@@ -79,10 +79,7 @@ async function main() {
     }
 
     // --- Rule set v1: insert once, then publish ------------------------
-    const existing = await db
-      .select()
-      .from(ruleSets)
-      .where(eq(ruleSets.version, 1));
+    const existing = await db.select().from(ruleSets).where(eq(ruleSets.version, 1));
 
     if (existing.length > 0) {
       console.log("Rule set version 1 already exists — skipping insert.");

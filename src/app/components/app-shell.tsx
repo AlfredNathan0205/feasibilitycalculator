@@ -77,7 +77,8 @@ export function AppShell({
                   Your approvals
                 </a>
               )}
-              {(session.accessRoles.includes("admin") || session.accessRoles.includes("auditor")) && (
+              {(session.accessRoles.includes("admin") ||
+                session.accessRoles.includes("auditor")) && (
                 <a href="/dashboard" style={{ color: "#fff", opacity: 0.92 }}>
                   Dashboard
                 </a>

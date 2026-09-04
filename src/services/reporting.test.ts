@@ -34,9 +34,9 @@ describeIfDb("reporting (integration, against real accumulated data)", () => {
   it("getVolumeOutcomeMixByMonth: totals sum to the actual number of decisions", async () => {
     const rows = await getVolumeOutcomeMixByMonth(db);
     const total = rows.reduce((sum, r) => sum + r.count, 0);
-    const actualTotalRows = await db.execute(
+    const actualTotalRows = (await db.execute(
       sql`SELECT count(*)::int AS count FROM decisions`,
-    ) as unknown as { count: number }[];
+    )) as unknown as { count: number }[];
     const actualTotal = actualTotalRows[0]!.count;
     expect(total).toBe(actualTotal);
     // Every row's finalStatus must be one of the three real enum values.
@@ -48,9 +48,9 @@ describeIfDb("reporting (integration, against real accumulated data)", () => {
   it("getVolumeByTier: totals sum to the actual number of briefs, only real tier values", async () => {
     const rows = await getVolumeByTier(db);
     const total = rows.reduce((sum, r) => sum + r.count, 0);
-    const actualTotalRows = await db.execute(
+    const actualTotalRows = (await db.execute(
       sql`SELECT count(*)::int AS count FROM briefs`,
-    ) as unknown as { count: number }[];
+    )) as unknown as { count: number }[];
     const actualTotal = actualTotalRows[0]!.count;
     expect(total).toBe(actualTotal);
     for (const r of rows) {
@@ -61,9 +61,9 @@ describeIfDb("reporting (integration, against real accumulated data)", () => {
   it("getVolumeByRequirementType: totals sum to the actual number of requirements raised", async () => {
     const rows = await getVolumeByRequirementType(db);
     const total = rows.reduce((sum, r) => sum + r.count, 0);
-    const actualTotalRows = await db.execute(
+    const actualTotalRows = (await db.execute(
       sql`SELECT count(*)::int AS count FROM approval_requirements`,
-    ) as unknown as { count: number }[];
+    )) as unknown as { count: number }[];
     const actualTotal = actualTotalRows[0]!.count;
     expect(total).toBe(actualTotal);
   });
@@ -84,9 +84,9 @@ describeIfDb("reporting (integration, against real accumulated data)", () => {
   it("getScoreDistribution: bucket counts sum to the actual number of decisions", async () => {
     const buckets = await getScoreDistribution(db);
     const total = buckets.reduce((sum, b) => sum + b.count, 0);
-    const actualTotalRows = await db.execute(
+    const actualTotalRows = (await db.execute(
       sql`SELECT count(*)::int AS count FROM decisions`,
-    ) as unknown as { count: number }[];
+    )) as unknown as { count: number }[];
     const actualTotal = actualTotalRows[0]!.count;
     expect(total).toBe(actualTotal);
     // Buckets must be in ascending order.
@@ -110,9 +110,9 @@ describeIfDb("reporting (integration, against real accumulated data)", () => {
   it("getShortDeadlineVolumeByMonth: only counts short_deadline requirement rows", async () => {
     const rows = await getShortDeadlineVolumeByMonth(db);
     const total = rows.reduce((sum, r) => sum + r.count, 0);
-    const actualTotalRows = await db.execute(
+    const actualTotalRows = (await db.execute(
       sql`SELECT count(*)::int AS count FROM approval_requirements WHERE requirement_type = 'short_deadline'`,
-    ) as unknown as { count: number }[];
+    )) as unknown as { count: number }[];
     const actualTotal = actualTotalRows[0]!.count;
     expect(total).toBe(actualTotal);
   });
@@ -126,12 +126,12 @@ describeIfDb("reporting (integration, against real accumulated data)", () => {
 
   it("getExportableBriefRows: row count matches the actual number of briefs with decisions", async () => {
     const rows = await getExportableBriefRows(db);
-    const actualTotalRows = await db.execute(
+    const actualTotalRows = (await db.execute(
       sql`SELECT count(*)::int AS count FROM briefs b JOIN decisions d ON d.brief_id = b.id`,
-    ) as unknown as { count: number }[];
+    )) as unknown as { count: number }[];
     const actualTotal = actualTotalRows[0]!.count;
     expect(rows.length).toBe(actualTotal);
-    const first = rows[0] as any;
+    const first = rows[0] as Record<string, unknown>;
     expect(first).toHaveProperty("customerReference");
     expect(first).toHaveProperty("approvalCode");
   });

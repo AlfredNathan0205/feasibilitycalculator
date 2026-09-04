@@ -111,10 +111,7 @@ export function computeStageB(
   }
 
   // Creative: creation — Creation/Unknown and tier is not A/T.
-  if (
-    inputs.creativeApproach === "Creation/Unknown" &&
-    inputs.customerTier !== "A/T"
-  ) {
+  if (inputs.creativeApproach === "Creation/Unknown" && inputs.customerTier !== "A/T") {
     addIfEnabled("creative_creation");
   }
 

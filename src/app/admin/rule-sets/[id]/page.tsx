@@ -25,7 +25,9 @@ export default async function RuleSetEditorPage({
     return (
       <AppShell session={null}>
         <div className="container">
-          <p style={{ marginTop: "3rem" }}><a href="/">Sign in</a> first.</p>
+          <p style={{ marginTop: "3rem" }}>
+            <a href="/">Sign in</a> first.
+          </p>
         </div>
       </AppShell>
     );
@@ -43,7 +45,10 @@ export default async function RuleSetEditorPage({
   }
 
   const db = getDb();
-  const [ruleSet] = await db.select().from(schema.ruleSets).where(eq(schema.ruleSets.id, id));
+  const [ruleSet] = await db
+    .select()
+    .from(schema.ruleSets)
+    .where(eq(schema.ruleSets.id, id));
   if (!ruleSet) {
     return (
       <AppShell session={session}>

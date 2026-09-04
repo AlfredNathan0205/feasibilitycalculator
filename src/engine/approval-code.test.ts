@@ -132,9 +132,7 @@ describe("normalizeApprovalCodeInput", () => {
   it("strips punctuation and whitespace the user might paste in", () => {
     const code = generateApprovalCode(new Date("2026-09-15T00:00:00Z"));
     const messy = "  " + code.toLowerCase().replace(/-/g, " . ") + "  ";
-    expect(normalizeApprovalCodeInput(messy)).toBe(
-      normalizeApprovalCodeInput(code),
-    );
+    expect(normalizeApprovalCodeInput(messy)).toBe(normalizeApprovalCodeInput(code));
   });
 
   it("returns null for input that normalizes to the wrong length", () => {
@@ -146,8 +144,20 @@ describe("normalizeApprovalCodeInput", () => {
     // stripped, per "strip anything that is not an allowed character."
     const withU = "FUC2609UABCD1X";
     const without = "FC2609ABCD1X";
-    expect(normalizeApprovalCodeInput(withU)).toBe(
-      normalizeApprovalCodeInput(without),
+    expect(normalizeApprovalCodeInput(withU)).toBe(normalizeApprovalCodeInput(without));
+  });
+});
+
+describe("computeCheckChar — error paths", () => {
+  it("throws for the wrong-length payload rather than silently truncating/padding", () => {
+    expect(() => computeCheckChar("TOOSHORT")).toThrow(/11-character payload/);
+    expect(() => computeCheckChar("FC26090ABC12EXTRA")).toThrow(/11-character payload/);
+  });
+
+  it("throws for a character outside the Crockford alphabet rather than silently skipping it", () => {
+    // 11 characters, but "U" isn't in the alphabet by design.
+    expect(() => computeCheckChar("FC2609ABCU1")).toThrow(
+      /not in the Crockford alphabet/,
     );
   });
 });

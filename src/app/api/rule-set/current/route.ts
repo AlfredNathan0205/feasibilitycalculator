@@ -33,10 +33,7 @@ export async function GET() {
     .limit(1);
 
   if (!ruleSet) {
-    return NextResponse.json(
-      { error: "No published rule set found" },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: "No published rule set found" }, { status: 404 });
   }
 
   return NextResponse.json(ruleSet);

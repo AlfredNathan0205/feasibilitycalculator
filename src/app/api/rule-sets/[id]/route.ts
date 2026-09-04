@@ -36,7 +36,10 @@ export async function GET(
 
   const { id } = await params;
   const db = getDb();
-  const [ruleSet] = await db.select().from(schema.ruleSets).where(eq(schema.ruleSets.id, id));
+  const [ruleSet] = await db
+    .select()
+    .from(schema.ruleSets)
+    .where(eq(schema.ruleSets.id, id));
   if (!ruleSet) {
     return NextResponse.json({ error: "Rule set not found" }, { status: 404 });
   }

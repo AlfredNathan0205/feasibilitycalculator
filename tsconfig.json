@@ -9,13 +9,8 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "outDir": "dist",
-    "types": [
-      "node"
-    ],
-    "lib": [
-      "ES2022",
-      "DOM"
-    ],
+    "types": ["node"],
+    "lib": ["ES2022", "DOM"],
     "jsx": "preserve",
     "allowJs": true,
     "incremental": true,
@@ -25,9 +20,7 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "noEmit": true,
     "isolatedModules": true
@@ -35,10 +28,11 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
+    "e2e/**/*.ts",
+    "playwright.config.ts",
+    "eslint.config.mjs",
     "next-env.d.ts",
     ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

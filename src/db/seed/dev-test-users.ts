@@ -61,9 +61,7 @@ async function main() {
       const existing = await db
         .select()
         .from(roleHolders)
-        .where(
-          and(eq(roleHolders.roleKey, roleKey), eq(roleHolders.userId, user!.id)),
-        );
+        .where(and(eq(roleHolders.roleKey, roleKey), eq(roleHolders.userId, user!.id)));
       if (existing.length === 0) {
         await db.insert(roleHolders).values({
           roleKey,
@@ -78,7 +76,9 @@ async function main() {
       await ensureRole(tu.approvalAuthorityRole);
     }
 
-    console.log(`Seeded ${tu.upn} with role(s): ${tu.accessRole}${"approvalAuthorityRole" in tu ? ", " + tu.approvalAuthorityRole : ""}`);
+    console.log(
+      `Seeded ${tu.upn} with role(s): ${tu.accessRole}${"approvalAuthorityRole" in tu ? ", " + tu.approvalAuthorityRole : ""}`,
+    );
   }
 
   await sql.end();

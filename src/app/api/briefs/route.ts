@@ -76,10 +76,7 @@ export async function POST(request: Request) {
 
   const deadline = new Date(body.deadline as string);
   if (Number.isNaN(deadline.getTime())) {
-    return NextResponse.json(
-      { error: "deadline must be a valid date" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "deadline must be a valid date" }, { status: 400 });
   }
 
   try {
@@ -94,8 +91,7 @@ export async function POST(request: Request) {
       nicheFfPreApproved: Boolean(body.nicheFfPreApproved),
       nicheFfRationale: (body.nicheFfRationale as string) ?? null,
       strategicPriority: Boolean(body.strategicPriority),
-      strategicPriorityRationale:
-        (body.strategicPriorityRationale as string) ?? null,
+      strategicPriorityRationale: (body.strategicPriorityRationale as string) ?? null,
       creativeApproach: body.creativeApproach as string,
       marketingFlag: Boolean(body.marketingFlag),
       ppdFlag: Boolean(body.ppdFlag),
@@ -104,7 +100,11 @@ export async function POST(request: Request) {
       pvReference: (body.pvReference as string) ?? null,
       submittedBy: session.userId,
       onBehalfOf: (body.onBehalfOf as string) ?? null,
-      preApprovals: (body.preApprovals as Record<string, { nominatedManagerId: string; comment: string }>) ?? undefined,
+      preApprovals:
+        (body.preApprovals as Record<
+          string,
+          { nominatedManagerId: string; comment: string }
+        >) ?? undefined,
     });
     return NextResponse.json(result, { status: 201 });
   } catch (err) {
@@ -112,9 +112,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: err.message }, { status: 400 });
     }
     console.error(err);
-    return NextResponse.json(
-      { error: "Internal error creating brief" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal error creating brief" }, { status: 500 });
   }
 }

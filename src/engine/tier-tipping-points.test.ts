@@ -8,9 +8,7 @@ const ruleSet = rulesetV1 as unknown as RuleSetPayload;
 describe("computeTierTippingPoints (§10 build artefact)", () => {
   it("matches the figures the spec says Simon has already been shown and accepted", () => {
     const table = computeTierTippingPoints(ruleSet);
-    const byTier = Object.fromEntries(
-      table.map((t) => [t.tier, t.tippingPointGbp]),
-    );
+    const byTier = Object.fromEntries(table.map((t) => [t.tier, t.tippingPointGbp]));
     // Spec: "around £30k for A/T, £130k for B, £180k for C and £210k for D."
     // Checked to the nearest £1000 rather than exact £, since the spec's own
     // wording is approximate ("around").
@@ -24,11 +22,23 @@ describe("computeTierTippingPoints (§10 build artefact)", () => {
     // Higher tier weight (A/T=100) should need less value to tip than a
     // lower tier weight (D=10), since less of the gap has to be closed by V.
     const table = computeTierTippingPoints(ruleSet);
-    const byTier = Object.fromEntries(
-      table.map((t) => [t.tier, t.tippingPointGbp]),
-    );
+    const byTier = Object.fromEntries(table.map((t) => [t.tier, t.tippingPointGbp]));
     expect(byTier["A/T"]!).toBeLessThan(byTier["B"]!);
     expect(byTier["B"]!).toBeLessThan(byTier["C"]!);
     expect(byTier["C"]!).toBeLessThan(byTier["D"]!);
+  });
+
+  it("throws a clear error rather than silently returning a wrong tipping point, if a degenerate rule set can never auto-approve", () => {
+    // An absurdly high auto-approve threshold that no tier's worst-case
+    // combination could ever cross, even at the generous £10M search
+    // ceiling — proves the defensive check actually fires rather than
+    // just trusting the binary search to terminate sensibly.
+    const brokenRuleSet: RuleSetPayload = {
+      ...ruleSet,
+      thresholds: { ...ruleSet.thresholds, autoApproveAbove: 10_000_000 },
+    };
+    expect(() => computeTierTippingPoints(brokenRuleSet)).toThrow(
+      /does not auto-approve even at/,
+    );
   });
 });

@@ -66,13 +66,16 @@ const initialState: FormState = {
 };
 
 type SubmitResult =
-  | { kind: "success"; data: {
-      commercialDecision: string;
-      finalStatus: string;
-      score: number;
-      approvalCode: string | null;
-      requirementCount: number;
-    } }
+  | {
+      kind: "success";
+      data: {
+        commercialDecision: string;
+        finalStatus: string;
+        score: number;
+        approvalCode: string | null;
+        requirementCount: number;
+      };
+    }
   | { kind: "error"; message: string };
 
 const DECISION_LABEL: Record<string, string> = {
@@ -108,7 +111,11 @@ export function BriefForm() {
     if (!form.deadline) return null;
     const deadline = new Date(form.deadline + "T00:00:00Z");
     const today = new Date();
-    const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+    const todayUtc = Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate(),
+    );
     return Math.round((deadline.getTime() - todayUtc) / (24 * 60 * 60 * 1000));
   }, [form.deadline]);
 
@@ -306,9 +313,15 @@ export function BriefForm() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.9rem" }}>
             <div>
               <label htmlFor="tier">Customer tier</label>
-              <select id="tier" value={form.tier} onChange={(e) => set("tier", e.target.value)}>
+              <select
+                id="tier"
+                value={form.tier}
+                onChange={(e) => set("tier", e.target.value)}
+              >
                 {TIERS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
                 ))}
               </select>
             </div>
@@ -328,17 +341,29 @@ export function BriefForm() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.9rem" }}>
             <div>
               <label htmlFor="newRework">New / Rework</label>
-              <select id="newRework" value={form.newRework} onChange={(e) => set("newRework", e.target.value)}>
+              <select
+                id="newRework"
+                value={form.newRework}
+                onChange={(e) => set("newRework", e.target.value)}
+              >
                 {NEW_REWORK.map((v) => (
-                  <option key={v} value={v}>{v}</option>
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
               <label htmlFor="briefType">Brief type</label>
-              <select id="briefType" value={form.briefType} onChange={(e) => set("briefType", e.target.value)}>
+              <select
+                id="briefType"
+                value={form.briefType}
+                onChange={(e) => set("briefType", e.target.value)}
+              >
                 {BRIEF_TYPES.map((v) => (
-                  <option key={v} value={v}>{v}</option>
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
                 ))}
               </select>
             </div>
@@ -353,7 +378,9 @@ export function BriefForm() {
                 onChange={(e) => set("customerApproval", e.target.value)}
               >
                 {CUSTOMER_APPROVALS.map((v) => (
-                  <option key={v} value={v}>{v}</option>
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
                 ))}
               </select>
             </div>
@@ -365,7 +392,9 @@ export function BriefForm() {
                 onChange={(e) => set("creativeApproach", e.target.value)}
               >
                 {CREATIVE_APPROACHES.map((v) => (
-                  <option key={v} value={v}>{v}</option>
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
                 ))}
               </select>
             </div>
@@ -400,7 +429,14 @@ export function BriefForm() {
         <h2>Flags</h2>
         <div style={{ display: "grid", gap: "0.9rem" }}>
           <div>
-            <label style={{ display: "flex", alignItems: "center", gap: "0.5em", fontWeight: 400 }}>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5em",
+                fontWeight: 400,
+              }}
+            >
               <input
                 type="checkbox"
                 style={{ width: "auto" }}
@@ -424,7 +460,14 @@ export function BriefForm() {
           </div>
 
           <div>
-            <label style={{ display: "flex", alignItems: "center", gap: "0.5em", fontWeight: 400 }}>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5em",
+                fontWeight: 400,
+              }}
+            >
               <input
                 type="checkbox"
                 style={{ width: "auto" }}
@@ -455,7 +498,15 @@ export function BriefForm() {
                 ["gcmsFlag", "GCMS / analytical resource"],
               ] as const
             ).map(([key, label]) => (
-              <label key={key} style={{ display: "flex", alignItems: "center", gap: "0.5em", fontWeight: 400 }}>
+              <label
+                key={key}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5em",
+                  fontWeight: 400,
+                }}
+              >
                 <input
                   type="checkbox"
                   style={{ width: "auto" }}
@@ -476,8 +527,21 @@ export function BriefForm() {
       {preview && (
         <div className="card" style={{ marginBottom: "1.25rem" }}>
           <h2>Live preview</h2>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem", marginBottom: "0.75rem" }}>
-            <span style={{ fontSize: "1.75rem", fontWeight: 700, fontFamily: "var(--font-mono)" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: "0.75rem",
+              marginBottom: "0.75rem",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "1.75rem",
+                fontWeight: 700,
+                fontFamily: "var(--font-mono)",
+              }}
+            >
               {preview.stageA.score.toFixed(1)}
             </span>
             <span
@@ -493,14 +557,22 @@ export function BriefForm() {
             </span>
           </div>
 
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+          <table
+            style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}
+          >
             <tbody>
               {Object.entries(preview.stageA.scoreBreakdown).map(([k, v]) => (
                 <tr key={k} style={{ borderTop: "1px solid var(--cpl-border)" }}>
                   <td style={{ padding: "0.4em 0", color: "var(--cpl-ink-soft)" }}>
                     {k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())}
                   </td>
-                  <td style={{ padding: "0.4em 0", textAlign: "right", fontFamily: "var(--font-mono)" }}>
+                  <td
+                    style={{
+                      padding: "0.4em 0",
+                      textAlign: "right",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
                     {(v as number).toFixed(1)}
                   </td>
                 </tr>
@@ -561,7 +633,9 @@ export function BriefForm() {
                         Already approved by a manager
                       </label>
                       {decl.enabled && (
-                        <div style={{ marginTop: "0.5em", display: "grid", gap: "0.5em" }}>
+                        <div
+                          style={{ marginTop: "0.5em", display: "grid", gap: "0.5em" }}
+                        >
                           <select
                             value={decl.nominatedManagerId}
                             onChange={(e) =>

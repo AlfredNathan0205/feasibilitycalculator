@@ -54,10 +54,7 @@ import { sql } from "drizzle-orm";
  * registration's app roles and are mirrored in on sign-in; approval-authority
  * roles are pure application data maintained by Admin.
  */
-export const roleCategoryEnum = pgEnum("role_category", [
-  "access",
-  "approval_authority",
-]);
+export const roleCategoryEnum = pgEnum("role_category", ["access", "approval_authority"]);
 
 export const ruleSetStatusEnum = pgEnum("rule_set_status", [
   "draft",
@@ -104,14 +101,13 @@ export const requirementStateEnum = pgEnum("requirement_state", [
   "revoked",
 ]);
 
-export const notificationChannelEnum = pgEnum("notification_channel", [
-  "email",
-]);
+export const notificationChannelEnum = pgEnum("notification_channel", ["email"]);
 
-export const notificationDeliveryStatusEnum = pgEnum(
-  "notification_delivery_status",
-  ["queued", "sent", "failed"],
-);
+export const notificationDeliveryStatusEnum = pgEnum("notification_delivery_status", [
+  "queued",
+  "sent",
+  "failed",
+]);
 
 // ---------------------------------------------------------------------------
 // users — mirrored from Entra on sign-in (§8)
@@ -126,12 +122,8 @@ export const users = pgTable(
     displayName: text("display_name").notNull(),
     email: text("email").notNull(),
     active: boolean("active").notNull().default(true),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex("users_entra_object_id_key").on(t.entraObjectId),
@@ -170,9 +162,7 @@ export const roleHolders = pgTable(
       .references(() => users.id),
     effectiveFrom: date("effective_from").notNull(),
     effectiveTo: date("effective_to"), // NULL = still current
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index("role_holders_role_key_idx").on(t.roleKey),
@@ -206,9 +196,7 @@ export const ruleSets = pgTable(
     createdBy: uuid("created_by")
       .notNull()
       .references(() => users.id),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     publishedBy: uuid("published_by").references(() => users.id),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     supersededAt: timestamp("superseded_at", { withTimezone: true }),
@@ -267,9 +255,7 @@ export const briefs = pgTable(
     // who gets notified; submittedBy is retained purely for the audit trail.
     onBehalfOf: uuid("on_behalf_of").references(() => users.id),
 
-    submittedAt: timestamp("submitted_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index("briefs_submitted_by_idx").on(t.submittedBy),
@@ -313,9 +299,7 @@ export const decisions = pgTable(
     finalStatus: finalStatusEnum("final_status").notNull().default("pending"),
     approvalCode: text("approval_code"),
     codeIssuedAt: timestamp("code_issued_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex("decisions_brief_id_key").on(t.briefId), // one live decision per brief
@@ -358,26 +342,22 @@ export const approvalRequirements = pgTable(
     comment: text("comment"),
 
     // --- Stage C: prior approval override fields ---
-    preApprovalNominatedManagerId: uuid(
-      "pre_approval_nominated_manager_id",
-    ).references(() => users.id),
+    preApprovalNominatedManagerId: uuid("pre_approval_nominated_manager_id").references(
+      () => users.id,
+    ),
     preApprovalSubmitterComment: text("pre_approval_submitter_comment"),
     revokeTokenHash: text("revoke_token_hash"),
     revokeWindowExpiresAt: timestamp("revoke_window_expires_at", {
       withTimezone: true,
     }),
 
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index("approval_requirements_decision_id_idx").on(t.decisionId),
     index("approval_requirements_state_idx").on(t.state),
     index("approval_requirements_required_role_key_idx").on(t.requiredRoleKey),
-    uniqueIndex("approval_requirements_revoke_token_hash_key").on(
-      t.revokeTokenHash,
-    ),
+    uniqueIndex("approval_requirements_revoke_token_hash_key").on(t.revokeTokenHash),
     check(
       "approval_requirements_rejection_comment_ck",
       sql`${t.state} <> 'rejected' OR (${t.comment} IS NOT NULL AND length(btrim(${t.comment})) > 0)`,
@@ -409,9 +389,7 @@ export const auditEvents = pgTable(
     entityId: uuid("entity_id").notNull(),
     before: jsonb("before"),
     after: jsonb("after"),
-    occurredAt: timestamp("occurred_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
     requestCorrelationId: uuid("request_correlation_id").notNull(),
     ip: inet("ip"),
   },
@@ -440,9 +418,7 @@ export const notifications = pgTable(
     deliveryStatus: notificationDeliveryStatusEnum("delivery_status")
       .notNull()
       .default("queued"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index("notifications_recipient_id_idx").on(t.recipientId),

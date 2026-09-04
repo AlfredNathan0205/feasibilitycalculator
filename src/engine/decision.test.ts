@@ -120,19 +120,12 @@ describe("computeStageB — required approvals (§5), independent of Stage A", (
     const stageA = computeStageA(inputs, ruleSet);
     const requirements = computeStageB(inputs, ruleSet);
     expect(stageA.commercialDecision).toBe("auto_approved");
-    expect(requirements.some((r) => r.requirementType === "short_deadline")).toBe(
-      true,
-    );
+    expect(requirements.some((r) => r.requirementType === "short_deadline")).toBe(true);
   });
 
   it("does not raise short_deadline outside the window", () => {
-    const requirements = computeStageB(
-      baseInputs({ daysUntilDeadline: 15 }),
-      ruleSet,
-    );
-    expect(
-      requirements.some((r) => r.requirementType === "short_deadline"),
-    ).toBe(false);
+    const requirements = computeStageB(baseInputs({ daysUntilDeadline: 15 }), ruleSet);
+    expect(requirements.some((r) => r.requirementType === "short_deadline")).toBe(false);
   });
 
   it("raises creative_creation for Creation/Unknown on any non-A/T tier", () => {
@@ -141,9 +134,9 @@ describe("computeStageB — required approvals (§5), independent of Stage A", (
         baseInputs({ customerTier: tier, creativeApproach: "Creation/Unknown" }),
         ruleSet,
       );
-      expect(
-        requirements.some((r) => r.requirementType === "creative_creation"),
-      ).toBe(true);
+      expect(requirements.some((r) => r.requirementType === "creative_creation")).toBe(
+        true,
+      );
     }
   });
 
@@ -152,9 +145,9 @@ describe("computeStageB — required approvals (§5), independent of Stage A", (
       baseInputs({ customerTier: "A/T", creativeApproach: "Creation/Unknown" }),
       ruleSet,
     );
-    expect(
-      requirements.some((r) => r.requirementType === "creative_creation"),
-    ).toBe(false);
+    expect(requirements.some((r) => r.requirementType === "creative_creation")).toBe(
+      false,
+    );
   });
 
   it("raises creative_starting_point only for tier C or D, not A/T or B", () => {
@@ -177,12 +170,22 @@ describe("computeStageB — required approvals (§5), independent of Stage A", (
       baseInputs({ customerTier: "A/T", marketingFlag: true, ppdFlag: true }),
       ruleSet,
     );
-    expect(
-      requirements.some((r) => r.requirementType === "marketing_resource"),
-    ).toBe(true);
-    expect(requirements.some((r) => r.requirementType === "ppd_resource")).toBe(
+    expect(requirements.some((r) => r.requirementType === "marketing_resource")).toBe(
       true,
     );
+    expect(requirements.some((r) => r.requirementType === "ppd_resource")).toBe(true);
+  });
+
+  it("GCMS/analytical resource requirement fires when flagged, including for A/T tier — genuinely never exercised before (real gap, not just a coverage nitpick)", () => {
+    const requirements = computeStageB(
+      baseInputs({ customerTier: "A/T", gcmsFlag: true }),
+      ruleSet,
+    );
+    const gcmsRequirement = requirements.find(
+      (r) => r.requirementType === "gcms_resource",
+    );
+    expect(gcmsRequirement).toBeDefined();
+    expect(gcmsRequirement!.role).toBe("analytical_manager");
   });
 
   it.skip(
@@ -195,4 +198,11 @@ describe("computeStageB — required approvals (§5), independent of Stage A", (
       // is represented as an input.
     },
   );
+
+  it("strategic priority does NOT raise a requirement under the current rule set (the alternate is disabled by default, §11 item 3)", () => {
+    const requirements = computeStageB(baseInputs({ strategicPriority: true }), ruleSet);
+    expect(
+      requirements.some((r) => r.requirementType === "strategic_priority_deferral"),
+    ).toBe(false);
+  });
 });

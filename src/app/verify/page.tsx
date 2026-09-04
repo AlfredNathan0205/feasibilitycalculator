@@ -35,8 +35,8 @@ export default async function VerifyLandingPage() {
       <div className="container">
         <h1>Verify an Approval Code</h1>
         <p className="helptext">
-          Look up any brief by its Approval Code — the audit entry point,
-          available without needing to know who submitted it.
+          Look up any brief by its Approval Code — the audit entry point, available
+          without needing to know who submitted it.
         </p>
         <form
           action={async (formData: FormData) => {

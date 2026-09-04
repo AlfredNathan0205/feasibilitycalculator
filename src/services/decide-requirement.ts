@@ -210,10 +210,7 @@ export async function revokeRequirement(
     if (!requirement.revokeTokenHash) {
       throw new ValidationError("This requirement has no active revoke token");
     }
-    if (
-      requirement.revokeWindowExpiresAt &&
-      now > requirement.revokeWindowExpiresAt
-    ) {
+    if (requirement.revokeWindowExpiresAt && now > requirement.revokeWindowExpiresAt) {
       throw new ValidationError("The revoke window has expired");
     }
     if (!verifyRevokeToken(input.rawToken, requirement.revokeTokenHash)) {

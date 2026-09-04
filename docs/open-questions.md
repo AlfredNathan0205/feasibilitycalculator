@@ -22,6 +22,7 @@ anywhere in the live input model. `E21`'s note is a leftover from whatever
 earlier version of the sheet did distinguish them.
 
 **Candidate interpretations:**
+
 1. Treat "A/T" as satisfying "tier T" for the disabled rule, i.e. the
    disabled `tier_auto_approval` requirement would fire for every A/T-tier
    brief if enabled.
@@ -54,6 +55,7 @@ capturing "who manages whom" — `role_holders` records role assignments
 is no `manager_of` relationship, no `line_manager_id` on `users`, nothing.
 
 **Candidate interpretations:**
+
 1. Add a reporting-hierarchy concept to the schema (e.g. `users.line_manager_id`
    self-referencing FK), populated from Entra's manager field or entered
    manually.
@@ -66,7 +68,7 @@ is no `manager_of` relationship, no `line_manager_id` on `users`, nothing.
    new schema at all.
 
 **What's implemented:** `checkSelfApproval()` and
-`requireCanDecideRequirement()` in `src/auth/authz.ts` reliably *detect*
+`requireCanDecideRequirement()` in `src/auth/authz.ts` reliably _detect_
 the self-approval conflict and block the action, but deliberately do not
 attempt to resolve or auto-assign a reassignment target — that part is left
 for whoever answers this question. The function's docstring and error
@@ -75,4 +77,3 @@ message point back here.
 **Needs:** A decision from Simon on which of the three interpretations (or
 another) is intended, before the reassignment half of this rule can be
 built.
-

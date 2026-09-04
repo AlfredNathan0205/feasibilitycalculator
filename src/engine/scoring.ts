@@ -80,13 +80,11 @@ export function computeScore(
   const valuePotential = valueApplies ? v : 0;
 
   const newRework = valueApplies
-    ? v *
-      lookupOrThrow(ruleSet.newReworkMultipliers, inputs.newRework, "newRework")
+    ? v * lookupOrThrow(ruleSet.newReworkMultipliers, inputs.newRework, "newRework")
     : 0;
 
   const briefType = valueApplies
-    ? v *
-      lookupOrThrow(ruleSet.briefTypeMultipliers, inputs.briefType, "briefType")
+    ? v * lookupOrThrow(ruleSet.briefTypeMultipliers, inputs.briefType, "briefType")
     : 0;
 
   const customerApproval = valueApplies
@@ -98,9 +96,7 @@ export function computeScore(
       )
     : 0;
 
-  const strategicPriority = inputs.strategicPriority
-    ? ruleSet.strategicPriorityBonus
-    : 0;
+  const strategicPriority = inputs.strategicPriority ? ruleSet.strategicPriorityBonus : 0;
 
   const creativeApproach = lookupOrThrow(
     ruleSet.creativeApproachScores,

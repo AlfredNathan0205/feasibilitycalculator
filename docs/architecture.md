@@ -9,17 +9,17 @@ business decision.
 
 ## Stack
 
-| Layer | Choice | Status |
-|---|---|---|
-| Framework | Next.js 15, App Router, TypeScript strict | Built |
-| UI | React 19, hand-rolled CSS (no Tailwind/shadcn) | Built, functional but plain |
-| Auth | NextAuth v5 (Auth.js) | Built — dev-login (Credentials) + Entra ID provider both wired, Entra untested (no real tenant yet) |
-| Database | PostgreSQL | Built — currently Supabase, not Azure Database for PostgreSQL |
-| ORM | Drizzle ORM, SQL migrations in `drizzle/` | Built |
-| Hosting | Vercel | Built — target was Azure App Service |
-| Secrets | Vercel environment variables | Built — target was Azure Key Vault |
-| Email | Not built | Notifications are queued (outbox pattern) but nothing sends them |
-| CI/CD | Not built | No GitHub Actions pipeline yet; deploys are manual pushes to `main` |
+| Layer     | Choice                                         | Status                                                                                              |
+| --------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Framework | Next.js 15, App Router, TypeScript strict      | Built                                                                                               |
+| UI        | React 19, hand-rolled CSS (no Tailwind/shadcn) | Built, functional but plain                                                                         |
+| Auth      | NextAuth v5 (Auth.js)                          | Built — dev-login (Credentials) + Entra ID provider both wired, Entra untested (no real tenant yet) |
+| Database  | PostgreSQL                                     | Built — currently Supabase, not Azure Database for PostgreSQL                                       |
+| ORM       | Drizzle ORM, SQL migrations in `drizzle/`      | Built                                                                                               |
+| Hosting   | Vercel                                         | Built — target was Azure App Service                                                                |
+| Secrets   | Vercel environment variables                   | Built — target was Azure Key Vault                                                                  |
+| Email     | Not built                                      | Notifications are queued (outbox pattern) but nothing sends them                                    |
+| CI/CD     | Not built                                      | No GitHub Actions pipeline yet; deploys are manual pushes to `main`                                 |
 
 **Why Vercel/Supabase instead of Azure**: an explicit, deliberate choice for
 the testing phase, not a scope reduction. Postgres is Postgres — moving the
@@ -70,7 +70,7 @@ Every brief goes through four stages, named to match the build spec:
    (`engine/decision.ts::computeStageA`). Score the brief, then: Rework (Of
    Selling) or Niche/FF pre-approved → auto-approved; score ≤ 30 →
    declined; score > 115 → auto-approved; otherwise → pending. These
-   thresholds are the *current published rule set's* values, not hardcoded
+   thresholds are the _current published rule set's_ values, not hardcoded
    — see "Rule sets are versioned data" below.
 
 2. **Stage B — required approvals.** Also pure (`computeStageB`).
@@ -140,7 +140,7 @@ role check inline in a route handler.
 The one boundary genuinely worth knowing about: an approver can never
 decide a requirement on their own submitted brief, whether they submitted
 it themselves or it was submitted on their behalf by a Sales Coordinator.
-Detecting this conflict is fully built and tested; *resolving* it (who it
+Detecting this conflict is fully built and tested; _resolving_ it (who it
 reassigns to) is not, because "line manager" isn't modeled anywhere in the
 schema yet — see `docs/open-questions.md` item 2.
 
@@ -153,7 +153,7 @@ new/rework × 3 brief types × 2 customer approvals × 2 niche flags × 2
 strategic flags × 3 creative approaches × 9 value points = 7,776
 combinations), driven through LibreOffice's UNO API, not a hand-written
 re-implementation of the formulas. Result: **7,776/7,776 exact score
-matches**. Every place the engine's decision *text* legitimately differs
+matches**. Every place the engine's decision _text_ legitimately differs
 from the workbook's is a documented, intentional deviation, asserted to
 differ in the specific expected direction — see `parity/generate_golden_dataset.py`
 and `src/engine/parity.test.ts` for the full account, including one

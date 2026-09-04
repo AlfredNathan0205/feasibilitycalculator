@@ -139,17 +139,14 @@ describeIfDb("createBrief (integration)", () => {
 
   it("rejects a deadline that is today or earlier with a ValidationError", async () => {
     const today = new Date();
-    await expect(
-      createBrief(db, baseInput({ deadline: today })),
-    ).rejects.toThrow(ValidationError);
+    await expect(createBrief(db, baseInput({ deadline: today }))).rejects.toThrow(
+      ValidationError,
+    );
   });
 
   it("rejects niche/FF pre-approval without a rationale", async () => {
     await expect(
-      createBrief(
-        db,
-        baseInput({ nicheFfPreApproved: true, nicheFfRationale: null }),
-      ),
+      createBrief(db, baseInput({ nicheFfPreApproved: true, nicheFfRationale: null })),
     ).rejects.toThrow(ValidationError);
   });
 

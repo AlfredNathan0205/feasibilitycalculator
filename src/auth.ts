@@ -102,8 +102,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // itself only ever happens server-side, here).
       if (user?.id) {
         const db = getDb();
-        const { accessRoles, approvalAuthorityRoles } =
-          await resolveSessionRoles(db, user.id);
+        const { accessRoles, approvalAuthorityRoles } = await resolveSessionRoles(
+          db,
+          user.id,
+        );
         token.userId = user.id;
         token.accessRoles = accessRoles;
         token.approvalAuthorityRoles = approvalAuthorityRoles;
@@ -113,8 +115,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       session.userId = token.userId as string;
       session.accessRoles = (token.accessRoles as string[]) ?? [];
-      session.approvalAuthorityRoles =
-        (token.approvalAuthorityRoles as string[]) ?? [];
+      session.approvalAuthorityRoles = (token.approvalAuthorityRoles as string[]) ?? [];
       return session;
     },
   },

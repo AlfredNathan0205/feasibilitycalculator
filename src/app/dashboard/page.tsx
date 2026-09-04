@@ -20,7 +20,9 @@ export default async function DashboardPage() {
     return (
       <AppShell session={null}>
         <div className="container">
-          <p style={{ marginTop: "3rem" }}><a href="/">Sign in</a> first.</p>
+          <p style={{ marginTop: "3rem" }}>
+            <a href="/">Sign in</a> first.
+          </p>
         </div>
       </AppShell>
     );
@@ -43,7 +45,14 @@ export default async function DashboardPage() {
   return (
     <AppShell session={session}>
       <div className="container-wide">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "1.5rem" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            marginBottom: "1.5rem",
+          }}
+        >
           <h1>Dashboard</h1>
           <div style={{ display: "flex", gap: "0.6rem" }}>
             <a className="btn btn-secondary" href="/api/reports/export/csv">
