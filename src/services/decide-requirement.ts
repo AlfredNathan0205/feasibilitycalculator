@@ -272,7 +272,10 @@ export async function revokeRequirement(
     });
 
     const [brief] = await tx
-      .select({ submittedBy: schema.briefs.submittedBy })
+      .select({
+        submittedBy: schema.briefs.submittedBy,
+        customerReference: schema.briefs.customerReference,
+      })
       .from(schema.briefs)
       .where(eq(schema.briefs.id, requirement.briefId));
     if (!brief) {
@@ -291,6 +294,8 @@ export async function revokeRequirement(
       payload: {
         requirementId: requirement.id,
         briefId: requirement.briefId,
+        customerReference: brief.customerReference,
+        requirementType: requirement.requirementType,
       },
       deliveryStatus: "queued",
     });

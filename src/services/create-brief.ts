@@ -315,6 +315,7 @@ export async function createBrief(
           template: "pre_approval_declared",
           payload: {
             briefId: brief.id,
+            customerReference: brief.customerReference,
             requirementType: requirement.requirementType,
             submitterComment: declaration.comment,
             rawRevokeToken: revokeToken.rawToken,

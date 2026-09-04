@@ -8,11 +8,40 @@ priority order itself may change as items get picked up.
 
 ## In progress / up next
 
-- [ ] **Notifications** (§8 `notifications` table exists; the outbox rows
-      are now queued correctly by both createBrief and the revoke path,
-      but nothing sends them yet). Needed for real: pre-approval declared
-      → email the nominated manager with the revoke link; revoked → email
-      the submitter (line-manager half blocked — see open item below).
+- [x] **Notifications: sending is now real, not just queued.** A dispatch
+      service (`src/services/notifications/dispatch-notifications.ts`)
+      reads queued `notifications` rows, renders the email via a pure
+      template renderer (`src/services/notifications/render-email.ts`,
+      6/6 unit tests, no DB/network), and sends via Resend
+      (`src/lib/resend.ts`, raw `fetch`, no new npm dependency) — resolving
+      the "Resend vs. Microsoft Graph" decision in favour of Resend for
+      the testing phase, per the handoff's stated fallback. Wired to
+      `POST /api/notifications/dispatch`, gated by a `CRON_SECRET` bearer
+      check, triggered every 5 minutes by `vercel.json`'s cron schedule.
+      **Verified against real Postgres** (10/10 integration tests in
+      `dispatch-notifications.test.ts`): a real `pre_approval_declared`
+      notification queued by `createBrief` gets sent and marked `sent`
+      with `sentAt` set; re-running dispatch does not re-send it; a real
+      revoke queues and sends `pre_approval_revoked` to the submitter; a
+      throwing send callback marks the row `failed` (not silently
+      dropped, not retried automatically); `batchSize` is respected.
+      Concurrency safety (`SELECT ... FOR UPDATE SKIP LOCKED` per
+      notification, so two overlapping dispatch runs can't double-send)
+      is implemented but only reasoned about, not proven under actual
+      concurrent load — no test currently forces two real overlapping
+      transactions against the same row.
+      **NOT verified**: the real HTTP call to `api.resend.com` itself —
+      this sandbox's network egress allowlist doesn't include that
+      domain, so `sendEmailViaResend()` has never actually executed
+      against Resend's live API, only been exercised via a stub in tests
+      (same category of limitation as the Playwright suite below). First
+      real send should be treated as the verification step, the same way
+      the e2e suite's first real run is. Also needs, before this is fully
+      done: `RESEND_API_KEY` and `NOTIFICATIONS_FROM_EMAIL` set in Vercel,
+      and a verified sending domain in Resend.
+      The line-manager half of revoke notifications is still blocked on
+      `docs/open-questions.md` item 2, as before — only the submitter
+      side sends.
 
 ## Not started
 

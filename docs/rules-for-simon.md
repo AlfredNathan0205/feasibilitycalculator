@@ -90,9 +90,11 @@ hours and usable only once. If they revoke it, the requirement goes back
 to needing a real decision, and if an Approval Code had already been
 issued off the back of it, that code stops working immediately.
 
-(Note: the emails themselves aren't wired up to actually send yet — the
-mechanism is fully built and tested, but nothing is dispatching real
-emails at the moment. See the backlog.)
+(Note: sending is wired up now — see the backlog for exactly what's
+verified vs. not. The short version: the mechanism has been proven end to
+end against the real database, but the actual outgoing email hasn't been
+sent for real yet in any environment, so treat the first live send as
+the point this is truly confirmed working, not this note.)
 
 ## The Approval Code
 
