@@ -20,9 +20,6 @@ priority order itself may change as items get picked up.
       manager with revoke link), revoked (notify submitter + line
       manager — blocked on the same line-manager gap as
       `docs/open-questions.md` item 2).
-- [ ] **docs/**: architecture note, operational runbook, plain-English
-      rules document for Simon (§14 step 9). Only `open-questions.md`
-      exists today.
 - [ ] **Quality gates**: no ESLint/Prettier config exists yet. No test
       coverage measurement. No Playwright e2e suite covering the three
       primary journeys the spec names (submit→auto-approve; submit→route
@@ -48,6 +45,21 @@ priority order itself may change as items get picked up.
 - [ ] Who holds Admin in practice (§12 item 4).
 
 ## Done and verified
+
+- [x] **docs/**: architecture note (`architecture.md`), operational
+      runbook (`runbook.md`), and a plain-English rules document for Simon
+      (`rules-for-simon.md`) — §14 step 9. All three grounded in what's
+      actually built and the real seeded v1 values (verified against
+      `ruleset-v1.generated.json` directly rather than recalled from
+      memory), not aspirational descriptions of the original spec. The
+      runbook includes every real gotcha hit during development (the
+      TypeScript version pin, the `.js`-extension webpack resolution fix,
+      the `xlsx` package's inconsistent default-export behaviour, the
+      Supabase pooler mode confusion) rather than a generic "how to run
+      Next.js" — the point is to save the next person from re-discovering
+      the same failures. The rules document deliberately omits anything
+      not yet actually working (real email sending) rather than
+      describing the intended future state as if it exists now.
 
 - [x] **Dashboard, reporting, CSV/XLSX export** (§9) — all six panels
       built and integration-tested (9/9) against the real accumulated
