@@ -16,15 +16,19 @@ function getDb() {
  * scheduled job. Gated instead by CRON_SECRET, matching Vercel Cron
  * Jobs' documented convention of sending `Authorization: Bearer
  * $CRON_SECRET` on its own scheduled invocations when that env var is
- * set (see vercel.json's schedule for this route). Confirm this
- * convention against Vercel's current docs before relying on it in
- * production — this project's runbook flags it as unverified from this
- * sandbox, same as the Resend call itself.
+ * set (see vercel.json's schedule for this route).
  *
- * A manual trigger (e.g. from Claude Code, or an Admin's "send now"
- * button later) can call this the same way by sending the same header.
+ * IMPORTANT: Vercel Cron Jobs invoke the configured path with a GET
+ * request, not POST — confirmed against Vercel's own documentation
+ * (every "Secure Cron Job Route Handler" example Vercel publishes for
+ * Next.js exports `GET`, not `POST`). The route originally only exported
+ * POST, which would have made the cron schedule in vercel.json silently
+ * 405 forever without ever actually dispatching anything. GET is the one
+ * that matters for the cron to work; POST is kept too so a manual trigger
+ * (curl, Claude Code, a future Admin "send now" button) can still use the
+ * more conventional method for a state-changing action.
  */
-export async function POST(request: Request) {
+async function handleDispatch(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
     return NextResponse.json(
@@ -60,4 +64,12 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+}
+
+export async function GET(request: Request) {
+  return handleDispatch(request);
+}
+
+export async function POST(request: Request) {
+  return handleDispatch(request);
 }
