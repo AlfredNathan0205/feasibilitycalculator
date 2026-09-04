@@ -20,15 +20,6 @@ priority order itself may change as items get picked up.
       manager with revoke link), revoked (notify submitter + line
       manager — blocked on the same line-manager gap as
       `docs/open-questions.md` item 2).
-- [ ] **Rule set editor + replay simulation** (§7 — spec calls this "a
-      first-release requirement, not a later enhancement"). Draft/publish
-      workflow, replay a draft rule set against every historical
-      submission, group results by outcome transition, before allowing
-      publish.
-- [ ] **Dashboard, reporting, CSV/XLSX export** (§9). Volume/outcome mix,
-      approval rate & time-to-decision per role, score distribution vs.
-      thresholds, pre-approval usage/revocations, short-deadline volume
-      over time.
 - [ ] **docs/**: architecture note, operational runbook, plain-English
       rules document for Simon (§14 step 9). Only `open-questions.md`
       exists today.
@@ -57,6 +48,51 @@ priority order itself may change as items get picked up.
 - [ ] Who holds Admin in practice (§12 item 4).
 
 ## Done and verified
+
+- [x] **Dashboard, reporting, CSV/XLSX export** (§9) — all six panels
+      built and integration-tested (9/9) against the real accumulated
+      dataset (245 briefs by the end): volume by tier and requirement
+      type, outcome mix by month, approval rate + median time-to-decision
+      per role, score distribution vs. current thresholds, pre-approval
+      usage with revocations highlighted, short-deadline volume over
+      time. Confirmed live over real HTTP as Admin: dashboard renders all
+      panels, `/api/reports/summary` returns correct aggregates (spot-
+      checked one against a manual `psql` count), wrong-role access
+      correctly blocked (403).
+      **Caught and fixed a real bug during live verification**: the XLSX
+      export threw a 500 (`Cannot read properties of undefined
+      (reading 'utils')`) — the `xlsx` package's default-export
+      resolution is inconsistent between Next's webpack bundler and
+      Node's native ESM loader (the opposite failure mode from the one
+      hit in Phase 1's `generate-ruleset-v1.ts`, which needed the
+      opposite import style). Fixed, then read the exported file back
+      with a fresh `xlsx` parse to confirm it's genuinely valid data (245
+      rows), not just a 200 with an empty/corrupt body.
+
+- [x] **Rule set editor + replay simulation** (§7) — full lifecycle
+      proven live over real HTTP against real Postgres, not just tests:
+      created a draft via the API, edited its thresholds, ran replay
+      against **197 real accumulated historical briefs** (correctly
+      surfacing genuine drift, including from an actual threshold
+      corruption earlier in this session — a good real-world proof the
+      mechanism works, not a synthetic case), published it, and confirmed
+      exactly one `published` row exists afterward with the prior one
+      correctly `superseded`. 8/8 integration tests against real Postgres.
+      **Caught and fixed a test-isolation bug while building this**: an
+      early version of the integration tests published an intentionally
+      broken rule set (to prove publish takes effect) without restoring
+      the original afterward, which silently corrupted the shared
+      database for every other test file run afterward — fixed with a
+      proper `afterAll` restore, and hit the same issue again live during
+      manual verification (restored via direct DB update both times).
+      **Known limitation, not yet closed**: "show replay before publish
+      can happen" is currently enforced only in the UI (the Publish button
+      is disabled client-side until a replay has run against the
+      currently-saved payload) — the `POST /api/rule-sets/:id/publish`
+      route itself does not independently verify a replay was run, so a
+      direct API call could bypass it. Admin is already a narrow, trusted
+      role, so this is a workflow safeguard against mistakes more than a
+      security boundary, but it's not a hard guarantee as written.
 
 - [x] Database schema, migrations, v1 rule set seed (Phase 1)
 - [x] Pure scoring/decision engine + parity harness — 7,776/7,776 exact
