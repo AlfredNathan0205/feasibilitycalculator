@@ -98,7 +98,9 @@ describeIfDb("reporting (integration, against real accumulated data)", () => {
   it("getPreApprovalUsageBySubmitter: revokedCount never exceeds preApprovalCount", async () => {
     const rows = await getPreApprovalUsageBySubmitter(db);
     if (rows.length === 0) {
-      console.warn("No pre-approval history yet — skipping the revokedCount<=preApprovalCount invariant check");
+      console.warn(
+        "No pre-approval history yet — skipping the revokedCount<=preApprovalCount invariant check",
+      );
       return;
     }
     for (const r of rows) {
