@@ -27,9 +27,11 @@ test("submit and route for approval, then approve: code withheld until the PPD s
   await page.locator("#deadline").fill(farFutureDeadline());
   await page.getByLabel("PPD resource").check();
 
-  // Live preview should show the PPD requirement before submitting.
+  // Step 2: live preview should show the PPD requirement.
+  await page.getByRole("button", { name: "Next: Approvals" }).click();
   await expect(page.getByText("PPD Manager")).toBeVisible();
 
+  await page.getByRole("button", { name: "Next: Review & submit" }).click();
   await page.getByRole("button", { name: "Submit brief" }).click();
 
   // Auto-approved commercially, but NOT fully clear — the central §5 rule.

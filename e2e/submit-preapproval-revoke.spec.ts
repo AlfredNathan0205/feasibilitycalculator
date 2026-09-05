@@ -39,6 +39,10 @@ test("submit with pre-approval, then revoke: the Approval Code genuinely stops w
   await page.locator("#deadline").fill(farFutureDeadline());
   await page.getByLabel("PPD resource").check();
 
+  // Step 2: the per-requirement pre-approval declaration lives here, not
+  // on step 1 alongside the fields that determine the requirement exists.
+  await page.getByRole("button", { name: "Next: Approvals" }).click();
+
   // Declare pre-approval inline, per §5 Stage C. Only one requirement
   // (PPD) is raised here, so there's exactly one such block on the page.
   await page.getByLabel("Already approved by a manager").check();
@@ -50,6 +54,7 @@ test("submit with pre-approval, then revoke: the Approval Code genuinely stops w
     .getByPlaceholder("Comment explaining the circumstances (required)")
     .fill("Confirmed verbally with Priya ahead of submission — e2e test");
 
+  await page.getByRole("button", { name: "Next: Review & submit" }).click();
   await page.getByRole("button", { name: "Submit brief" }).click();
 
   // Pre-approval satisfies the requirement immediately — code issued now.

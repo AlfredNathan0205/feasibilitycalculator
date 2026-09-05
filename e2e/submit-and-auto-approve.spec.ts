@@ -26,10 +26,16 @@ test("submit and auto-approve: A/T tier, £200k, New/Exclusive/Direct/Library On
   // marketingFlag / ppdFlag / gcmsFlag all default unchecked — zero
   // requirements expected.
 
-  // Live preview should show the score before submitting.
+  // Step 1 → Step 2 (§9's 3-step wizard): the live score preview and any
+  // pre-approval declarations live on step 2, not alongside the fields
+  // that produce them.
+  await page.getByRole("button", { name: "Next: Approvals" }).click();
   await expect(page.getByText("900.0")).toBeVisible();
   await expect(page.getByText("Auto-Approved")).toBeVisible();
+  await expect(page.getByText("No approvals required for this brief.")).toBeVisible();
 
+  // Step 2 → Step 3: review, then the real submit.
+  await page.getByRole("button", { name: "Next: Review & submit" }).click();
   await page.getByRole("button", { name: "Submit brief" }).click();
 
   // Outcome page: two-part display (§9) — commercial decision AND

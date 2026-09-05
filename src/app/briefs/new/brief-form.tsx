@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { computeStageA, computeStageB } from "../../../engine/decision.js";
 import type { RuleSetPayload } from "../../../engine/scoring.js";
 
@@ -95,6 +95,17 @@ export function BriefForm() {
   >({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
+  // §9's 3-step wizard: (1) brief details + flags — everything the
+  // decision engine needs to compute requirements, (2) the resulting
+  // score preview and per-requirement pre-approval declarations, (3) a
+  // read-only review before the real submit. Purely presentational: form
+  // state lives in `form`/`preApprovals` above regardless of which step
+  // is visible, and handleSubmit reads directly from that state rather
+  // than from native form serialization — so hiding a step's fields
+  // doesn't affect what gets submitted, and a required field only blocks
+  // advancing past the step it's actually rendered on.
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     fetch("/api/rule-set/current")
@@ -204,6 +215,14 @@ export function BriefForm() {
     }
   }
 
+  function goNext() {
+    if (formRef.current && !formRef.current.reportValidity()) return;
+    setStep((s) => (s === 1 ? 2 : s === 2 ? 3 : s));
+  }
+  function goBack() {
+    setStep((s) => (s === 3 ? 2 : s === 2 ? 1 : s));
+  }
+
   if (result?.kind === "success") {
     const { data } = result;
     const commercialStatus =
@@ -295,218 +314,249 @@ export function BriefForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="card" style={{ marginBottom: "1.25rem" }}>
-        <div className="field-group">
-          <div className="field-group-label">Commercial details</div>
-          <div className="field-row">
-            <div>
-              <label htmlFor="customerReference">Customer reference</label>
-              <input
-                id="customerReference"
-                required
-                value={form.customerReference}
-                onChange={(e) => set("customerReference", e.target.value)}
-              />
+    <form ref={formRef} onSubmit={handleSubmit}>
+      <div className="wizard-steps">
+        {(["Brief details", "Approvals", "Review & submit"] as const).map((label, i) => {
+          const n = (i + 1) as 1 | 2 | 3;
+          return (
+            <div
+              key={label}
+              className={`wizard-step ${n === step ? "wizard-step-active" : n < step ? "wizard-step-done" : ""}`}
+            >
+              <span className="wizard-step-num">{n}</span>
+              {label}
             </div>
-
-            <div className="field-row-2">
-              <div>
-                <label htmlFor="tier">Customer tier</label>
-                <select
-                  id="tier"
-                  value={form.tier}
-                  onChange={(e) => set("tier", e.target.value)}
-                >
-                  {TIERS.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="valuePotentialGbp">Value potential (£)</label>
-                <input
-                  id="valuePotentialGbp"
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={form.valuePotentialGbp}
-                  onChange={(e) => set("valuePotentialGbp", e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="field-row-2">
-              <div>
-                <label htmlFor="newRework">New / Rework</label>
-                <select
-                  id="newRework"
-                  value={form.newRework}
-                  onChange={(e) => set("newRework", e.target.value)}
-                >
-                  {NEW_REWORK.map((v) => (
-                    <option key={v} value={v}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="briefType">Brief type</label>
-                <select
-                  id="briefType"
-                  value={form.briefType}
-                  onChange={(e) => set("briefType", e.target.value)}
-                >
-                  {BRIEF_TYPES.map((v) => (
-                    <option key={v} value={v}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="field-row-2">
-              <div>
-                <label htmlFor="customerApproval">Customer approval</label>
-                <select
-                  id="customerApproval"
-                  value={form.customerApproval}
-                  onChange={(e) => set("customerApproval", e.target.value)}
-                >
-                  {CUSTOMER_APPROVALS.map((v) => (
-                    <option key={v} value={v}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="creativeApproach">Creative approach</label>
-                <select
-                  id="creativeApproach"
-                  value={form.creativeApproach}
-                  onChange={(e) => set("creativeApproach", e.target.value)}
-                >
-                  {CREATIVE_APPROACHES.map((v) => (
-                    <option key={v} value={v}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="field-group">
-          <div className="field-group-label">Timing &amp; reference</div>
-          <div className="field-row-2">
-            <div>
-              <label htmlFor="deadline">Deadline</label>
-              <input
-                id="deadline"
-                type="date"
-                required
-                value={form.deadline}
-                onChange={(e) => set("deadline", e.target.value)}
-              />
-              {daysUntilDeadline !== null && daysUntilDeadline <= 0 && (
-                <div className="field-error">check this date</div>
-              )}
-            </div>
-            <div>
-              <label htmlFor="pvReference">PV reference (optional)</label>
-              <input
-                id="pvReference"
-                value={form.pvReference}
-                onChange={(e) => set("pvReference", e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
-      <div className="card" style={{ marginBottom: "1.25rem" }}>
-        <div className="field-group">
-          <div className="field-group-label">Flags &amp; exceptions</div>
-          <div className="field-row">
-            <div>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={form.nicheFfPreApproved}
-                  onChange={(e) => set("nicheFfPreApproved", e.target.checked)}
-                />
-                Niche / Fine Fragrance pre-approved
-              </label>
-              {form.nicheFfPreApproved && (
-                <div style={{ marginTop: "0.5em" }}>
-                  <label htmlFor="nicheFfRationale">Rationale (required)</label>
-                  <textarea
-                    id="nicheFfRationale"
-                    required
-                    rows={2}
-                    value={form.nicheFfRationale}
-                    onChange={(e) => set("nicheFfRationale", e.target.value)}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={form.strategicPriority}
-                  onChange={(e) => set("strategicPriority", e.target.checked)}
-                />
-                Strategic priority
-              </label>
-              {form.strategicPriority && (
-                <div style={{ marginTop: "0.5em" }}>
-                  <label htmlFor="strategicPriorityRationale">Rationale (required)</label>
-                  <textarea
-                    id="strategicPriorityRationale"
-                    required
-                    rows={2}
-                    value={form.strategicPriorityRationale}
-                    onChange={(e) => set("strategicPriorityRationale", e.target.value)}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div style={{ display: "flex", gap: "1.75rem", flexWrap: "wrap" }}>
-              {(
-                [
-                  ["marketingFlag", "Marketing resource"],
-                  ["ppdFlag", "PPD resource"],
-                  ["gcmsFlag", "GCMS / analytical resource"],
-                ] as const
-              ).map(([key, label]) => (
-                <label key={key} style={{ width: "auto" }}>
+      {step === 1 && (
+        <>
+          <div className="card" style={{ marginBottom: "1.25rem" }}>
+            <div className="field-group">
+              <div className="field-group-label">Commercial details</div>
+              <div className="field-row">
+                <div>
+                  <label htmlFor="customerReference">Customer reference</label>
                   <input
-                    type="checkbox"
-                    checked={form[key]}
-                    onChange={(e) => set(key, e.target.checked)}
+                    id="customerReference"
+                    required
+                    value={form.customerReference}
+                    onChange={(e) => set("customerReference", e.target.value)}
                   />
-                  {label}
-                </label>
-              ))}
+                </div>
+
+                <div className="field-row-2">
+                  <div>
+                    <label htmlFor="tier">Customer tier</label>
+                    <select
+                      id="tier"
+                      value={form.tier}
+                      onChange={(e) => set("tier", e.target.value)}
+                    >
+                      {TIERS.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="valuePotentialGbp">Value potential (£)</label>
+                    <input
+                      id="valuePotentialGbp"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={form.valuePotentialGbp}
+                      onChange={(e) => set("valuePotentialGbp", e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="field-row-2">
+                  <div>
+                    <label htmlFor="newRework">New / Rework</label>
+                    <select
+                      id="newRework"
+                      value={form.newRework}
+                      onChange={(e) => set("newRework", e.target.value)}
+                    >
+                      {NEW_REWORK.map((v) => (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="briefType">Brief type</label>
+                    <select
+                      id="briefType"
+                      value={form.briefType}
+                      onChange={(e) => set("briefType", e.target.value)}
+                    >
+                      {BRIEF_TYPES.map((v) => (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="field-row-2">
+                  <div>
+                    <label htmlFor="customerApproval">Customer approval</label>
+                    <select
+                      id="customerApproval"
+                      value={form.customerApproval}
+                      onChange={(e) => set("customerApproval", e.target.value)}
+                    >
+                      {CUSTOMER_APPROVALS.map((v) => (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="creativeApproach">Creative approach</label>
+                    <select
+                      id="creativeApproach"
+                      value={form.creativeApproach}
+                      onChange={(e) => set("creativeApproach", e.target.value)}
+                    >
+                      {CREATIVE_APPROACHES.map((v) => (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="field-group">
+              <div className="field-group-label">Timing &amp; reference</div>
+              <div className="field-row-2">
+                <div>
+                  <label htmlFor="deadline">Deadline</label>
+                  <input
+                    id="deadline"
+                    type="date"
+                    required
+                    value={form.deadline}
+                    onChange={(e) => set("deadline", e.target.value)}
+                  />
+                  {daysUntilDeadline !== null && daysUntilDeadline <= 0 && (
+                    <div className="field-error">check this date</div>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="pvReference">PV reference (optional)</label>
+                  <input
+                    id="pvReference"
+                    value={form.pvReference}
+                    onChange={(e) => set("pvReference", e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+
+          <div className="card" style={{ marginBottom: "1.25rem" }}>
+            <div className="field-group">
+              <div className="field-group-label">Flags &amp; exceptions</div>
+              <div className="field-row">
+                <div>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={form.nicheFfPreApproved}
+                      onChange={(e) => set("nicheFfPreApproved", e.target.checked)}
+                    />
+                    Niche / Fine Fragrance pre-approved
+                  </label>
+                  {form.nicheFfPreApproved && (
+                    <div style={{ marginTop: "0.5em" }}>
+                      <label htmlFor="nicheFfRationale">Rationale (required)</label>
+                      <textarea
+                        id="nicheFfRationale"
+                        required
+                        rows={2}
+                        value={form.nicheFfRationale}
+                        onChange={(e) => set("nicheFfRationale", e.target.value)}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={form.strategicPriority}
+                      onChange={(e) => set("strategicPriority", e.target.checked)}
+                    />
+                    Strategic priority
+                  </label>
+                  {form.strategicPriority && (
+                    <div style={{ marginTop: "0.5em" }}>
+                      <label htmlFor="strategicPriorityRationale">
+                        Rationale (required)
+                      </label>
+                      <textarea
+                        id="strategicPriorityRationale"
+                        required
+                        rows={2}
+                        value={form.strategicPriorityRationale}
+                        onChange={(e) =>
+                          set("strategicPriorityRationale", e.target.value)
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", gap: "1.75rem", flexWrap: "wrap" }}>
+                  {(
+                    [
+                      ["marketingFlag", "Marketing resource"],
+                      ["ppdFlag", "PPD resource"],
+                      ["gcmsFlag", "GCMS / analytical resource"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <label key={key} style={{ width: "auto" }}>
+                      <input
+                        type="checkbox"
+                        checked={form[key]}
+                        onChange={(e) => set(key, e.target.checked)}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button type="button" className="btn btn-primary" onClick={goNext}>
+              Next: Approvals
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Live score preview — computed client-side with the exact same
           pure engine the server uses, per §9 "a live score preview updates
           as fields change, showing the running total and each component's
           contribution." */}
-      {preview && (
+      {step === 2 && !preview && <p className="helptext">Loading rule set…</p>}
+
+      {step === 2 && preview && (
         <div className="readout" style={{ marginBottom: "1.25rem" }}>
           <div className="helptext" style={{ marginBottom: "0.5em" }}>
             Live score preview
@@ -652,6 +702,104 @@ export function BriefForm() {
               </div>
             </div>
           )}
+          {preview.requirements.length === 0 && (
+            <p className="helptext" style={{ marginTop: "1rem", marginBottom: 0 }}>
+              No approvals required for this brief.
+            </p>
+          )}
+        </div>
+      )}
+
+      {step === 2 && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "1.25rem",
+          }}
+        >
+          <button type="button" className="btn btn-secondary" onClick={goBack}>
+            Back
+          </button>
+          <button type="button" className="btn btn-primary" onClick={goNext}>
+            Next: Review &amp; submit
+          </button>
+        </div>
+      )}
+
+      {step === 3 && preview && (
+        <div className="card" style={{ marginBottom: "1.25rem" }}>
+          <h2>Review</h2>
+          <dl className="detail-list" style={{ marginBottom: "1.25rem" }}>
+            <dt>Customer reference</dt>
+            <dd>{form.customerReference}</dd>
+            <dt>Tier</dt>
+            <dd>{form.tier}</dd>
+            <dt>Value potential</dt>
+            <dd>£{(Number(form.valuePotentialGbp) || 0).toLocaleString("en-GB")}</dd>
+            <dt>New/Rework</dt>
+            <dd>{form.newRework}</dd>
+            <dt>Brief type</dt>
+            <dd>{form.briefType}</dd>
+            <dt>Customer approval</dt>
+            <dd>{form.customerApproval}</dd>
+            <dt>Creative approach</dt>
+            <dd>{form.creativeApproach}</dd>
+            <dt>Deadline</dt>
+            <dd>{form.deadline}</dd>
+            {form.pvReference && (
+              <>
+                <dt>PV reference</dt>
+                <dd>{form.pvReference}</dd>
+              </>
+            )}
+          </dl>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: "0.85rem",
+              marginBottom: "1rem",
+            }}
+          >
+            <span className="readout-score">{preview.stageA.score.toFixed(1)}</span>
+            <span
+              className={`status-pill status-${
+                preview.stageA.commercialDecision === "declined"
+                  ? "declined"
+                  : preview.stageA.commercialDecision === "auto_approved"
+                    ? "approved"
+                    : "pending"
+              }`}
+            >
+              {DECISION_LABEL[preview.stageA.commercialDecision]}
+            </span>
+          </div>
+
+          {Object.entries(preApprovals).filter(([, v]) => v.enabled).length > 0 && (
+            <div className="helptext" style={{ marginBottom: 0 }}>
+              {Object.entries(preApprovals).filter(([, v]) => v.enabled).length}{" "}
+              pre-approval declaration(s) will be recorded on submit.
+            </div>
+          )}
+        </div>
+      )}
+
+      {step === 3 && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "1.25rem",
+          }}
+        >
+          <button type="button" className="btn btn-secondary" onClick={goBack}>
+            Back
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
+            {submitting ? "Submitting…" : "Submit brief"}
+          </button>
         </div>
       )}
 
@@ -660,10 +808,6 @@ export function BriefForm() {
           {result.message}
         </div>
       )}
-
-      <button type="submit" className="btn btn-primary" disabled={submitting}>
-        {submitting ? "Submitting…" : "Submit brief"}
-      </button>
     </form>
   );
 }

@@ -73,10 +73,27 @@ priority order itself may change as items get picked up.
       pending. The existing e2e suite's single-item approve/reject flow
       (which shares the same page) was re-run afterward and still passes
       — the DOM restructuring for grouping didn't regress it.
-- [ ] **3-step submission wizard** (§9) — currently one page. Not wrong,
-      just not what the spec describes; revisit once Stage C exists,
-      since step 2 of the real wizard is specifically the per-requirement
-      pre-approval declaration.
+- [x] ~~**3-step submission wizard** (§9)~~ — **DONE.**
+      `src/app/briefs/new/brief-form.tsx` now has a real 3-step flow: (1)
+      brief details + flags — everything the engine needs to compute
+      requirements, (2) the live score preview and, per §9's own
+      description of what step 2 is for, the per-requirement pre-approval
+      declarations, (3) a read-only review before the real submit.
+      Architecturally low-risk: all form state already lived in React
+      state rather than native form serialization, so gating which
+      section is *visible* by step doesn't change what gets submitted —
+      no new data-flow path, just conditional rendering plus a
+      `reportValidity()` check on "Next" so a step's required fields
+      still block advancing past it the same way they used to block
+      submission.
+      **Verified against the real e2e suite, not just by inspection**: all
+      three journeys were updated to actually click through the three
+      steps (rather than assume everything's still on one page) and
+      re-run for real, twice, from a clean state — still 3/3 passing.
+      The full unit/integration suite (127/128) was also re-run
+      unaffected, since nothing about the submission API or decision
+      engine changed, only the client-side presentation of the same
+      existing fields.
 - [ ] **Azure infra** (§14 step 1, Bicep). Deliberately deferred — testing
       on Vercel/Supabase per explicit direction; Azure comes post-testing.
 

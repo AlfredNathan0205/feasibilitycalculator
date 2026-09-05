@@ -516,6 +516,52 @@ button {
   margin: 0;
 }
 
+/* Wizard step indicator — a row of "1 Brief details · 2 Approvals ·
+ * 3 Review & submit", quiet until a step is current or done. Not a
+ * progress bar or numbered pills alone — the label stays visible at
+ * every step so it reads as a map of the whole journey, not just "you
+ * are here". */
+.wizard-steps {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--cpl-border);
+  font-size: 0.875rem;
+  color: var(--cpl-ink-soft);
+}
+.wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.wizard-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5em;
+  height: 1.5em;
+  border-radius: 50%;
+  border: 1.5px solid var(--cpl-border-strong);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  flex-shrink: 0;
+}
+.wizard-step-active {
+  color: var(--cpl-ink);
+  font-weight: 600;
+}
+.wizard-step-active .wizard-step-num {
+  background: var(--cpl-indigo);
+  border-color: var(--cpl-indigo);
+  color: var(--cpl-white);
+}
+.wizard-step-done .wizard-step-num {
+  background: var(--cpl-green-tint);
+  border-color: var(--cpl-green);
+  color: var(--cpl-green);
+}
+
 /* Full-page outcome states — sign-in gates, revoke confirmation/result,
  * "no such code" — a centered card with a colored top edge signaling
  * what kind of state it is, instead of every page inventing its own
