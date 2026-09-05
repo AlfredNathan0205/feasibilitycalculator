@@ -10,9 +10,11 @@ export default async function VerifyLandingPage() {
     return (
       <AppShell session={null}>
         <div className="container">
-          <p style={{ marginTop: "3rem" }}>
-            <a href="/">Sign in</a> first.
-          </p>
+          <div className="state-card state-card-neutral">
+            <p style={{ margin: 0 }}>
+              <a href="/">Sign in</a> first.
+            </p>
+          </div>
         </div>
       </AppShell>
     );
@@ -22,7 +24,7 @@ export default async function VerifyLandingPage() {
     return (
       <AppShell session={session}>
         <div className="container">
-          <div className="card" style={{ marginTop: "3rem" }}>
+          <div className="state-card state-card-warning">
             <p style={{ margin: 0 }}>Requires the Auditor or Admin role.</p>
           </div>
         </div>

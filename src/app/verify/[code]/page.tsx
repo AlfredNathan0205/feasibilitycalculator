@@ -46,7 +46,9 @@ export default async function VerifyPage({
     return (
       <AppShell session={null}>
         <div className="container">
-          <p style={{ marginTop: "3rem" }}>Not signed in.</p>
+          <div className="state-card state-card-neutral">
+            <p style={{ margin: 0 }}>Not signed in.</p>
+          </div>
         </div>
       </AppShell>
     );
@@ -55,7 +57,7 @@ export default async function VerifyPage({
     return (
       <AppShell session={session}>
         <div className="container">
-          <div className="card" style={{ marginTop: "3rem" }}>
+          <div className="state-card state-card-warning">
             <p style={{ margin: 0 }}>Requires the Auditor or Admin role.</p>
           </div>
         </div>
@@ -70,7 +72,7 @@ export default async function VerifyPage({
       <AppShell session={session}>
         <div className="container">
           <h1>Verify Approval Code</h1>
-          <div className="card">
+          <div className="state-card state-card-error" style={{ margin: 0 }}>
             <p style={{ margin: 0 }}>
               <code style={{ fontFamily: "var(--font-mono)" }}>
                 {verification.formatted ?? code}
@@ -95,7 +97,7 @@ export default async function VerifyPage({
       <AppShell session={session}>
         <div className="container">
           <h1>Verify Approval Code</h1>
-          <div className="card">
+          <div className="state-card state-card-warning" style={{ margin: 0 }}>
             <p style={{ margin: 0 }}>
               <code style={{ fontFamily: "var(--font-mono)" }}>
                 {verification.formatted}

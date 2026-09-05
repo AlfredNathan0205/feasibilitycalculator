@@ -516,6 +516,36 @@ button {
   margin: 0;
 }
 
+/* Full-page outcome states — sign-in gates, revoke confirmation/result,
+ * "no such code" — a centered card with a colored top edge signaling
+ * what kind of state it is, instead of every page inventing its own
+ * `style={{marginTop:"3rem"}}` wrapper. */
+.state-card {
+  max-width: 32rem;
+  margin: 3rem auto 0;
+  border-radius: 8px;
+  padding: 1.75rem 2rem;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--cpl-border);
+  border-top: 3px solid var(--cpl-border-strong);
+  background: var(--cpl-white);
+}
+.state-card h1 {
+  margin-top: 0;
+}
+.state-card-neutral {
+  border-top-color: var(--cpl-indigo);
+}
+.state-card-warning {
+  border-top-color: var(--cpl-amber);
+}
+.state-card-success {
+  border-top-color: var(--cpl-green);
+}
+.state-card-error {
+  border-top-color: var(--cpl-red);
+}
+
 /* Status pill — reads like a specimen/sample label, matching the amber
  * glass bottle labels in CPL's own lab. One accent color per state, a
  * left rule rather than a filled badge, so it reads as information (this
