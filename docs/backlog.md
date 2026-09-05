@@ -45,8 +45,34 @@ priority order itself may change as items get picked up.
 
 ## Not started
 
-- [ ] Bulk-approve for multiple items of the same requirement type in one
-      action (§9) — the approver queue built handles one-at-a-time only.
+- [x] ~~Bulk-approve for multiple items of the same requirement type in one
+      action (§9)~~ — **DONE.** `decideRequirementsBulk`
+      (`src/services/decide-requirement.ts`) loops the existing, unchanged
+      `decideRequirement` per item — no new decision-logic code path, so
+      Stage D computation can never drift between single and bulk
+      approval. One item failing (already decided, wrong role) doesn't
+      abort the rest of the batch; each gets an independent result.
+      Approve-only, deliberately — reject requires a mandatory per-item
+      comment with no sensible bulk equivalent.
+      The approvals queue (`src/app/approvals/page.tsx`) now groups
+      pending items by requirement type, each group with its own
+      "Approve selected" action — items are HTML-associated to their
+      group's `<form>` via the `form` attribute (not nested forms), which
+      makes "same requirement type only" true by construction rather
+      than a runtime check. Every id is independently re-authorized
+      server-side before being included in the batch (never trust which
+      checkboxes the client rendered).
+      **Verified against real Postgres** (3 new integration tests: two
+      independent requirements from separate briefs approved in one call;
+      one already-decided item in a batch fails independently without
+      blocking the other; an empty id list is a no-op) **and against a
+      real browser**: created three real pending requirements, drove an
+      actual Chromium session through sign-in → select two of three →
+      submit, confirmed via direct DB query and a fresh page load that
+      exactly the selected two were approved and the third stayed
+      pending. The existing e2e suite's single-item approve/reject flow
+      (which shares the same page) was re-run afterward and still passes
+      — the DOM restructuring for grouping didn't regress it.
 - [ ] **3-step submission wizard** (§9) — currently one page. Not wrong,
       just not what the spec describes; revisit once Stage C exists,
       since step 2 of the real wizard is specifically the per-requirement

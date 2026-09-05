@@ -6,6 +6,7 @@ import * as schema from "../db/schema.js";
 import { createBrief } from "./create-brief.js";
 import {
   decideRequirement,
+  decideRequirementsBulk,
   listPendingRequirementsForRoles,
   ValidationError,
   NotFoundError,
@@ -242,5 +243,65 @@ describeIfDb("decideRequirement (integration)", () => {
   it("returns an empty array for an empty role list without querying", async () => {
     const items = await listPendingRequirementsForRoles(db, []);
     expect(items).toEqual([]);
+  });
+
+  describe("decideRequirementsBulk", () => {
+    it("approves multiple independent requirements from separate briefs in one call", async () => {
+      const a = await submitBriefWithPpdRequirement();
+      const b = await submitBriefWithPpdRequirement();
+      const reqA = await getTheOneRequirement(a.decisionId);
+      const reqB = await getTheOneRequirement(b.decisionId);
+
+      const result = await decideRequirementsBulk(db, {
+        requirementIds: [reqA.id, reqB.id],
+        decidedBy: ppdApproverId,
+      });
+
+      expect(result.failed).toEqual([]);
+      expect(result.succeeded).toHaveLength(2);
+      expect(result.succeeded.every((r) => r.codeJustIssued)).toBe(true);
+      expect(result.succeeded.every((r) => r.approvalCode !== null)).toBe(true);
+
+      const [decisionA] = await db
+        .select()
+        .from(schema.decisions)
+        .where(eq(schema.decisions.id, a.decisionId));
+      expect(decisionA!.finalStatus).toBe("approved");
+    });
+
+    it("one already-decided requirement in the batch fails independently without blocking the rest", async () => {
+      const a = await submitBriefWithPpdRequirement();
+      const b = await submitBriefWithPpdRequirement();
+      const reqA = await getTheOneRequirement(a.decisionId);
+      const reqB = await getTheOneRequirement(b.decisionId);
+
+      // Decide reqA ahead of time, outside the batch — simulating another
+      // approver having just actioned it a moment earlier.
+      await decideRequirement(db, {
+        requirementId: reqA.id,
+        decidedBy: ppdApproverId,
+        decision: "reject",
+        comment: "already handled by someone else",
+      });
+
+      const result = await decideRequirementsBulk(db, {
+        requirementIds: [reqA.id, reqB.id],
+        decidedBy: ppdApproverId,
+      });
+
+      expect(result.succeeded).toHaveLength(1);
+      expect(result.succeeded[0]!.requirementId).toBe(reqB.id);
+      expect(result.failed).toHaveLength(1);
+      expect(result.failed[0]!.requirementId).toBe(reqA.id);
+      expect(result.failed[0]!.error).toMatch(/already "rejected"/);
+    });
+
+    it("an empty id list succeeds trivially with nothing decided", async () => {
+      const result = await decideRequirementsBulk(db, {
+        requirementIds: [],
+        decidedBy: ppdApproverId,
+      });
+      expect(result).toEqual({ succeeded: [], failed: [] });
+    });
   });
 });

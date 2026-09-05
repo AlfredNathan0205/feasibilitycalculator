@@ -169,6 +169,53 @@ export async function decideRequirement(
   });
 }
 
+/**
+ * §9: "Bulk-approve for multiple items of the same requirement type in
+ * one action." Each requirement still goes through the exact same
+ * decideRequirement() logic and gets its own transaction/audit event —
+ * this is a convenience loop, not a different code path, so a brief's
+ * Stage D computation can never drift between the single-item and
+ * bulk-item approval flows.
+ *
+ * One requirement failing (e.g. someone else decided it a moment ago)
+ * does not abort the rest of the batch — each item is independent, and
+ * the caller gets a per-item result to report back accurately rather
+ * than an all-or-nothing outcome that would silently lose already-
+ * succeeded approvals if a later item in the batch failed.
+ *
+ * Authorization is NOT checked in here, same convention as
+ * decideRequirement — the caller must have already run
+ * requireCanDecideRequirement() for every id in the list.
+ */
+export interface BulkDecideResult {
+  succeeded: DecideRequirementResult[];
+  failed: { requirementId: string; error: string }[];
+}
+
+export async function decideRequirementsBulk(
+  db: PostgresJsDatabase<typeof schema>,
+  input: { requirementIds: string[]; decidedBy: string },
+  now: Date = new Date(),
+): Promise<BulkDecideResult> {
+  const result: BulkDecideResult = { succeeded: [], failed: [] };
+
+  for (const requirementId of input.requirementIds) {
+    try {
+      const outcome = await decideRequirement(
+        db,
+        { requirementId, decidedBy: input.decidedBy, decision: "approve" },
+        now,
+      );
+      result.succeeded.push(outcome);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      result.failed.push({ requirementId, error: message });
+    }
+  }
+
+  return result;
+}
+
 /** §5 Stage C revoke path: "If the manager revokes, the requirement
  * returns to pending, the brief loses any issued Approval Code, and the
  * submitter and their line manager are both notified."
