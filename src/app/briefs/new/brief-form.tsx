@@ -254,7 +254,7 @@ export function BriefForm() {
             {data.requirementCount === 0 ? (
               <span style={{ color: "var(--cpl-ink-soft)" }}>None</span>
             ) : (
-              <span style={{ color: "var(--cpl-amber)", fontWeight: 600 }}>
+              <span style={{ color: "var(--cpl-pending-text)", fontWeight: 600 }}>
                 {data.requirementCount} pending
               </span>
             )}
@@ -264,8 +264,8 @@ export function BriefForm() {
         {data.approvalCode ? (
           <div
             style={{
-              background: "var(--cpl-indigo-tint)",
-              border: "1px solid var(--cpl-indigo-border)",
+              background: "var(--cpl-purple-tint)",
+              border: "1px solid var(--cpl-purple-border)",
               borderRadius: 6,
               padding: "1rem 1.25rem",
             }}
@@ -279,7 +279,7 @@ export function BriefForm() {
                   fontFamily: "var(--font-mono)",
                   fontSize: "1.25rem",
                   fontWeight: 700,
-                  color: "var(--cpl-indigo-ink)",
+                  color: "var(--cpl-purple-ink)",
                 }}
               >
                 {data.approvalCode}
@@ -626,8 +626,8 @@ export function BriefForm() {
                     <div
                       key={r.requirementType}
                       style={{
-                        border: "1px solid var(--cpl-indigo-border)",
-                        background: "var(--cpl-indigo-tint)",
+                        border: "1px solid var(--cpl-purple-border)",
+                        background: "var(--cpl-purple-tint)",
                         borderRadius: 6,
                         padding: "0.85rem 1rem",
                       }}

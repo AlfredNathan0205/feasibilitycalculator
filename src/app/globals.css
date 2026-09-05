@@ -1,25 +1,14 @@
 /**
- * Design tokens, grounded in CPL Aromas' actual brand:
- *  - Brand indigo #331AF0, sampled directly from the CPL logo file.
- *  - The amber accent is drawn from CPL's own fragrance library — rows of
- *    amber glass sample bottles on white shelving (from the office photos
- *    supplied) — used sparingly, the way a specimen label uses color: to
- *    mark status, not to decorate.
- *  - Everything else (ink, paper, borders) stays quiet and precise, the
- *    way their actual lab space reads: white, glass, steel, one bold color.
+ * Design tokens — CPL Aromas brand, muted-purple palette.
+ * Poppins (display/body) + IBM Plex Mono (scores, codes, technical).
  */
 
 :root {
-  /* Brand */
-  --cpl-indigo: #331af0;
-  --cpl-indigo-ink: #241099; /* darker, for text-on-white at AA contrast */
-  --cpl-indigo-tint: #eeebfe; /* pale wash for selected/hover backgrounds */
-  --cpl-indigo-border: #d3caf9;
-
-  /* Amber — status/accent, used the way a specimen label is used */
-  --cpl-amber: #b5651d;
-  --cpl-amber-tint: #fbf1e6;
-  --cpl-amber-border: #e8cba3;
+  /* Brand purple */
+  --cpl-purple: #6b4fa6;
+  --cpl-purple-ink: #4a3570;
+  --cpl-purple-tint: #f4eefb;
+  --cpl-purple-border: #ddd0ef;
 
   /* Status */
   --cpl-green: #1f7a4d;
@@ -37,18 +26,24 @@
   --cpl-border: #e3e1ea;
   --cpl-border-strong: #c8c5d6;
 
+  /* Sidebar chrome */
+  --cpl-dark: #211a2e;
+
+  /* Pending (neutral, not brand-colored) */
+  --cpl-pending-bg: #f1f0f5;
+  --cpl-pending-border: #6b6478;
+  --cpl-pending-text: #5b5566;
+
   /* Type */
-  --font-display: "Inter", -apple-system, "Segoe UI", sans-serif;
-  --font-body: "Inter", -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Poppins", -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Poppins", -apple-system, "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
 
-  /* Elevation — tinted with the brand indigo rather than flat grey, so
-   * depth reads as "this instrument's surface" rather than generic
-   * SaaS-card drop-shadow. Two steps: resting cards, and the one
-   * "instrument readout" surface (the live score preview) that carries
-   * slightly more lift, per the single-bold-moment principle. */
-  --shadow-card: 0 1px 2px rgba(51, 26, 240, 0.045), 0 6px 20px rgba(51, 26, 240, 0.055);
-  --shadow-readout: 0 2px 4px rgba(51, 26, 240, 0.07), 0 16px 40px rgba(51, 26, 240, 0.1);
+  /* Elevation — tinted with brand purple */
+  --shadow-card: 0 1px 2px rgba(107, 79, 166, 0.045),
+    0 6px 20px rgba(107, 79, 166, 0.055);
+  --shadow-readout: 0 2px 4px rgba(107, 79, 166, 0.07),
+    0 16px 40px rgba(107, 79, 166, 0.1);
 }
 
 * {
@@ -91,7 +86,7 @@ h3 {
 }
 
 a {
-  color: var(--cpl-indigo-ink);
+  color: var(--cpl-purple-ink);
 }
 
 label {
@@ -102,8 +97,6 @@ label {
   margin-bottom: 0.35em;
 }
 
-/* A label wrapping a checkbox reads as one clickable row, not a form
- * label sitting above a field — different layout, same element. */
 label:has(> input[type="checkbox"]) {
   display: flex;
   align-items: center;
@@ -153,19 +146,16 @@ textarea:focus,
 button:focus-visible,
 a:focus-visible {
   outline: none;
-  border-color: var(--cpl-indigo);
-  box-shadow: 0 0 0 3px var(--cpl-indigo-tint);
+  border-color: var(--cpl-purple);
+  box-shadow: 0 0 0 3px var(--cpl-purple-tint);
 }
 
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--cpl-indigo);
+  outline: 2px solid var(--cpl-purple);
   outline-offset: 2px;
 }
 
-/* Native <select>, given a real chevron and breathing room instead of
- * each browser's inconsistent default arrow — this alone is most of what
- * makes a form read as "built" rather than "unstyled HTML". */
 select {
   appearance: none;
   -webkit-appearance: none;
@@ -177,10 +167,6 @@ select {
   cursor: pointer;
 }
 
-/* Native checkbox, redrawn — a real checkmark on a brand-indigo fill
- * when checked, rather than each OS's own default control. Still a real
- * <input type="checkbox">: automation (Playwright's .check()) and
- * assistive tech both see the same native element underneath. */
 input[type="checkbox"] {
   appearance: none;
   -webkit-appearance: none;
@@ -196,7 +182,7 @@ input[type="checkbox"] {
   margin: 0;
 }
 input[type="checkbox"]:hover {
-  border-color: var(--cpl-indigo);
+  border-color: var(--cpl-purple);
 }
 input[type="checkbox"]::before {
   content: "";
@@ -209,8 +195,8 @@ input[type="checkbox"]::before {
   background: var(--cpl-white);
 }
 input[type="checkbox"]:checked {
-  background: var(--cpl-indigo);
-  border-color: var(--cpl-indigo);
+  background: var(--cpl-purple);
+  border-color: var(--cpl-purple);
 }
 input[type="checkbox"]:checked::before {
   transform: scale(1);
@@ -222,6 +208,8 @@ button {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* ── Buttons ── */
 
 .btn {
   display: inline-flex;
@@ -244,15 +232,15 @@ button {
 }
 
 .btn-primary {
-  background: var(--cpl-indigo);
+  background: var(--cpl-purple);
   color: var(--cpl-white);
-  border-color: var(--cpl-indigo);
+  border-color: var(--cpl-purple);
   box-shadow:
-    0 1px 2px rgba(51, 26, 240, 0.15),
-    0 6px 16px rgba(51, 26, 240, 0.18);
+    0 1px 2px rgba(107, 79, 166, 0.15),
+    0 6px 16px rgba(107, 79, 166, 0.18);
 }
 .btn-primary:hover {
-  background: #2814c9;
+  background: #5a4290;
 }
 .btn-primary:disabled {
   background: var(--cpl-border-strong);
@@ -271,6 +259,15 @@ button {
   border-color: var(--cpl-ink-soft);
 }
 
+.btn-danger {
+  background: var(--cpl-white);
+  color: var(--cpl-red);
+  border-color: var(--cpl-red);
+}
+.btn-danger:hover {
+  background: var(--cpl-red-tint);
+}
+
 .field-error {
   color: var(--cpl-red);
   font-size: 0.8125rem;
@@ -283,6 +280,8 @@ button {
   margin-top: 0.3em;
 }
 
+/* ── Card ── */
+
 .card {
   background: var(--cpl-white);
   border: 1px solid var(--cpl-border);
@@ -291,10 +290,6 @@ button {
   box-shadow: var(--shadow-card);
 }
 
-/* A grouped set of fields within a card — a left rule stands in for a
- * fieldset boundary, so related inputs read as one unit without another
- * nested box. The label is a real heading of the group, sentence case,
- * not a tracked-out eyebrow. */
 .field-group + .field-group {
   margin-top: 1.75rem;
   padding-top: 1.5rem;
@@ -307,7 +302,7 @@ button {
   color: var(--cpl-ink);
   margin-bottom: 1rem;
   padding-left: 0.85rem;
-  border-left: 3px solid var(--cpl-indigo-border);
+  border-left: 3px solid var(--cpl-border-strong);
 }
 
 .field-row {
@@ -325,14 +320,12 @@ button {
   }
 }
 
-/* The "instrument readout" — the one surface in the form allowed extra
- * lift and a top accent, since the live score preview is the single
- * thing every field on the page feeds into. Everything else on the page
- * stays at --shadow-card. */
+/* ── Readout (live score preview) ── */
+
 .readout {
   background: var(--cpl-white);
-  border: 1px solid var(--cpl-indigo-border);
-  border-top: 3px solid var(--cpl-indigo);
+  border: 1px solid var(--cpl-purple-border);
+  border-top: 3px solid var(--cpl-purple);
   border-radius: 8px;
   padding: 1.75rem;
   box-shadow: var(--shadow-readout);
@@ -341,7 +334,7 @@ button {
   font-family: var(--font-mono);
   font-size: 2.5rem;
   font-weight: 700;
-  color: var(--cpl-indigo-ink);
+  color: var(--cpl-purple-ink);
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -366,7 +359,7 @@ button {
 .readout-bar-fill {
   display: block;
   height: 100%;
-  background: var(--cpl-indigo);
+  background: var(--cpl-purple);
   border-radius: 3px;
   transition: width 0.15s ease;
 }
@@ -377,8 +370,8 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-/* Page header — a title with optional trailing actions, used at the top
- * of every internal page instead of ad hoc flex containers each time. */
+/* ── Page header ── */
+
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -392,8 +385,54 @@ button {
   gap: 0.6rem;
 }
 
-/* Data table — used across the dashboard and admin views. Rows read as
- * rulings on a ledger (hairline top borders), not a bordered grid. */
+/* ── Eyebrow (role label above page title) ── */
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cpl-ink-soft);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+/* ── KPI strip ── */
+
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.kpi-card {
+  background: var(--cpl-white);
+  border: 1px solid var(--cpl-border);
+  border-radius: 8px;
+  padding: 1.1rem 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+.kpi-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cpl-ink-soft);
+  margin-bottom: 0.25rem;
+}
+.kpi-value {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--cpl-purple-ink);
+  font-variant-numeric: tabular-nums;
+}
+.kpi-caption {
+  font-size: 0.75rem;
+  color: var(--cpl-ink-soft);
+  margin-top: 0.15rem;
+}
+
+/* ── Data table ── */
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -420,9 +459,6 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-/* Modifier for a table that IS the card (card padding: 0) rather than
- * sitting inside one — full-bleed rows with their own horizontal padding
- * and a tinted header row. */
 .data-table-flush th,
 .data-table-flush td {
   padding: 0.75em 1.25rem;
@@ -437,8 +473,8 @@ button {
   border-top: 1px solid var(--cpl-border);
 }
 
-/* Bar row — the dashboard's distribution rows (volume by tier, score
- * distribution, etc.) share this with the readout's breakdown bars. */
+/* ── Bar rows (dashboard, readout) ── */
+
 .bar-row {
   display: grid;
   grid-template-columns: 9rem 1fr auto;
@@ -463,7 +499,7 @@ button {
 .bar-fill {
   display: block;
   height: 100%;
-  background: var(--cpl-indigo);
+  background: var(--cpl-purple);
   border-radius: 3px;
 }
 .bar-value {
@@ -475,7 +511,7 @@ button {
 
 .panel-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 1.25rem;
 }
 .panel-grid-full {
@@ -487,9 +523,8 @@ button {
   }
 }
 
-/* A queue/list item — the approvals queue and pre-approval requirement
- * cards both read as a requisition ticket: a clear top line of identity,
- * a quiet metadata line, actions along the bottom. */
+/* ── Ticket (approvals, requirement cards) ── */
+
 .ticket {
   border: 1px solid var(--cpl-border);
   border-radius: 7px;
@@ -517,7 +552,8 @@ button {
   font-family: var(--font-mono);
 }
 
-/* A definition list of read-only facts — verify/audit pages. */
+/* ── Detail list (verify/audit pages) ── */
+
 .detail-list {
   margin: 0;
   display: grid;
@@ -532,11 +568,8 @@ button {
   margin: 0;
 }
 
-/* Wizard step indicator — a row of "1 Brief details · 2 Approvals ·
- * 3 Review & submit", quiet until a step is current or done. Not a
- * progress bar or numbered pills alone — the label stays visible at
- * every step so it reads as a map of the whole journey, not just "you
- * are here". */
+/* ── Wizard step indicator (square badges, not circles) ── */
+
 .wizard-steps {
   display: flex;
   gap: 1.5rem;
@@ -557,7 +590,7 @@ button {
   justify-content: center;
   width: 1.5em;
   height: 1.5em;
-  border-radius: 50%;
+  border-radius: 3px;
   border: 1.5px solid var(--cpl-border-strong);
   font-family: var(--font-mono);
   font-size: 0.8125rem;
@@ -568,8 +601,8 @@ button {
   font-weight: 600;
 }
 .wizard-step-active .wizard-step-num {
-  background: var(--cpl-indigo);
-  border-color: var(--cpl-indigo);
+  background: var(--cpl-purple);
+  border-color: var(--cpl-purple);
   color: var(--cpl-white);
 }
 .wizard-step-done .wizard-step-num {
@@ -578,10 +611,8 @@ button {
   color: var(--cpl-green);
 }
 
-/* Full-page outcome states — sign-in gates, revoke confirmation/result,
- * "no such code" — a centered card with a colored top edge signaling
- * what kind of state it is, instead of every page inventing its own
- * `style={{marginTop:"3rem"}}` wrapper. */
+/* ── State card (full-page outcome states) ── */
+
 .state-card {
   max-width: 32rem;
   margin: 3rem auto 0;
@@ -596,10 +627,10 @@ button {
   margin-top: 0;
 }
 .state-card-neutral {
-  border-top-color: var(--cpl-indigo);
+  border-top-color: var(--cpl-purple);
 }
 .state-card-warning {
-  border-top-color: var(--cpl-amber);
+  border-top-color: #b5651d;
 }
 .state-card-success {
   border-top-color: var(--cpl-green);
@@ -608,10 +639,8 @@ button {
   border-top-color: var(--cpl-red);
 }
 
-/* Status pill — reads like a specimen/sample label, matching the amber
- * glass bottle labels in CPL's own lab. One accent color per state, a
- * left rule rather than a filled badge, so it reads as information (this
- * row's status) rather than decoration. */
+/* ── Status pill ── */
+
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -633,99 +662,145 @@ button {
   color: var(--cpl-red);
 }
 .status-pending {
-  background: var(--cpl-amber-tint);
-  border-color: var(--cpl-amber);
-  color: var(--cpl-amber);
+  background: var(--cpl-pending-bg);
+  border-color: var(--cpl-pending-border);
+  color: var(--cpl-pending-text);
 }
 
-/* App shell / top nav — a slim instrument bezel, not a marketing header.
- * The wordmark stays quiet; the one accent is the bottom rule picking up
- * the amber used everywhere else as a status/specimen marker. */
-.shell-header {
-  background: var(--cpl-indigo);
-  border-bottom: 3px solid var(--cpl-amber);
-}
-.shell-header-inner {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 0.85rem 1.5rem;
+/* ── Sidebar app shell ── */
+
+.shell-layout {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  min-height: 100vh;
 }
+
+.shell-sidebar {
+  width: 236px;
+  min-width: 236px;
+  background: var(--cpl-dark);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.5rem 1.25rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  overflow-y: auto;
+}
+
 .shell-brand {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.6rem;
   text-decoration: none;
   color: #fff;
+  margin-bottom: 0.35rem;
 }
 .shell-brand-name {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: -0.01em;
+  font-size: 1.05rem;
+  color: #fff;
+  line-height: 1.2;
 }
+.shell-brand-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #9a97a6;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.15rem;
+}
+/* Playful Square motif — small brand accent below the wordmark */
+.shell-brand-accent {
+  display: block;
+  width: 8px;
+  height: 8px;
+  background: var(--cpl-purple);
+  margin-top: 0.5rem;
+  margin-bottom: 1.25rem;
+  /* deliberately no border-radius — square corners are the brand motif */
+}
+
 .shell-nav {
   display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.875rem;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 .shell-nav-link {
-  color: rgba(255, 255, 255, 0.85);
+  display: block;
+  color: #c9c7d1;
   text-decoration: none;
-  padding: 0.45em 0.75em;
-  border-radius: 5px;
+  padding: 0.55em 0.75em;
+  border-radius: 3px;
+  font-size: 0.9rem;
   transition:
     background 0.12s ease,
     color 0.12s ease;
 }
 .shell-nav-link:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
-.shell-user {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.8125rem;
-  padding-left: 0.5rem;
-  margin-left: 0.25rem;
-  border-left: 1px solid rgba(255, 255, 255, 0.25);
+.shell-nav-link-active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-weight: 600;
+}
+
+.shell-footer {
+  margin-top: auto;
+  padding-top: 1.5rem;
+}
+.shell-user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+}
+.shell-user-role {
+  font-size: 0.75rem;
+  color: #9a97a6;
+  margin-bottom: 0.75rem;
 }
 .shell-signout {
-  background: rgba(255, 255, 255, 0.12);
+  display: block;
+  width: 100%;
+  background: transparent;
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 5px;
   padding: 0.45em 0.85em;
   font-size: 0.8125rem;
   font-weight: 600;
+  text-align: center;
   transition: background 0.12s ease;
 }
 .shell-signout:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
 }
+
+.shell-main {
+  margin-left: 236px;
+  flex: 1;
+  min-width: 0;
+  background: var(--cpl-paper);
+  padding: 2rem 2.25rem 4rem;
+}
+
+/* ── Containers (used inside shell-main) ── */
 
 .container {
   max-width: 720px;
-  margin: 0 auto;
-  padding: 2.5rem 1.5rem 4rem;
 }
 
 .container-wide {
   max-width: 1080px;
-  margin: 0 auto;
-  padding: 2.5rem 1.5rem 4rem;
 }
 
-/* Full-bleed centered layout for the sign-in screen — this is the very
- * first thing anyone sees, and top-aligning a small card in a wide
- * container left most of the viewport as dead grey space. A two-panel
- * split gives that space an actual job (establishing what this tool is)
- * instead of just centering a card on emptiness. */
+/* ── Sign-in screen (full viewport, no sidebar) ── */
+
 .auth-screen {
-  min-height: calc(100vh - 70px);
+  min-height: 100vh;
   display: grid;
   grid-template-columns: 1fr 1fr;
 }
@@ -738,59 +813,40 @@ button {
   }
 }
 .auth-brand-panel {
-  background: var(--cpl-indigo);
+  background:
+    linear-gradient(180deg, rgba(58, 41, 92, 0.55), rgba(40, 28, 68, 0.85)),
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 20px,
+      rgba(255, 255, 255, 0.03) 20px,
+      rgba(255, 255, 255, 0.03) 40px
+    );
+  background-color: var(--cpl-dark);
   color: #fff;
   display: flex;
   flex-direction: column;
   justify-content: center;
   padding: 4rem;
-  position: relative;
-  overflow: hidden;
-}
-.auth-brand-panel::after {
-  content: "";
-  position: absolute;
-  right: -8rem;
-  bottom: -8rem;
-  width: 22rem;
-  height: 22rem;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-.auth-brand-panel::before {
-  content: "";
-  position: absolute;
-  right: -3rem;
-  bottom: -3rem;
-  width: 14rem;
-  height: 14rem;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .auth-brand-eyebrow {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
-  color: var(--cpl-amber);
+  color: rgba(255, 255, 255, 0.65);
   margin-bottom: 1rem;
-  letter-spacing: 0.02em;
-}
-.auth-brand-panel h1 {
-  color: #fff;
-  font-size: 2rem;
-  max-width: 22rem;
-  margin-bottom: 1rem;
+  letter-spacing: 0.06em;
 }
 .auth-brand-headline {
-  color: #fff;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 2rem;
   line-height: 1.15;
   max-width: 22rem;
   margin-bottom: 1rem;
+  color: #fff;
 }
 .auth-brand-panel p {
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.8);
   max-width: 24rem;
   font-size: 1rem;
 }
@@ -799,10 +855,45 @@ button {
   align-items: center;
   justify-content: center;
   padding: 2rem 1.5rem;
+  background: linear-gradient(160deg, #f8f5fc, #f0e9fa);
 }
 .auth-card {
   width: 100%;
   max-width: 26rem;
+  background: var(--cpl-white);
+  border-radius: 18px;
+  box-shadow: 0 8px 30px rgba(107, 79, 166, 0.12);
+  padding: 2rem;
+}
+.auth-card h1 {
+  text-align: center;
+}
+.auth-logo-badge {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.auth-subtitle {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--cpl-ink-soft);
+  margin-bottom: 1.5rem;
+}
+
+/* ── Approval code highlight box ── */
+
+.approval-code-box {
+  background: var(--cpl-purple-tint);
+  border: 1px solid var(--cpl-purple-border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  text-align: center;
+}
+.approval-code-value {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--cpl-purple-ink);
 }
 
 @media (prefers-reduced-motion: reduce) {
