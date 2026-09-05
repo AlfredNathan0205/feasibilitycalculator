@@ -6,7 +6,7 @@ import { signInAs, farFutureDeadline } from "./helpers.js";
  * commercially auto-approves with zero outstanding requirements, and
  * confirm an Approval Code is issued immediately.
  *
- * NOT verified as passing — see playwright.config.ts's docstring.
+ * Confirmed passing for real — see playwright.config.ts's docstring.
  */
 test("submit and auto-approve: A/T tier, £200k, New/Exclusive/Direct/Library Only issues a code immediately", async ({
   page,

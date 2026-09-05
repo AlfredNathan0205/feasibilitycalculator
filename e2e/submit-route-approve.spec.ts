@@ -7,7 +7,7 @@ import { signInAs, farFutureDeadline } from "./helpers.js";
  * is issued yet, then sign in as the PPD Manager approver and approve it
  * via the real queue UI, confirming the code issues at that point.
  *
- * NOT verified as passing — see playwright.config.ts's docstring.
+ * Confirmed passing for real — see playwright.config.ts's docstring.
  */
 test("submit and route for approval, then approve: code withheld until the PPD sign-off clears", async ({
   page,

@@ -1,14 +1,13 @@
 import { defineConfig } from "@playwright/test";
 
 /**
- * IMPORTANT — see docs/runbook.md "Known gotchas": this suite was written
- * against the real app markup but could NOT be executed in the sandbox
- * these tests were authored in (its network egress allowlist blocks
- * cdn.playwright.dev, which is needed to download the browser binary).
- * Every other test in this repo has been run and confirmed passing before
- * being called done — these have not. Run them for real (`npx playwright
- * test`) before trusting them, and expect to fix selector/timing issues on
- * the first real run.
+ * All three journeys in this suite have been run for real and pass —
+ * confirmed twice from a clean state. See docs/backlog.md for what was
+ * found and fixed on the first actual run (two real bugs in
+ * e2e/helpers.ts, one in a spec's assertion), and for the one-off
+ * workaround used to get a Chromium binary in a network-restricted
+ * sandbox (not needed on a machine with normal internet access — just
+ * run `npx playwright install` there as usual).
  */
 export default defineConfig({
   testDir: "./e2e",

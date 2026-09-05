@@ -82,8 +82,10 @@ Manager), `ppd@cpl.example` (Approver + PPD Manager), `admin@cpl.example`
   real Postgres with a stub sender, but the real HTTP call itself needs a
   first real run (e.g. from Claude Code, or by letting Vercel Cron fire it
   once `RESEND_API_KEY`/`NOTIFICATIONS_FROM_EMAIL` are set) before it's
-  trusted — treat that first send as the actual verification step, the
-  same way the Playwright suite's first run is.
+  trusted — the Playwright suite's own first real run (see backlog) is a
+  good model for what that verification step should look like: three real
+  bugs turned up immediately, none of them things a unit test would ever
+  have caught.
 
 ## Rule set changes
 

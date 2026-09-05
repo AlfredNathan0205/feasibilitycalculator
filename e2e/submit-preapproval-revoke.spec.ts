@@ -15,7 +15,7 @@ import { signInAs, farFutureDeadline } from "./helpers.js";
  * same way the eventual email-sending step would, rather than skipping
  * the hardest part of the journey.
  *
- * NOT verified as passing — see playwright.config.ts's docstring.
+ * Confirmed passing for real — see playwright.config.ts's docstring.
  */
 test("submit with pre-approval, then revoke: the Approval Code genuinely stops working", async ({
   page,
@@ -92,7 +92,11 @@ test("submit with pre-approval, then revoke: the Approval Code genuinely stops w
   // possession-of-token security model.
   await page.goto(`/revoke/${requirementId}/${encodeURIComponent(rawToken)}`);
   await page.getByRole("button", { name: "Yes, revoke this pre-approval" }).click();
-  await expect(page.getByText("Revoked")).toBeVisible();
+  // Not getByText("Revoked") — that's ambiguous: it also matches the
+  // paragraph explaining what happened (contains "revoked" as a
+  // substring) and Next.js's hidden route-announcer element. The heading
+  // role is what this assertion actually means to check.
+  await expect(page.getByRole("heading", { name: "Revoked" })).toBeVisible();
 
   // The code must genuinely no longer resolve.
   await page.goto(`/verify/${approvalCode}`);
