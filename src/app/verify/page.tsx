@@ -35,6 +35,7 @@ export default async function VerifyLandingPage() {
   return (
     <AppShell session={session}>
       <div className="container">
+        <div className="eyebrow">AUDITOR</div>
         <h1>Verify an Approval Code</h1>
         <p className="helptext">
           Look up any brief by its Approval Code — the audit entry point, available

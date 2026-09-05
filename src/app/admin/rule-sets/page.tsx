@@ -60,6 +60,7 @@ export default async function RuleSetsListPage() {
   return (
     <AppShell session={session}>
       <div className="container-wide">
+        <div className="eyebrow">ADMIN</div>
         <div className="page-header">
           <h1>Rule sets</h1>
           <form action={createDraft}>

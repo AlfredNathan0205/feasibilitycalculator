@@ -172,6 +172,7 @@ export default async function ApprovalsPage() {
   return (
     <AppShell session={session}>
       <div className="container-wide">
+        <div className="eyebrow">APPROVER</div>
         <div className="page-header">
           <div>
             <h1 style={{ marginBottom: "0.2em" }}>Your approvals</h1>
@@ -274,11 +275,7 @@ export default async function ApprovalsPage() {
                             type="submit"
                             name="decision"
                             value="reject"
-                            className="btn btn-secondary"
-                            style={{
-                              borderColor: "var(--cpl-red)",
-                              color: "var(--cpl-red)",
-                            }}
+                            className="btn btn-danger"
                           >
                             Reject
                           </button>

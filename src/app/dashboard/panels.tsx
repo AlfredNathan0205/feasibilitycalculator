@@ -84,7 +84,41 @@ export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
     ...summary.shortDeadlineVolumeByMonth.map((r) => r.count),
   );
 
+  const totalBriefs = summary.volumeByTier.reduce((s, r) => s + r.count, 0);
+  const totalApproved = summary.volumeOutcomeMixByMonth
+    .filter((r) => r.finalStatus === "approved")
+    .reduce((s, r) => s + r.count, 0);
+  const totalAll = summary.volumeOutcomeMixByMonth.reduce((s, r) => s + r.count, 0);
+  const approvalRate = totalAll > 0 ? Math.round((totalApproved / totalAll) * 100) : 0;
+  const totalRequirements = summary.volumeByRequirementType.reduce(
+    (s, r) => s + r.count,
+    0,
+  );
+
   return (
+    <>
+      <div className="kpi-strip">
+        <div className="kpi-card">
+          <div className="kpi-label">Total briefs</div>
+          <div className="kpi-value">{totalBriefs}</div>
+          <div className="kpi-caption">all time</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-label">Approval rate</div>
+          <div className="kpi-value">{approvalRate}%</div>
+          <div className="kpi-caption">of all decisions</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-label">Requirements raised</div>
+          <div className="kpi-value">{totalRequirements}</div>
+          <div className="kpi-caption">by type</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-label">Score buckets</div>
+          <div className="kpi-value">{summary.scoreDistribution.length}</div>
+          <div className="kpi-caption">distribution bands</div>
+        </div>
+      </div>
     <div className="panel-grid">
       <Panel title="Volume by customer tier">
         {summary.volumeByTier.map((r) => (
@@ -202,5 +236,6 @@ export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
         </Panel>
       </div>
     </div>
+    </>
   );
 }

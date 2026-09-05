@@ -45,8 +45,9 @@ export default async function DashboardPage() {
   return (
     <AppShell session={session}>
       <div className="container-wide">
+        <div className="eyebrow">DASHBOARD</div>
         <div className="page-header">
-          <h1>Dashboard</h1>
+          <h1>Overview</h1>
           <div className="page-header-actions">
             <a className="btn btn-secondary" href="/api/reports/export/csv">
               Export CSV
