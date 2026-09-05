@@ -99,14 +99,131 @@ export function RuleSetEditor({
 
   if (!isDraft) {
     return (
-      <div className="card">
-        <p style={{ margin: 0 }}>
-          This rule set is <strong>{status}</strong> and immutable. Create a new draft
-          from <a href="/admin/rule-sets">the rule sets list</a> to make changes.
-        </p>
-        <pre style={{ marginTop: "1rem", fontSize: "0.8125rem", overflow: "auto" }}>
-          {JSON.stringify(payload, null, 2)}
-        </pre>
+      <div style={{ display: "grid", gap: "1.25rem" }}>
+        <div
+          className="card"
+          style={{ borderLeft: "3px solid var(--cpl-border-strong)" }}
+        >
+          <p style={{ margin: 0 }}>
+            This rule set is <strong>{status}</strong> and immutable — shown read-only
+            below. Create a new draft from{" "}
+            <a href="/admin/rule-sets">the rule sets list</a> to make changes.
+          </p>
+        </div>
+
+        <div className="card">
+          <h2>Tier weights</h2>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: "0.75rem",
+            }}
+          >
+            {Object.entries(payload.tierWeights).map(([tier, value]) => (
+              <div key={tier}>
+                <label>{tier}</label>
+                <input value={value} disabled />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <h2>Thresholds</h2>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}
+          >
+            <div>
+              <label>Auto-approve above</label>
+              <input value={payload.thresholds.autoApproveAbove} disabled />
+            </div>
+            <div>
+              <label>Decline at or below</label>
+              <input value={payload.thresholds.declineAtOrBelow} disabled />
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <h2>Multipliers &amp; scores</h2>
+          <div style={{ display: "grid", gap: "1.25rem" }}>
+            {(
+              [
+                ["newReworkMultipliers", "New / Rework"],
+                ["briefTypeMultipliers", "Brief type"],
+                ["customerApprovalMultipliers", "Customer approval"],
+                ["creativeApproachScores", "Creative approach"],
+              ] as const
+            ).map(([key, label]) => (
+              <div key={key}>
+                <div className="field-group-label" style={{ marginBottom: "0.6em" }}>
+                  {label}
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                    gap: "0.6rem",
+                  }}
+                >
+                  {Object.entries(payload[key] as Record<string, number>).map(
+                    ([k, v]) => (
+                      <div key={k}>
+                        <label style={{ fontWeight: 400 }}>{k}</label>
+                        <input value={v} disabled />
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <h2>Other</h2>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}
+          >
+            <div>
+              <label>Strategic priority bonus</label>
+              <input value={payload.strategicPriorityBonus} disabled />
+            </div>
+            <div>
+              <label>Short deadline window (days)</label>
+              <input value={payload.deadlineWindowDays} disabled />
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <h2>Routing table</h2>
+          <table className="data-table">
+            <thead>
+              <tr>
+                {["Requirement", "Role", "Enabled"].map((h) => (
+                  <th key={h}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(payload.routingTable).map(([reqType, routing]) => (
+                <tr key={reqType}>
+                  <td>{reqType.replace(/_/g, " ")}</td>
+                  <td>{routing.role.replace(/_/g, " ")}</td>
+                  <td>
+                    <span
+                      className={`status-pill ${routing.enabled ? "status-approved" : "status-declined"}`}
+                    >
+                      {routing.enabled ? "Enabled" : "Disabled"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }

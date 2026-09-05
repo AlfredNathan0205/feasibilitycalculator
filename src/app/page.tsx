@@ -54,13 +54,23 @@ export default async function Home() {
     if (!devLoginEnabled) {
       return (
         <AppShell session={null}>
-          <div className="container">
-            <div className="card" style={{ marginTop: "3rem" }}>
-              <h1>CPL Project Feasibility Calculator</h1>
-              <p className="helptext">
-                No sign-in method is configured. Set the AUTH_MICROSOFT_ENTRA_ID_* env
-                vars for production, or ALLOW_DEV_LOGIN=true for local testing.
+          <div className="auth-screen">
+            <div className="auth-brand-panel">
+              <div className="auth-brand-eyebrow">CPL AROMAS</div>
+              <div className="auth-brand-headline">Project Feasibility Calculator</div>
+              <p>
+                Score, route, and audit customer fragrance briefs — replacing the old
+                spreadsheet with a single system of record.
               </p>
+            </div>
+            <div className="auth-form-panel">
+              <div className="card auth-card">
+                <h1>CPL Project Feasibility Calculator</h1>
+                <p className="helptext">
+                  No sign-in method is configured. Set the AUTH_MICROSOFT_ENTRA_ID_* env
+                  vars for production, or ALLOW_DEV_LOGIN=true for local testing.
+                </p>
+              </div>
             </div>
           </div>
         </AppShell>
@@ -71,45 +81,55 @@ export default async function Home() {
 
     return (
       <AppShell session={null}>
-        <div className="container">
-          <div className="card" style={{ marginTop: "3rem" }}>
-            <h1>Sign in</h1>
-            <p
-              className="helptext"
-              style={{
-                background: "var(--cpl-amber-tint)",
-                border: "1px solid var(--cpl-amber-border)",
-                borderRadius: 4,
-                padding: "0.6em 0.8em",
-                color: "var(--cpl-ink)",
-              }}
-            >
-              Local testing only — no password. This must never be enabled in a deployed
-              production environment.
+        <div className="auth-screen">
+          <div className="auth-brand-panel">
+            <div className="auth-brand-eyebrow">CPL AROMAS</div>
+            <div className="auth-brand-headline">Project Feasibility Calculator</div>
+            <p>
+              Score, route, and audit customer fragrance briefs — replacing the old
+              spreadsheet with a single system of record.
             </p>
-            <form
-              action={async (formData: FormData) => {
-                "use server";
-                const upn = formData.get("upn");
-                await signIn("dev-login", {
-                  upn: typeof upn === "string" ? upn : "",
-                  redirectTo: "/",
-                });
-              }}
-              style={{ marginTop: "1rem" }}
-            >
-              <label htmlFor="upn">Test user</label>
-              <select name="upn" id="upn" style={{ marginBottom: "0.9rem" }}>
-                {users.map((u) => (
-                  <option key={u.upn} value={u.upn}>
-                    {u.displayName} ({u.upn})
-                  </option>
-                ))}
-              </select>
-              <button type="submit" className="btn btn-primary">
-                Sign in
-              </button>
-            </form>
+          </div>
+          <div className="auth-form-panel">
+            <div className="card auth-card">
+              <h1>Sign in</h1>
+              <p
+                className="helptext"
+                style={{
+                  background: "var(--cpl-amber-tint)",
+                  border: "1px solid var(--cpl-amber-border)",
+                  borderRadius: 4,
+                  padding: "0.6em 0.8em",
+                  color: "var(--cpl-ink)",
+                }}
+              >
+                Local testing only — no password. This must never be enabled in a deployed
+                production environment.
+              </p>
+              <form
+                action={async (formData: FormData) => {
+                  "use server";
+                  const upn = formData.get("upn");
+                  await signIn("dev-login", {
+                    upn: typeof upn === "string" ? upn : "",
+                    redirectTo: "/",
+                  });
+                }}
+                style={{ marginTop: "1rem" }}
+              >
+                <label htmlFor="upn">Test user</label>
+                <select name="upn" id="upn" style={{ marginBottom: "0.9rem" }}>
+                  {users.map((u) => (
+                    <option key={u.upn} value={u.upn}>
+                      {u.displayName} ({u.upn})
+                    </option>
+                  ))}
+                </select>
+                <button type="submit" className="btn btn-primary">
+                  Sign in
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </AppShell>

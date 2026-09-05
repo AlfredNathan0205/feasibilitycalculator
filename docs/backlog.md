@@ -110,6 +110,51 @@ priority order itself may change as items get picked up.
 
 ## Done and verified
 
+- [x] **UI redesign, real-screenshot-verified fix pass.** After three
+      earlier redesign passes were done "blind" (verified only by
+      checking rendered HTML/classes, never actual pixels), the person
+      sent real screenshots showing the dashboard "looks like a basic
+      spreadsheet," the sign-in page as mostly empty, and a published
+      rule set as a raw JSON dump. All three were real, not taste
+      disagreements:
+      - **A genuine CSS bug, not a style choice**: `.bar-fill` and
+        `.readout-bar-fill` (every progress bar on the dashboard and the
+        brief-form's live score readout) were `<span>` elements with no
+        `display` set. Spans default to `display: inline`, and CSS
+        width/height have **no effect on non-replaced inline elements** —
+        so every bar's proportional fill was invisible regardless of its
+        actual value, which is exactly why very different counts (142 vs.
+        5) rendered identically. Fixed with `display: block` on both.
+      - The sign-in page (`src/app/page.tsx`) was a small card top-aligned
+        in a wide container, leaving most of the viewport as dead grey
+        space. Rebuilt as a two-panel layout — an indigo brand panel
+        (eyebrow, headline, one-line description of the tool, subtle
+        decorative circles) alongside the actual sign-in card.
+      - The **published, immutable rule-set view** was never actually
+        redesigned in the earlier UI passes — only the draft editor was.
+        It was a literal `<pre>{JSON.stringify(payload)}</pre>` dump.
+        Rebuilt to reuse the exact same structured layout as the draft
+        editor (tier weights, thresholds, multipliers, routing table)
+        with disabled inputs and enabled/disabled pills, instead of raw
+        JSON.
+      - Dashboard polish while in there: the "Outcome mix by month"
+        status column and "Revoked" count now use colored status pills
+        instead of plain text / an emoji character.
+      **Verified with actual screenshots this time**, not just rendered
+      HTML/class checks — took real screenshots with the sandbox's
+      Chromium before and after each fix and looked at them directly.
+      Full unit/integration suite re-run clean (127/128), and the real
+      e2e suite re-run twice from a clean state (3/3 both times) to
+      confirm the sign-in page rebuild didn't break the automated
+      dev-login flow the suite depends on.
+      **Lesson for next time**: earlier passes claimed things looked
+      "professional" based on correct CSS class names and successful
+      HTTP 200s, which is necessary but not sufficient — it never once
+      caught that a whole category of visual element (every bar chart in
+      the app) was rendering with zero fill. Real screenshots, taken and
+      actually looked at, should be the standard for any future styling
+      work, not just structural checks.
+
 - [x] **Quality gates: ESLint, Prettier, coverage measurement** — all
       clean/passing, confirmed by actually running them, not just adding
       config files. ESLint required working around a real ESLint 9 /

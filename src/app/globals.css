@@ -135,6 +135,18 @@ textarea:hover {
   border-color: var(--cpl-ink-soft);
 }
 
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: var(--cpl-paper);
+  color: var(--cpl-ink-soft);
+  border-color: var(--cpl-border);
+  cursor: not-allowed;
+}
+input:disabled:hover {
+  border-color: var(--cpl-border);
+}
+
 input:focus,
 select:focus,
 textarea:focus,
@@ -345,12 +357,14 @@ button {
   border-top: 1px solid var(--cpl-border);
 }
 .readout-bar-track {
+  display: block;
   height: 6px;
   border-radius: 3px;
   background: var(--cpl-paper);
   overflow: hidden;
 }
 .readout-bar-fill {
+  display: block;
   height: 100%;
   background: var(--cpl-indigo);
   border-radius: 3px;
@@ -439,6 +453,7 @@ button {
   white-space: nowrap;
 }
 .bar-track {
+  display: block;
   height: 8px;
   border-radius: 4px;
   background: var(--cpl-paper);
@@ -446,6 +461,7 @@ button {
   overflow: hidden;
 }
 .bar-fill {
+  display: block;
   height: 100%;
   background: var(--cpl-indigo);
   border-radius: 3px;
@@ -701,6 +717,92 @@ button {
   max-width: 1080px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 4rem;
+}
+
+/* Full-bleed centered layout for the sign-in screen — this is the very
+ * first thing anyone sees, and top-aligning a small card in a wide
+ * container left most of the viewport as dead grey space. A two-panel
+ * split gives that space an actual job (establishing what this tool is)
+ * instead of just centering a card on emptiness. */
+.auth-screen {
+  min-height: calc(100vh - 70px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 860px) {
+  .auth-screen {
+    grid-template-columns: 1fr;
+  }
+  .auth-brand-panel {
+    display: none;
+  }
+}
+.auth-brand-panel {
+  background: var(--cpl-indigo);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem;
+  position: relative;
+  overflow: hidden;
+}
+.auth-brand-panel::after {
+  content: "";
+  position: absolute;
+  right: -8rem;
+  bottom: -8rem;
+  width: 22rem;
+  height: 22rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.auth-brand-panel::before {
+  content: "";
+  position: absolute;
+  right: -3rem;
+  bottom: -3rem;
+  width: 14rem;
+  height: 14rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.auth-brand-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--cpl-amber);
+  margin-bottom: 1rem;
+  letter-spacing: 0.02em;
+}
+.auth-brand-panel h1 {
+  color: #fff;
+  font-size: 2rem;
+  max-width: 22rem;
+  margin-bottom: 1rem;
+}
+.auth-brand-headline {
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1.15;
+  max-width: 22rem;
+  margin-bottom: 1rem;
+}
+.auth-brand-panel p {
+  color: rgba(255, 255, 255, 0.75);
+  max-width: 24rem;
+  font-size: 1rem;
+}
+.auth-form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+.auth-card {
+  width: 100%;
+  max-width: 26rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

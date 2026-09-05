@@ -17,6 +17,7 @@ function SimpleTable({
     key: string;
     label: string;
     format?: (v: unknown) => string;
+    render?: (v: unknown) => React.ReactNode;
     num?: boolean;
   }[];
   rows: Record<string, unknown>[];
@@ -44,7 +45,11 @@ function SimpleTable({
           <tr key={i}>
             {columns.map((c) => (
               <td key={c.key} className={c.num ? "num" : undefined}>
-                {c.format ? c.format(row[c.key]) : String(row[c.key] ?? "")}
+                {c.render
+                  ? c.render(row[c.key])
+                  : c.format
+                    ? c.format(row[c.key])
+                    : String(row[c.key] ?? "")}
               </td>
             ))}
           </tr>
@@ -102,7 +107,20 @@ export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
         <SimpleTable
           columns={[
             { key: "month", label: "Month" },
-            { key: "finalStatus", label: "Status" },
+            {
+              key: "finalStatus",
+              label: "Status",
+              render: (v) => {
+                const status = String(v);
+                const cls =
+                  status === "approved"
+                    ? "status-approved"
+                    : status === "declined"
+                      ? "status-declined"
+                      : "status-pending";
+                return <span className={`status-pill ${cls}`}>{status}</span>;
+              },
+            },
             { key: "count", label: "Count", num: true },
           ]}
           rows={summary.volumeOutcomeMixByMonth as unknown as Record<string, unknown>[]}
@@ -169,7 +187,14 @@ export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
                 key: "revokedCount",
                 label: "Revoked",
                 num: true,
-                format: (v) => (Number(v) > 0 ? `⚠ ${v}` : "0"),
+                render: (v) =>
+                  Number(v) > 0 ? (
+                    <span className="status-pill status-declined">{String(v)}</span>
+                  ) : (
+                    <span className="num" style={{ color: "var(--cpl-ink-soft)" }}>
+                      0
+                    </span>
+                  ),
               },
             ]}
             rows={summary.preApprovalUsage as unknown as Record<string, unknown>[]}
