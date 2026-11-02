@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dispatchQueuedNotifications } from "../../../../services/notifications/dispatch-notifications.js";
-import { sendEmailViaResend } from "../../../../lib/resend.js";
+import { getEmailSender } from "../../../../lib/mail.js";
 import { getDb } from "../../../../lib/db.js";
 
 /**
@@ -45,7 +45,7 @@ async function handleDispatch(request: Request) {
   const db = getDb();
 
   try {
-    const result = await dispatchQueuedNotifications(db, sendEmailViaResend, {
+    const result = await dispatchQueuedNotifications(db, getEmailSender(), {
       appBaseUrl,
     });
     return NextResponse.json(result);

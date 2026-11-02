@@ -1,7 +1,7 @@
 import { and, desc, eq, exists, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema.js";
-import type { AuthSession } from "../auth/authz.js";
+import { canVeto, type AuthSession } from "../auth/authz.js";
 
 type Db = PostgresJsDatabase<typeof schema>;
 
@@ -9,18 +9,23 @@ type Db = PostgresJsDatabase<typeof schema>;
  * Which briefs a signed-in user may see. Pure and exported so the rule is
  * testable without a database:
  *  - Admin and Auditor see every brief (Auditor's whole job is lookup).
+ *  - The General Manager (veto) sees every brief, without the audit trail.
  *  - Everyone else sees briefs they submitted or that were submitted on
  *    their behalf, plus — for approvers — briefs holding a requirement
  *    routed to an approval-authority role they currently hold.
  *  - Anyone with none of those gets nothing.
  */
 export type BriefScope =
-  { kind: "all" } | { kind: "restricted"; userId: string; approvalRoles: string[] };
+  | { kind: "all"; audit: boolean }
+  | { kind: "restricted"; userId: string; approvalRoles: string[] };
 
 export function briefScopeFor(session: AuthSession): BriefScope {
   if (session.accessRoles.includes("admin") || session.accessRoles.includes("auditor")) {
-    return { kind: "all" };
+    return { kind: "all", audit: true };
   }
+  // The General Manager can veto any brief, so can see every brief — but
+  // not the audit trail, which stays with Admin and Auditor.
+  if (canVeto(session)) return { kind: "all", audit: false };
   return {
     kind: "restricted",
     userId: session.userId,
@@ -154,6 +159,7 @@ export interface BriefDetail {
   brief: typeof schema.briefs.$inferSelect;
   submitterName: string | null;
   onBehalfOfName: string | null;
+  vetoedByName: string | null;
   decision: typeof schema.decisions.$inferSelect;
   ruleSetVersion: number | null;
   requirements: {
@@ -202,7 +208,9 @@ export async function getBriefDetail(
     .where(eq(schema.decisions.briefId, briefId));
   if (!brief || !decision) return null;
 
-  const userIds = [brief.submittedBy, brief.onBehalfOf].filter((x): x is string => !!x);
+  const userIds = [brief.submittedBy, brief.onBehalfOf, decision.vetoedBy].filter(
+    (x): x is string => !!x,
+  );
   const requirementRows = await db
     .select()
     .from(schema.approvalRequirements)
@@ -227,7 +235,7 @@ export async function getBriefDetail(
     .where(eq(schema.ruleSets.id, decision.ruleSetId));
 
   let auditEvents: BriefDetail["auditEvents"] = [];
-  if (scope.kind === "all") {
+  if (scope.kind === "all" && scope.audit) {
     const entityIds = [briefId, ...requirementRows.map((r) => r.id)];
     const events = await db
       .select({
@@ -249,6 +257,7 @@ export async function getBriefDetail(
     brief,
     submitterName: nameOf(brief.submittedBy),
     onBehalfOfName: nameOf(brief.onBehalfOf),
+    vetoedByName: nameOf(decision.vetoedBy),
     decision,
     ruleSetVersion: ruleSet?.version ?? null,
     requirements: requirementRows.map((r) => ({

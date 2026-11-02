@@ -106,3 +106,28 @@ describe("renderNotificationEmail", () => {
     ).toThrow(UnknownNotificationTemplateError);
   });
 });
+
+describe("veto emails", () => {
+  it("renders brief_vetoed with the reason, escaped", () => {
+    const e = renderNotificationEmail(
+      "brief_vetoed",
+      {
+        customerReference: "ACME",
+        reason: "<b>no</b>",
+      } as never,
+      "https://app.example",
+    );
+    expect(e.subject).toBe("Brief vetoed — ACME");
+    expect(e.text).toContain('Reason: "<b>no</b>"');
+    expect(e.html).toContain("&lt;b&gt;no&lt;/b&gt;");
+  });
+  it("renders veto_reversed", () => {
+    expect(
+      renderNotificationEmail(
+        "veto_reversed",
+        { customerReference: "ACME" } as never,
+        "https://app.example",
+      ).subject,
+    ).toBe("Veto reversed — ACME");
+  });
+});

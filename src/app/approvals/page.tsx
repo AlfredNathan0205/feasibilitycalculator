@@ -3,16 +3,20 @@ import { eq } from "drizzle-orm";
 import { auth } from "../../auth.js";
 import * as schema from "../../db/schema.js";
 import {
+  canVeto,
   hasAccessRole,
+  requireCanVeto,
   requireCanDecideRequirement,
   AuthorizationError,
 } from "../../auth/authz.js";
 import {
   decideRequirement,
   decideRequirementsBulk,
+  ValidationError,
   listEscalatedRequirements,
   listPendingRequirementsForRoles,
 } from "../../services/decide-requirement.js";
+import { listOpenRequirementsForVeto, vetoRequirement } from "../../services/veto.js";
 import { AppShell } from "../components/app-shell.js";
 import { REQUIREMENT_LABELS } from "../components/labels.js";
 import { getDb } from "../../lib/db.js";
@@ -68,6 +72,8 @@ export default async function ApprovalsPage() {
     : [];
   const items = [...roleItems, ...escalatedItems];
 
+  const vetoItems = canVeto(session) ? await listOpenRequirementsForVeto(db) : [];
+
   const groups = new Map<string, typeof items>();
   for (const item of items) {
     const group = groups.get(item.requirementTypeKind);
@@ -116,6 +122,30 @@ export default async function ApprovalsPage() {
       decision,
       comment: comment || null,
     });
+    revalidatePath("/approvals");
+  }
+
+  async function veto(formData: FormData) {
+    "use server";
+    const session = await auth();
+    if (!session) return;
+    try {
+      requireCanVeto(session);
+    } catch (err) {
+      if (err instanceof AuthorizationError) return;
+      throw err;
+    }
+    const reason = String(formData.get("reason") ?? "").trim();
+    if (!reason) return; // the field is required in the form
+    try {
+      await vetoRequirement(getDb(), {
+        requirementId: String(formData.get("requirementId")),
+        vetoedBy: session.userId,
+        reason,
+      });
+    } catch (err) {
+      if (!(err instanceof ValidationError)) throw err; // already decided / vetoed: just refresh
+    }
     revalidatePath("/approvals");
   }
 
@@ -304,6 +334,62 @@ export default async function ApprovalsPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {vetoItems.length > 0 && (
+          <div style={{ marginTop: "2.5rem" }}>
+            <h2 style={{ marginBottom: "0.25rem" }}>
+              Veto{" "}
+              <span className="helptext" style={{ fontWeight: 400 }}>
+                ({vetoItems.length} open)
+              </span>
+            </h2>
+            <p className="helptext" style={{ marginTop: 0 }}>
+              As General Manager you can veto any open requirement, whoever it is routed
+              to. A veto declines the brief; an Admin can reverse it. You never need to
+              act for a brief to proceed.
+            </p>
+            <div style={{ display: "grid", gap: "0.75rem" }}>
+              {vetoItems.map((item) => (
+                <div key={item.requirementId} className="card ticket">
+                  <div className="ticket-title">
+                    <a href={`/briefs/${item.briefId}`}>{item.customerReference}</a> —{" "}
+                    {item.tier}, £{Number(item.valuePotentialGbp).toLocaleString("en-GB")}
+                  </div>
+                  <span className="ticket-meta">
+                    {REQUIREMENT_LABELS[item.requirementTypeKind] ??
+                      item.requirementTypeKind}{" "}
+                    · routed to {item.requiredRoleKey.replace(/_/g, " ")}
+                  </span>
+                  <form
+                    action={veto}
+                    style={{
+                      display: "flex",
+                      gap: "0.5rem",
+                      marginTop: "0.5rem",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <input
+                      type="hidden"
+                      name="requirementId"
+                      value={item.requirementId}
+                    />
+                    <input
+                      name="reason"
+                      required
+                      placeholder="Reason for veto (required)"
+                      aria-label={`Reason to veto ${item.customerReference}`}
+                      style={{ minWidth: "20rem" }}
+                    />
+                    <button type="submit" className="btn btn-danger">
+                      Veto
+                    </button>
+                  </form>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

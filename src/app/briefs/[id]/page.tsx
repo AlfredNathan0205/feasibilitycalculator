@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { auth } from "../../../auth.js";
 import { briefScopeFor, getBriefDetail } from "../../../services/brief-queries.js";
 import { AppShell } from "../../components/app-shell.js";
@@ -9,6 +9,9 @@ import {
   REQUIREMENT_STATE_LABELS,
 } from "../../components/labels.js";
 import { getDb } from "../../../lib/db.js";
+import { hasAccessRole } from "../../../auth/authz.js";
+import { reverseVeto } from "../../../services/veto.js";
+import { ValidationError } from "../../../services/decide-requirement.js";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -22,8 +25,10 @@ function yesNo(v: boolean) {
 
 export default async function BriefDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const session = await auth();
   if (!session) {
@@ -39,6 +44,7 @@ export default async function BriefDetailPage({
   }
 
   const { id } = await params;
+  const { error } = await searchParams;
   if (!UUID_RE.test(id)) notFound();
 
   const detail = await getBriefDetail(getDb(), briefScopeFor(session), id);
@@ -46,6 +52,25 @@ export default async function BriefDetailPage({
 
   const { brief, decision } = detail;
   const breakdown = (decision.scoreBreakdown ?? {}) as Record<string, number>;
+  const isAdmin = hasAccessRole(session, "admin");
+
+  async function reverseVetoAction(formData: FormData) {
+    "use server";
+    const s = await auth();
+    if (!s || !hasAccessRole(s, "admin")) return;
+    try {
+      await reverseVeto(getDb(), {
+        briefId: id,
+        reversedBy: s.userId,
+        reason: String(formData.get("reason") ?? ""),
+      });
+    } catch (e) {
+      if (e instanceof ValidationError)
+        redirect(`/briefs/${id}?error=${encodeURIComponent(e.message)}`);
+      throw e;
+    }
+    redirect(`/briefs/${id}`);
+  }
 
   return (
     <AppShell session={session}>
@@ -63,6 +88,48 @@ export default async function BriefDetailPage({
           </div>
           <StatusPill status={decision.finalStatus} />
         </div>
+
+        {error && (
+          <div
+            className="card"
+            role="alert"
+            style={{ marginBottom: "1rem", borderColor: "#c0392b" }}
+          >
+            {error}
+          </div>
+        )}
+        {decision.vetoedAt && (
+          <div
+            className="card"
+            role="alert"
+            style={{ marginBottom: "1rem", borderColor: "#c0392b" }}
+          >
+            <strong>Vetoed by the General Manager</strong>
+            {detail.vetoedByName ? ` (${detail.vetoedByName})` : ""} on{" "}
+            {fmtDateTime(decision.vetoedAt)}. Reason: &ldquo;{decision.vetoReason}&rdquo;
+            {isAdmin && (
+              <form
+                action={reverseVetoAction}
+                style={{
+                  marginTop: "0.75rem",
+                  display: "flex",
+                  gap: "0.5rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                <input
+                  name="reason"
+                  placeholder="Reason for reversing (required)"
+                  required
+                  style={{ minWidth: "20rem" }}
+                />
+                <button type="submit" className="btn">
+                  Reverse veto
+                </button>
+              </form>
+            )}
+          </div>
+        )}
 
         <div className="kpi-strip">
           <div className="kpi-card">

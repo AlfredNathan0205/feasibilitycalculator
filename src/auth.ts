@@ -32,6 +32,7 @@ import { eq } from "drizzle-orm";
 import * as schema from "./db/schema.js";
 import { resolveSessionRoles } from "./auth/resolve-session-roles.js";
 import { getDb } from "./lib/db.js";
+import { provisionEntraUser } from "./auth/provision-entra-user.js";
 
 const devLoginEnabled = process.env.ALLOW_DEV_LOGIN === "true";
 
@@ -85,7 +86,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   session: { strategy: "jwt" },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account, profile }) {
+      // Entra sign-in: the provider's user.id is the Entra identity, not our
+      // users.id, so link (or create) the users row first. Without this a
+      // real Entra login would resolve no roles at all.
+      if (account?.provider === "microsoft-entra-id" && profile) {
+        const p = profile as Record<string, unknown>;
+        const objectId = String(p.oid ?? p.sub ?? "");
+        const upn = String(p.preferred_username ?? p.email ?? "");
+        if (!objectId || !upn) throw new Error("Entra profile is missing oid/upn");
+        const row = await provisionEntraUser(getDb(), {
+          objectId,
+          upn,
+          displayName: String(p.name ?? upn),
+          email: typeof p.email === "string" ? p.email : null,
+        });
+        if (!row)
+          throw new Error(
+            "Sign-in refused: account is inactive or UPN is bound to another identity",
+          );
+        user = { ...user, id: row.id };
+      }
       // Only re-resolve roles on sign-in (when `user` is populated), not on
       // every subsequent request — avoids a DB round trip per request while
       // still never trusting a client-supplied claim (the resolution

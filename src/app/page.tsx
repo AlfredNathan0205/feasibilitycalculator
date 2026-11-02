@@ -7,6 +7,12 @@ import Image from "next/image";
 import { getDb } from "../lib/db.js";
 
 const devLoginEnabled = process.env.ALLOW_DEV_LOGIN === "true";
+// Mirrors the condition in auth.ts that registers the Microsoft Entra provider.
+const entraConfigured = Boolean(
+  process.env.AUTH_MICROSOFT_ENTRA_ID_ID &&
+  process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET &&
+  process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
+);
 
 async function getTestUsers() {
   if (!process.env.DATABASE_URL) return [];
@@ -40,7 +46,7 @@ export default async function Home() {
   const session = await auth();
 
   if (!session) {
-    if (!devLoginEnabled) {
+    if (!devLoginEnabled && !entraConfigured) {
       return (
         <div className="auth-screen">
           <div className="auth-brand-panel">
@@ -70,7 +76,9 @@ export default async function Home() {
       );
     }
 
-    const users = await getTestUsers();
+    // Only read the user list when the test login is actually on; it must never
+    // be exposed on a production (Microsoft-only) deployment.
+    const users = devLoginEnabled ? await getTestUsers() : [];
 
     return (
       <div className="auth-screen">
@@ -92,42 +100,66 @@ export default async function Home() {
             </div>
             <h1>Welcome</h1>
             <p className="auth-subtitle">Sign in to continue</p>
-            <p
-              style={{
-                background: "#fbf1e6",
-                border: "1px solid #e8cba3",
-                borderRadius: 4,
-                padding: "0.6em 0.8em",
-                color: "var(--cpl-ink)",
-                fontSize: "0.8125rem",
-                marginBottom: "1rem",
-              }}
-            >
-              Local testing only — no password. This must never be enabled in a deployed
-              production environment.
-            </p>
-            <form
-              action={async (formData: FormData) => {
-                "use server";
-                const upn = formData.get("upn");
-                await signIn("dev-login", {
-                  upn: typeof upn === "string" ? upn : "",
-                  redirectTo: "/",
-                });
-              }}
-            >
-              <label htmlFor="upn">Test user</label>
-              <select name="upn" id="upn" style={{ marginBottom: "0.9rem" }}>
-                {users.map((u) => (
-                  <option key={u.upn} value={u.upn}>
-                    {u.displayName} ({u.upn})
-                  </option>
-                ))}
-              </select>
-              <button type="submit" className="btn btn-primary" style={{ width: "100%" }}>
-                Sign in
-              </button>
-            </form>
+            {entraConfigured && (
+              <form
+                action={async () => {
+                  "use server";
+                  await signIn("microsoft-entra-id", { redirectTo: "/" });
+                }}
+              >
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ width: "100%" }}
+                >
+                  Sign in with Microsoft
+                </button>
+              </form>
+            )}
+            {devLoginEnabled && (
+              <div style={entraConfigured ? { marginTop: "1.5rem" } : undefined}>
+                <p
+                  style={{
+                    background: "#fbf1e6",
+                    border: "1px solid #e8cba3",
+                    borderRadius: 4,
+                    padding: "0.6em 0.8em",
+                    color: "var(--cpl-ink)",
+                    fontSize: "0.8125rem",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  Local testing only — no password. This must never be enabled in a
+                  deployed production environment.
+                </p>
+                <form
+                  action={async (formData: FormData) => {
+                    "use server";
+                    const upn = formData.get("upn");
+                    await signIn("dev-login", {
+                      upn: typeof upn === "string" ? upn : "",
+                      redirectTo: "/",
+                    });
+                  }}
+                >
+                  <label htmlFor="upn">Test user</label>
+                  <select name="upn" id="upn" style={{ marginBottom: "0.9rem" }}>
+                    {users.map((u) => (
+                      <option key={u.upn} value={u.upn}>
+                        {u.displayName} ({u.upn})
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    style={{ width: "100%" }}
+                  >
+                    Sign in
+                  </button>
+                </form>
+              </div>
+            )}
           </div>
         </div>
       </div>

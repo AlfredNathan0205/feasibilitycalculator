@@ -37,6 +37,14 @@ async function main() {
       email: "admin@cpl.example",
       accessRole: "admin",
     },
+    {
+      entraObjectId: "44444444-4444-4444-4444-444444444444",
+      upn: "gm@cpl.example",
+      displayName: "Gina General Manager (veto)",
+      email: "gm@cpl.example",
+      accessRole: "approver",
+      approvalAuthorityRole: "general_manager",
+    },
   ] as const;
 
   for (const tu of testUsers) {

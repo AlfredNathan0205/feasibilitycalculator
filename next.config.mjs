@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Self-contained server output for the Azure container image (ignored by Vercel).
+  output: "standalone",
   webpack(config) {
     // The rest of this package uses explicit .js extensions on relative
     // imports (required by Node's native ESM resolver when scripts are run

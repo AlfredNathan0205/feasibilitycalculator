@@ -18,7 +18,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:migrate:run": "node scripts/migrate.mjs",
+    "seed:people": "tsx src/db/seed/provision-people.ts"
   },
   "keywords": [],
   "author": "",

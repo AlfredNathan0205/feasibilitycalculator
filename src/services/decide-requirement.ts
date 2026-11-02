@@ -87,6 +87,16 @@ export async function decideRequirement(
 
     const newState = input.decision === "approve" ? "approved" : "rejected";
 
+    const [vetoCheck] = await tx
+      .select({ vetoedAt: schema.decisions.vetoedAt })
+      .from(schema.decisions)
+      .where(eq(schema.decisions.id, requirement.decisionId));
+    if (vetoCheck?.vetoedAt) {
+      throw new ValidationError(
+        "This brief was vetoed by the General Manager; an Admin must reverse the veto first",
+      );
+    }
+
     await tx
       .update(schema.approvalRequirements)
       .set({
@@ -294,7 +304,9 @@ export async function revokeRequirement(
     // finalStatus from approved back to pending (or leave it pending if
     // something else was already outstanding), never touch "declined".
     const newFinalStatus: "pending" | "approved" | "declined" =
-      decision.commercialDecision === "declined" ? "declined" : "pending";
+      decision.commercialDecision === "declined" || decision.vetoedAt
+        ? "declined"
+        : "pending";
 
     // "the brief loses any issued Approval Code" (§5) — unconditionally,
     // even though in principle a NEW code could be regenerated later once
