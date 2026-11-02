@@ -10,19 +10,12 @@ import {
 import {
   decideRequirement,
   decideRequirementsBulk,
+  listEscalatedRequirements,
   listPendingRequirementsForRoles,
 } from "../../services/decide-requirement.js";
 import { AppShell } from "../components/app-shell.js";
+import { REQUIREMENT_LABELS } from "../components/labels.js";
 import { getDb } from "../../lib/db.js";
-
-const REQUIREMENT_LABELS: Record<string, string> = {
-  short_deadline: "Short deadline",
-  creative_creation: "Creative approach (Creation)",
-  creative_starting_point: "Creative approach (Starting Point)",
-  marketing_resource: "Marketing resource",
-  ppd_resource: "PPD resource",
-  gcms_resource: "GCMS / analytical resource",
-};
 
 /** A stable, DOM-safe id for the bulk-approve <form> that a given
  * requirement type's checkboxes are associated with via the HTML `form`
@@ -48,12 +41,12 @@ export default async function ApprovalsPage() {
     );
   }
 
-  if (!hasAccessRole(session, "approver")) {
+  if (!hasAccessRole(session, "approver") && !hasAccessRole(session, "admin")) {
     return (
       <AppShell session={session}>
         <div className="container">
           <div className="card" style={{ marginTop: "3rem" }}>
-            <p style={{ margin: 0 }}>Requires the Approver role.</p>
+            <p style={{ margin: 0 }}>Requires the Approver or Admin role.</p>
           </div>
         </div>
       </AppShell>
@@ -61,7 +54,19 @@ export default async function ApprovalsPage() {
   }
 
   const db = getDb();
-  const items = await listPendingRequirementsForRoles(db, session.approvalAuthorityRoles);
+  const roleItems = hasAccessRole(session, "approver")
+    ? await listPendingRequirementsForRoles(db, session.approvalAuthorityRoles)
+    : [];
+  // Admins also see requirements escalated because the role's only holders
+  // are conflicted (they submitted, or are the Account Manager of record).
+  // Anything the signed-in Admin is themselves conflicted on is left out:
+  // they couldn't decide it anyway.
+  const escalatedItems = hasAccessRole(session, "admin")
+    ? (await listEscalatedRequirements(db)).filter(
+        (i) => i.submittedBy !== session.userId && i.onBehalfOf !== session.userId,
+      )
+    : [];
+  const items = [...roleItems, ...escalatedItems];
 
   const groups = new Map<string, typeof items>();
   for (const item of items) {
@@ -95,7 +100,10 @@ export default async function ApprovalsPage() {
       requireCanDecideRequirement(
         session,
         { submittedBy: brief.submittedBy, onBehalfOf: brief.onBehalfOf },
-        { requiredRoleKey: requirement.requiredRoleKey },
+        {
+          requiredRoleKey: requirement.requiredRoleKey,
+          escalated: requirement.escalatedAt !== null,
+        },
       );
     } catch (err) {
       if (err instanceof AuthorizationError) return; // silently no-op; the button shouldn't have been shown
@@ -143,7 +151,10 @@ export default async function ApprovalsPage() {
         requireCanDecideRequirement(
           session,
           { submittedBy: brief.submittedBy, onBehalfOf: brief.onBehalfOf },
-          { requiredRoleKey: requirement.requiredRoleKey },
+          {
+            requiredRoleKey: requirement.requiredRoleKey,
+            escalated: requirement.escalatedAt !== null,
+          },
         );
         authorizedIds.push(requirementId);
       } catch (err) {
@@ -165,13 +176,19 @@ export default async function ApprovalsPage() {
   return (
     <AppShell session={session}>
       <div className="container-wide">
-        <div className="eyebrow">APPROVER</div>
+        <div className="eyebrow">
+          {hasAccessRole(session, "approver") ? "APPROVER" : "ADMIN"}
+        </div>
         <div className="page-header">
           <div>
             <h1 style={{ marginBottom: "0.2em" }}>Your approvals</h1>
             <p className="helptext" style={{ margin: 0 }}>
-              Requirements assigned to:{" "}
-              {session.approvalAuthorityRoles.join(", ") || "(none)"}
+              {session.approvalAuthorityRoles.length > 0
+                ? `Requirements assigned to: ${session.approvalAuthorityRoles.join(", ")}`
+                : "No approval role held"}
+              {hasAccessRole(session, "admin")
+                ? " · Admins also see requirements escalated for a self-approval conflict"
+                : ""}
             </p>
           </div>
         </div>
@@ -221,6 +238,14 @@ export default async function ApprovalsPage() {
                                 {item.customerReference} — {item.tier}, £
                                 {Number(item.valuePotentialGbp).toLocaleString("en-GB")}
                               </div>
+                              {item.escalatedAt && (
+                                <div className="helptext" style={{ margin: "0.2rem 0" }}>
+                                  <span className="status-pill status-pending">
+                                    Escalated to Admin
+                                  </span>{" "}
+                                  {item.escalationReason}
+                                </div>
+                              )}
                               <span className="ticket-meta">
                                 score{" "}
                                 <span className="num">

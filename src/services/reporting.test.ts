@@ -54,7 +54,7 @@ describeIfDb("reporting (integration, against real accumulated data)", () => {
     const actualTotal = actualTotalRows[0]!.count;
     expect(total).toBe(actualTotal);
     for (const r of rows) {
-      expect(["A/T", "B", "C", "D"]).toContain(r.dimension);
+      expect(["A/T", "A", "T", "B", "C", "D"]).toContain(r.dimension);
     }
   });
 

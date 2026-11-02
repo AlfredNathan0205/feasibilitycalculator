@@ -13,8 +13,8 @@ Agreed order: build capabilities first, then migrate to CPL's Azure.
 2. [ ] Role-holder admin screen (who holds PPD Manager etc.)
 3. [ ] Notification reliability: retry with backoff, delivery status view, a send interface Microsoft Graph can slot into
 4. [ ] Reminders / escalation for requirements pending too long
-5. [ ] Self-approval reassignment: default is "escalate to Admin + audit flag" (open question 2, option 3) pending Simon's answer
-6. [ ] Tier T / Commercial & Development Director routing: blocked on Simon / Pauline Holmes
+5. [x] Self-approval escalation to Admin (this pass, see below)
+6. [x] Tier T as a separate tier (this pass, see below). Remaining: which requirement types the Commercial and Development Directors sign off on is still provisional pending Pauline Holmes
 
 - [x] **Brief list and detail pages.** `/briefs` (search by customer or PV
       reference, filter by status and tier, pagination) and `/briefs/[id]`
@@ -29,6 +29,44 @@ Agreed order: build capabilities first, then migrate to CPL's Azure.
       screenshots as Admin, and as a submitter trying to open someone
       else's brief. The home page table now links through to the detail.
       Previously only submitters had any list, with no links or search.
+- [x] **Tier T (Target account).** CPL confirmed (2 Nov 2026): T is separate
+      from A; A needs no extra approval, T always goes to the Commercial
+      Director (Claire). Implemented as data plus a small amount of engine:
+      `src/engine/tiers.ts` (canonical tier, `resolveTierKey`, `withTierT`),
+      `computeStageB` raises `tier_auto_approval` for T, and the legacy
+      "A/T" value still works everywhere and behaves as A, so historical
+      briefs, replays and the 7,776-case parity set are unaffected. T is
+      deliberately NOT aliased: it is an unknown tier until a rule set
+      that defines it is published. T's weight (100) is an assumption from
+      the workbook's note "T = A (100)"; confirm with CPL.
+      **Rollout is a rule-set change, not a code deploy:** run
+      `npx tsx src/db/seed/add-tier-t-draft.ts <admin-upn>`, open the draft
+      in Admin > Rule sets, run the replay, then publish. Until it is
+      published, the form still offers "A/T" and nothing changes. The brief
+      form and list filter now read the tier list from the published rule set.
+      On the dashboard, briefs from before the split stay under their own
+      "A/T" row rather than being folded into A, since some may have been T.
+      16 new engine tests (engine still 100% on every file), 2 integration
+      tests (the draft splits A/T and replays identically to a plain copy),
+      and verified in a real browser: T raises one Commercial Director
+      requirement and stays pending, A and legacy A/T auto-approve.
+      **The live workbook** still has the merged "A/T". Splitting it would let
+      the parity harness cover T and keeps the two in step while both are in
+      use; not required for the app.
+- [x] **Self-approval escalation to Admin.** Migration
+      `drizzle/0002_escalate_self_approval.sql` adds `escalated_at` and
+      `escalation_reason` to `approval_requirements`. At submission, if every
+      current holder of the required role is the submitter or the Account
+      Manager of record (`shouldEscalateRequirement`), the requirement is
+      flagged and a `requirement.escalated_to_admin` audit event is written.
+      Escalated requirements leave the role's queue, appear in an Admin's
+      Approvals queue, and only an Admin who is not themselves conflicted
+      can decide them. With no holders at all it is NOT escalated (that is a
+      role-mapping gap). 4 integration tests plus 8 authz tests; checked in a
+      real browser.
+      **Supabase:** apply the migration with `drizzle-kit migrate`, or if the
+      tracking table is empty again, run the two ALTER statements and insert
+      its hash per the runbook.
 - [x] **Shared database pool (`src/lib/db.ts`).** Every page and route
       used to build its own `postgres()` pool per request and never close
       it; 20 copies of `getDb()` are now one cached pool per process

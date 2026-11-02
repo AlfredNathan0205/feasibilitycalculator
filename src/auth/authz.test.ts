@@ -7,6 +7,7 @@ import {
   requireCanActOnRequirement,
   checkSelfApproval,
   requireCanDecideRequirement,
+  shouldEscalateRequirement,
   AuthorizationError,
   type AuthSession,
 } from "./authz.js";
@@ -202,7 +203,7 @@ describe("requireCanDecideRequirement — combined gate", () => {
     ).toThrow(AuthorizationError);
   });
 
-  it("the self-approval block error names the reassignment gap rather than silently guessing", () => {
+  it("the self-approval block error says why it was blocked", () => {
     try {
       requireCanDecideRequirement(
         approverSession,
@@ -212,8 +213,82 @@ describe("requireCanDecideRequirement — combined gate", () => {
       expect.unreachable("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(AuthorizationError);
-      expect((err as Error).message).toMatch(/line manager/);
-      expect((err as Error).message).toMatch(/open-questions/);
+      expect((err as Error).message).toMatch(/self-approval conflict \(submitter\)/);
     }
+  });
+
+  describe("escalated requirements are decided by an Admin", () => {
+    const escalated = { requiredRoleKey: "ppd_manager", escalated: true };
+    const admin = session({ userId: "admin-1", accessRoles: ["admin"] });
+    const brief = { submittedBy: "approver-1", onBehalfOf: null };
+
+    it("lets an Admin decide it, even without holding the approval role", () => {
+      expect(() => requireCanDecideRequirement(admin, brief, escalated)).not.toThrow();
+    });
+
+    it("no longer lets the role's own approver decide it", () => {
+      expect(() =>
+        requireCanDecideRequirement(approverSession, brief, escalated),
+      ).toThrow(AuthorizationError);
+      const otherApprover = session({
+        userId: "approver-2",
+        accessRoles: ["approver"],
+        approvalAuthorityRoles: ["ppd_manager"],
+      });
+      expect(() => requireCanDecideRequirement(otherApprover, brief, escalated)).toThrow(
+        AuthorizationError,
+      );
+    });
+
+    it("still blocks an Admin who submitted the brief, or is its Account Manager of record", () => {
+      expect(() =>
+        requireCanDecideRequirement(
+          admin,
+          { submittedBy: "admin-1", onBehalfOf: null },
+          escalated,
+        ),
+      ).toThrow(/self-approval conflict/);
+      expect(() =>
+        requireCanDecideRequirement(
+          admin,
+          { submittedBy: "coordinator-1", onBehalfOf: "admin-1" },
+          escalated,
+        ),
+      ).toThrow(/self-approval conflict/);
+    });
+  });
+});
+
+describe("shouldEscalateRequirement", () => {
+  const brief = { submittedBy: "jo", onBehalfOf: null };
+
+  it("escalates when the only holder is the submitter", () => {
+    expect(shouldEscalateRequirement(["jo"], brief)).toBe(true);
+  });
+
+  it("escalates when the only holder is the Account Manager of record", () => {
+    expect(
+      shouldEscalateRequirement(["claire"], {
+        submittedBy: "coordinator",
+        onBehalfOf: "claire",
+      }),
+    ).toBe(true);
+  });
+
+  it("escalates when every holder is conflicted, across both identities", () => {
+    expect(
+      shouldEscalateRequirement(["coordinator", "claire"], {
+        submittedBy: "coordinator",
+        onBehalfOf: "claire",
+      }),
+    ).toBe(true);
+  });
+
+  it("does not escalate while any holder is unconflicted", () => {
+    expect(shouldEscalateRequirement(["jo", "selena"], brief)).toBe(false);
+  });
+
+  it("does not escalate when there are no holders: that is a role-mapping gap, not a conflict", () => {
+    expect(shouldEscalateRequirement([], brief)).toBe(false);
   });
 });

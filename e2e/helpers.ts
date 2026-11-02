@@ -41,3 +41,14 @@ export function farFutureDeadline(daysFromNow = 45): string {
   d.setUTCDate(d.getUTCDate() + daysFromNow);
   return d.toISOString().slice(0, 10);
 }
+
+/**
+ * Selects tier A in the brief form. The tier list comes from the published
+ * rule set: it offers "A/T" before the tier-T split and "A" and "T" after,
+ * so pick whichever of the two this environment has.
+ */
+export async function selectTierA(page: Page) {
+  const tier = page.locator("#tier");
+  const hasA = (await tier.locator('option[value="A"]').count()) > 0;
+  await tier.selectOption(hasA ? "A" : "A/T");
+}

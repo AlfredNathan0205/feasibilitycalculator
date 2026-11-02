@@ -1,5 +1,16 @@
 # Open questions
 
+**Both questions below were answered by CPL on 2 Nov 2026 and are resolved.**
+They are kept for the reasoning. Answers:
+
+1. Tier T is a Target account and is a separate tier from A. A needs no
+   extra approval; T always goes to the Commercial Director. Implemented
+   (`src/engine/tiers.ts`, `src/services/tier-t-migration.ts`).
+2. A self-approval conflict escalates to Admin (option 3 below) and is
+   recorded in the audit trail. CPL's approvers (Jo, Selena, Pauline,
+   Claire) don't normally submit briefs, so this is a safeguard.
+   Implemented (`shouldEscalateRequirement`, `approval_requirements.escalated_at`).
+
 Per Build Prompt §15: where the workbook or spec leaves something genuinely
 ambiguous, this documents the cell reference and the candidate
 interpretations, rather than the implementer silently picking one.

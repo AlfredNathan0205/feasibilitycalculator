@@ -64,7 +64,10 @@ export async function POST(
     requireCanDecideRequirement(
       session,
       { submittedBy: brief.submittedBy, onBehalfOf: brief.onBehalfOf },
-      { requiredRoleKey: requirement.requiredRoleKey },
+      {
+        requiredRoleKey: requirement.requiredRoleKey,
+        escalated: requirement.escalatedAt !== null,
+      },
     );
   } catch (err) {
     if (err instanceof AuthorizationError) {

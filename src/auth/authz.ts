@@ -108,15 +108,12 @@ export type SelfApprovalCheck =
  * open question, so it's implemented directly rather than punted to
  * docs/open-questions.md.
  *
- * NOTE — genuinely open, and IS logged in docs/open-questions.md: the spec
- * says to "reassign to their line manager role," but no relationship
- * capturing "who is X's line manager" exists anywhere in the data model
- * (role_holders records role assignments, not a management hierarchy). This
- * function can reliably DETECT the conflict; it deliberately does not
- * attempt to resolve a reassignment target, since guessing at an unmodeled
- * relationship would be worse than surfacing the gap. Callers must treat
- * `conflicted: true` as "block this approval and escalate to a human/admin
- * decision," not as "auto-reassign."
+ * RESOLVED (CPL, Nov 2026): there is no line-manager relationship in the
+ * data model, and CPL's approvers do not normally submit briefs. The agreed
+ * handling is to escalate to an Admin and record it in the audit trail, not
+ * to reassign to a line manager. This function only DETECTS the conflict;
+ * shouldEscalateRequirement and requireCanDecideRequirement implement the
+ * escalation.
  */
 export function checkSelfApproval(
   session: AuthSession,
@@ -137,18 +134,44 @@ export function checkSelfApproval(
  * Throws with a specific, distinguishable reason in each failure case so
  * callers (and their tests) don't have to re-derive why an attempt was
  * rejected.
+ *
+ * Escalated requirements (every holder of the required role is the
+ * submitter, or the Account Manager the brief was submitted for) are decided
+ * by an Admin instead of the role's holders. The Admin is still subject to
+ * the self-approval check, so an Admin who submitted the brief can't decide
+ * it either. This resolves docs/open-questions.md item 2 as "escalate to
+ * Admin and record it in the audit trail".
  */
 export function requireCanDecideRequirement(
   session: AuthSession,
   brief: { submittedBy: string; onBehalfOf: string | null },
-  requirement: { requiredRoleKey: string },
+  requirement: { requiredRoleKey: string; escalated?: boolean },
 ): void {
-  requireCanActOnRequirement(session, requirement);
+  if (requirement.escalated) {
+    requireAdmin(session);
+  } else {
+    requireCanActOnRequirement(session, requirement);
+  }
   const selfApproval = checkSelfApproval(session, brief);
   if (selfApproval.conflicted) {
     throw new AuthorizationError(
-      `User ${session.userId} cannot decide this requirement: self-approval conflict (${selfApproval.reason}). ` +
-        `Must be reassigned to a line manager per §2 — see docs/open-questions.md item 2.`,
+      `User ${session.userId} cannot decide this requirement: self-approval conflict (${selfApproval.reason}).`,
     );
   }
+}
+
+/**
+ * True when a requirement should be escalated to Admin at creation time:
+ * it has at least one current holder, and every one of them is the person
+ * who submitted the brief or the Account Manager it was submitted for.
+ * With no holders at all it is NOT escalated (that is a role-mapping gap an
+ * Admin should fix, not a conflict), and with any unconflicted holder it is
+ * left with that holder.
+ */
+export function shouldEscalateRequirement(
+  holderIds: string[],
+  brief: { submittedBy: string; onBehalfOf: string | null },
+): boolean {
+  if (holderIds.length === 0) return false;
+  return holderIds.every((id) => id === brief.submittedBy || id === brief.onBehalfOf);
 }

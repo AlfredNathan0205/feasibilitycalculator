@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { computeStageA, computeStageB, type DecisionInputs } from "./decision.js";
 import type { RuleSetPayload } from "./scoring.js";
+import { withTierT } from "./tiers.js";
 import rulesetV1 from "../db/seed/ruleset-v1.generated.json" with { type: "json" };
 
 const ruleSet = rulesetV1 as unknown as RuleSetPayload;
@@ -188,16 +189,51 @@ describe("computeStageB — required approvals (§5), independent of Stage A", (
     expect(gcmsRequirement!.role).toBe("analytical_manager");
   });
 
-  it.skip(
-    "tier T raises an automatic approval requirement (§11 item 2) — SKIPPED: " +
-      "the live workbook has no distinguishable 'T' input separate from 'A/T', " +
-      "see docs/open-questions.md item 1. This test documents the gap rather " +
-      "than guessing an interpretation.",
-    () => {
-      // Intentionally left unimplemented pending a real answer on how tier T
-      // is represented as an input.
-    },
-  );
+  describe("tier T (Target account)", () => {
+    const tierTRuleSet = withTierT(ruleSet);
+
+    it("raises a Commercial Director approval for tier T", () => {
+      const requirements = computeStageB(baseInputs({ customerTier: "T" }), tierTRuleSet);
+      expect(requirements).toEqual([
+        { requirementType: "tier_auto_approval", role: "commercial_director" },
+      ]);
+    });
+
+    it("does not raise it for tier A, the legacy merged A/T value, or any other tier", () => {
+      for (const customerTier of ["A", "A/T", "B", "C", "D"]) {
+        const requirements = computeStageB(baseInputs({ customerTier }), tierTRuleSet);
+        expect(
+          requirements.some((r) => r.requirementType === "tier_auto_approval"),
+          customerTier,
+        ).toBe(false);
+      }
+    });
+
+    it("does nothing under a rule set that has not enabled it", () => {
+      // v1 has the routing entry disabled; T is not even a known tier there.
+      const requirements = computeStageB(baseInputs({ customerTier: "T" }), ruleSet);
+      expect(requirements).toEqual([]);
+    });
+
+    it("treats T like A for the creative-creation rule (neither raises it)", () => {
+      const inputs = { creativeApproach: "Creation/Unknown" };
+      const types = (customerTier: string) =>
+        computeStageB(baseInputs({ ...inputs, customerTier }), tierTRuleSet).map(
+          (r) => r.requirementType,
+        );
+      expect(types("A")).not.toContain("creative_creation");
+      expect(types("T")).not.toContain("creative_creation");
+      expect(types("B")).toContain("creative_creation");
+    });
+
+    it("a high-scoring tier T brief is commercially auto-approved but still needs the Commercial Director", () => {
+      const inputs = baseInputs({ customerTier: "T", valuePotentialGbp: 200_000 });
+      expect(computeStageA(inputs, tierTRuleSet).commercialDecision).toBe(
+        "auto_approved",
+      );
+      expect(computeStageB(inputs, tierTRuleSet)).toHaveLength(1);
+    });
+  });
 
   it("strategic priority does NOT raise a requirement under the current rule set (the alternate is disabled by default, §11 item 3)", () => {
     const requirements = computeStageB(baseInputs({ strategicPriority: true }), ruleSet);

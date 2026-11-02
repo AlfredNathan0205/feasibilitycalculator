@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import postgres from "postgres";
-import { signInAs, farFutureDeadline } from "./helpers.js";
+import { signInAs, farFutureDeadline, selectTierA } from "./helpers.js";
 
 /**
  * Journey 3: submit a brief with an inline pre-approval declaration
@@ -30,7 +30,7 @@ test("submit with pre-approval, then revoke: the Approval Code genuinely stops w
   await page.goto("/briefs/new");
 
   await page.locator("#customerReference").fill(customerReference);
-  await page.locator("#tier").selectOption("A/T");
+  await selectTierA(page);
   await page.locator("#valuePotentialGbp").fill("200000");
   await page.locator("#newRework").selectOption("New");
   await page.locator("#briefType").selectOption("Exclusive");

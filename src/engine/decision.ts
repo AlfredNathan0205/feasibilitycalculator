@@ -17,6 +17,7 @@
 
 import type { RuleSetPayload, ScoringInputs } from "./scoring.js";
 import { computeScore } from "./scoring.js";
+import { canonicalTier, isTierAOrT } from "./tiers.js";
 
 export type CommercialDecision = "auto_approved" | "pending" | "declined";
 
@@ -27,7 +28,7 @@ export type RequirementType =
   | "marketing_resource"
   | "ppd_resource"
   | "gcms_resource"
-  | "tier_auto_approval" // disabled by default, §11 item 2
+  | "tier_auto_approval" // tier T: Commercial Director approval (enabled by the tier-T rule set)
   | "strategic_priority_deferral"; // disabled by default, §11 item 3
 
 export interface RequiredApproval {
@@ -110,8 +111,12 @@ export function computeStageB(
     addIfEnabled("short_deadline");
   }
 
-  // Creative: creation — Creation/Unknown and tier is not A/T.
-  if (inputs.creativeApproach === "Creation/Unknown" && inputs.customerTier !== "A/T") {
+  // Creative: creation — Creation/Unknown and tier is not A or T (tier T behaves
+  // like A here, as the merged workbook value did; legacy "A/T" is tier A).
+  if (
+    inputs.creativeApproach === "Creation/Unknown" &&
+    !isTierAOrT(inputs.customerTier)
+  ) {
     addIfEnabled("creative_creation");
   }
 
@@ -134,19 +139,11 @@ export function computeStageB(
   // fires if a future rule set enables it.
   if (inputs.strategicPriority) addIfEnabled("strategic_priority_deferral");
 
-  // Disabled-by-default alternate for "tier raises an automatic approval
-  // requirement" (§11 item 2) is DELIBERATELY NOT WIRED IN HERE.
-  //
-  // The spec's item 2 assumes a distinguishable "tier T" separate from tier
-  // A. But the live workbook's actual data-validation list for the tier
-  // dropdown (Calculator!B2, validated against Reference!$A$2:$A$5) only
-  // offers "A/T" as a single combined value — there is no separate "T" input
-  // anywhere in the live model to test. Guessing that "A/T" should stand in
-  // for "T" here would be silently picking a behaviour the spec explicitly
-  // warns against (§15 "How to handle uncertainty"). See
-  // docs/open-questions.md — this requirement type exists in the enum and
-  // the routing table (disabled) so the schema doesn't need to change once
-  // the real answer is known, but no code path currently raises it.
+  // Tier T (Target account): always goes to the Commercial Director, because
+  // it is likely to be proactive work. Tier A does not. Enabled by the rule
+  // set that introduces tier T; until then the routing entry is disabled and
+  // addIfEnabled skips it.
+  if (canonicalTier(inputs.customerTier) === "T") addIfEnabled("tier_auto_approval");
 
   return requirements;
 }

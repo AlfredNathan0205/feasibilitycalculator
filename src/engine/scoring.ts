@@ -14,6 +14,8 @@
  * workbook is the ground truth the parity harness checks against.
  */
 
+import { resolveTierKey } from "./tiers.js";
+
 export interface RuleSetPayload {
   tierWeights: Record<string, number>;
   newReworkMultipliers: Record<string, number>;
@@ -27,7 +29,7 @@ export interface RuleSetPayload {
 }
 
 export interface ScoringInputs {
-  customerTier: string; // "A/T" | "B" | "C" | "D"
+  customerTier: string; // "A" | "T" | "B" | "C" | "D" (legacy briefs: "A/T", treated as A)
   valuePotentialGbp: number;
   newRework: string; // "New" | "Rework (Of Selling)" | "Rework (Non-Selling)"
   briefType: string; // "Exclusive" | "Competitive" | "ProActive"
@@ -68,7 +70,7 @@ export function computeScore(
 ): ScoreResult {
   const customerTier = lookupOrThrow(
     ruleSet.tierWeights,
-    inputs.customerTier,
+    resolveTierKey(ruleSet.tierWeights, inputs.customerTier) ?? inputs.customerTier,
     "customerTier",
   );
 

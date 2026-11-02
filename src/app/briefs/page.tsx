@@ -9,7 +9,8 @@ import { StatusPill } from "../components/status-pill.js";
 import { getDb } from "../../lib/db.js";
 
 const STATUSES = ["pending", "approved", "declined"] as const;
-const TIERS = ["A/T", "B", "C", "D"];
+// "A/T" is the legacy merged value on briefs submitted before A and T were split.
+const TIERS = ["A", "T", "A/T", "B", "C", "D"];
 
 type SearchParams = { q?: string; status?: string; tier?: string; page?: string };
 

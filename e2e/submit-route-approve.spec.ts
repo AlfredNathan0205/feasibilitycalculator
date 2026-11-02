@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { signInAs, farFutureDeadline } from "./helpers.js";
+import { signInAs, farFutureDeadline, selectTierA } from "./helpers.js";
 
 /**
  * Journey 2: submit a brief that raises a PPD resource requirement (so
@@ -18,7 +18,7 @@ test("submit and route for approval, then approve: code withheld until the PPD s
   await page.goto("/briefs/new");
 
   await page.locator("#customerReference").fill(customerReference);
-  await page.locator("#tier").selectOption("A/T");
+  await selectTierA(page);
   await page.locator("#valuePotentialGbp").fill("200000");
   await page.locator("#newRework").selectOption("New");
   await page.locator("#briefType").selectOption("Exclusive");

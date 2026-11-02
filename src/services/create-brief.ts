@@ -21,6 +21,7 @@ import { computeStageA, computeStageB } from "../engine/decision.js";
 import type { RuleSetPayload } from "../engine/scoring.js";
 import { issueUniqueApprovalCode } from "./issue-approval-code.js";
 import { generateRevokeToken } from "../engine/revoke-token.js";
+import { shouldEscalateRequirement } from "../auth/authz.js";
 
 /** §5 Stage C: a per-requirement pre-approval declaration, made inline at
  * submission time (the spec's step-2-of-the-wizard concept, folded into
@@ -119,11 +120,11 @@ function daysBetween(from: Date, to: Date): number {
  * a role has zero or multiple current holders (e.g. mid-handover),
  * leaving this null rather than guessing which one to snapshot is the
  * safer default; the UI falls back to showing the role name alone. */
-async function resolveSingleCurrentHolder(
+async function listCurrentHolderIds(
   db: PostgresJsDatabase<typeof schema>,
   roleKey: string,
   asOf: Date,
-): Promise<string | null> {
+): Promise<string[]> {
   const asOfDay = asOf.toISOString().slice(0, 10);
   const holders = await db
     .select({ userId: schema.roleHolders.userId })
@@ -138,7 +139,7 @@ async function resolveSingleCurrentHolder(
         ),
       ),
     );
-  return holders.length === 1 ? holders[0]!.userId : null;
+  return holders.map((h) => h.userId);
 }
 
 /** §5 Stage C: "the named manager who gave the go-ahead, selected from
@@ -325,19 +326,45 @@ export async function createBrief(
         });
       } else {
         allRequirementsSatisfied = false;
-        const assignedHolderId = await resolveSingleCurrentHolder(
-          tx,
-          requirement.role,
-          now,
-        );
-        await tx.insert(schema.approvalRequirements).values({
-          briefId: brief.id,
-          decisionId: decision.id,
-          requirementType: requirement.requirementType,
-          requiredRoleKey: requirement.role,
-          assignedHolderId,
-          state: "pending",
+        const holderIds = await listCurrentHolderIds(tx, requirement.role, now);
+        const assignedHolderId = holderIds.length === 1 ? holderIds[0]! : null;
+        // Self-approval conflict: if everyone who holds the role is the
+        // submitter or the Account Manager of record, nobody can legitimately
+        // decide it, so it goes to an Admin instead and is recorded as such.
+        const escalate = shouldEscalateRequirement(holderIds, {
+          submittedBy: input.submittedBy,
+          onBehalfOf: input.onBehalfOf ?? null,
         });
+        const [inserted] = await tx
+          .insert(schema.approvalRequirements)
+          .values({
+            briefId: brief.id,
+            decisionId: decision.id,
+            requirementType: requirement.requirementType,
+            requiredRoleKey: requirement.role,
+            assignedHolderId,
+            state: "pending",
+            escalatedAt: escalate ? now : null,
+            escalationReason: escalate
+              ? `Every current holder of ${requirement.role.replace(/_/g, " ")} is the submitter or the Account Manager of record, so this was escalated to an Admin.`
+              : null,
+          })
+          .returning({ id: schema.approvalRequirements.id });
+        if (escalate && inserted) {
+          await tx.insert(schema.auditEvents).values({
+            actorId: input.submittedBy,
+            action: "requirement.escalated_to_admin",
+            entityType: "approval_requirement",
+            entityId: inserted.id,
+            before: null,
+            after: {
+              reason: "self_approval_conflict",
+              requirementType: requirement.requirementType,
+              requiredRoleKey: requirement.role,
+            },
+            requestCorrelationId: crypto.randomUUID(),
+          });
+        }
       }
     }
 

@@ -15,6 +15,13 @@
       "when": 1788418486091,
       "tag": "0001_audit_immutability",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793649492231,
+      "tag": "0002_escalate_self_approval",
+      "breakpoints": true
     }
   ]
 }

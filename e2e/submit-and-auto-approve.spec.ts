@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { signInAs, farFutureDeadline } from "./helpers.js";
+import { signInAs, farFutureDeadline, selectTierA } from "./helpers.js";
 
 /**
  * Journey 1 (§14's three primary journeys): submit a brief that
@@ -16,7 +16,7 @@ test("submit and auto-approve: A/T tier, £200k, New/Exclusive/Direct/Library On
   await page.goto("/briefs/new");
 
   await page.locator("#customerReference").fill("E2E-AUTO-APPROVE");
-  await page.locator("#tier").selectOption("A/T");
+  await selectTierA(page);
   await page.locator("#valuePotentialGbp").fill("200000");
   await page.locator("#newRework").selectOption("New");
   await page.locator("#briefType").selectOption("Exclusive");

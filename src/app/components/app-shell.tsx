@@ -48,7 +48,8 @@ export function AppShell({
                 New brief
               </a>
             )}
-            {session.accessRoles.includes("approver") && (
+            {(session.accessRoles.includes("approver") ||
+              session.accessRoles.includes("admin")) && (
               <a href="/approvals" className="shell-nav-link">
                 Approvals
               </a>

@@ -15,7 +15,7 @@
  * computation.
  */
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema.js";
 import { issueUniqueApprovalCode } from "./issue-approval-code.js";
@@ -383,6 +383,8 @@ export async function listPendingRequirementsForRoles(
       score: schema.decisions.computedScore,
       commercialDecision: schema.decisions.commercialDecision,
       decisionId: schema.decisions.id,
+      escalatedAt: schema.approvalRequirements.escalatedAt,
+      escalationReason: schema.approvalRequirements.escalationReason,
     })
     .from(schema.approvalRequirements)
     .innerJoin(schema.briefs, eq(schema.briefs.id, schema.approvalRequirements.briefId))
@@ -394,6 +396,45 @@ export async function listPendingRequirementsForRoles(
       and(
         inArray(schema.approvalRequirements.state, ["pending", "revoked"]),
         inArray(schema.approvalRequirements.requiredRoleKey, roleKeys),
+        // Escalated requirements belong to Admin, not to the role's holders.
+        isNull(schema.approvalRequirements.escalatedAt),
+      ),
+    );
+}
+
+/** Requirements escalated to Admin because every holder of the required role
+ * is the submitter or the Account Manager of record. Same shape as
+ * listPendingRequirementsForRoles so the approvals queue can show both. */
+export async function listEscalatedRequirements(db: PostgresJsDatabase<typeof schema>) {
+  return db
+    .select({
+      requirementId: schema.approvalRequirements.id,
+      requirementTypeKind: schema.approvalRequirements.requirementType,
+      requiredRoleKey: schema.approvalRequirements.requiredRoleKey,
+      state: schema.approvalRequirements.state,
+      createdAt: schema.approvalRequirements.createdAt,
+      briefId: schema.briefs.id,
+      customerReference: schema.briefs.customerReference,
+      tier: schema.briefs.tier,
+      valuePotentialGbp: schema.briefs.valuePotentialGbp,
+      submittedBy: schema.briefs.submittedBy,
+      onBehalfOf: schema.briefs.onBehalfOf,
+      score: schema.decisions.computedScore,
+      commercialDecision: schema.decisions.commercialDecision,
+      decisionId: schema.decisions.id,
+      escalatedAt: schema.approvalRequirements.escalatedAt,
+      escalationReason: schema.approvalRequirements.escalationReason,
+    })
+    .from(schema.approvalRequirements)
+    .innerJoin(schema.briefs, eq(schema.briefs.id, schema.approvalRequirements.briefId))
+    .innerJoin(
+      schema.decisions,
+      eq(schema.decisions.id, schema.approvalRequirements.decisionId),
+    )
+    .where(
+      and(
+        inArray(schema.approvalRequirements.state, ["pending", "revoked"]),
+        isNotNull(schema.approvalRequirements.escalatedAt),
       ),
     );
 }

@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { computeStageA, computeStageB } from "../../../engine/decision.js";
 import type { RuleSetPayload } from "../../../engine/scoring.js";
 
-const TIERS = ["A/T", "B", "C", "D"];
+// Shown until the published rule set loads; the real list comes from its tierWeights.
+const FALLBACK_TIERS = ["A", "B", "C", "D"];
 const NEW_REWORK = ["New", "Rework (Of Selling)", "Rework (Non-Selling)"];
 const BRIEF_TYPES = ["Exclusive", "Competitive", "ProActive"];
 const CUSTOMER_APPROVALS = ["Direct", "Deferred/Unknown"];
@@ -48,7 +49,7 @@ interface FormState {
 
 const initialState: FormState = {
   customerReference: "",
-  tier: TIERS[0]!,
+  tier: FALLBACK_TIERS[0]!,
   valuePotentialGbp: "0",
   newRework: NEW_REWORK[0]!,
   briefType: BRIEF_TYPES[0]!,
@@ -106,11 +107,19 @@ export function BriefForm() {
   // advancing past the step it's actually rendered on.
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const formRef = useRef<HTMLFormElement>(null);
+  const tiers = ruleSet ? Object.keys(ruleSet.tierWeights) : FALLBACK_TIERS;
 
   useEffect(() => {
     fetch("/api/rule-set/current")
       .then((r) => r.json())
-      .then((data) => setRuleSet(data.payload))
+      .then((data) => {
+        const payload = data.payload as RuleSetPayload;
+        setRuleSet(payload);
+        // Keep the selected tier valid for this rule set (e.g. a rule set that
+        // has A and T but not the legacy merged A/T).
+        const keys = Object.keys(payload.tierWeights);
+        setForm((f) => (keys.includes(f.tier) ? f : { ...f, tier: keys[0] ?? f.tier }));
+      })
       .catch(() => setRuleSet(null));
     fetch("/api/role-holders/current")
       .then((r) => r.json())
@@ -354,12 +363,18 @@ export function BriefForm() {
                       value={form.tier}
                       onChange={(e) => set("tier", e.target.value)}
                     >
-                      {TIERS.map((t) => (
+                      {tiers.map((t) => (
                         <option key={t} value={t}>
                           {t}
                         </option>
                       ))}
                     </select>
+                    {form.tier === "T" && (
+                      <p className="helptext" style={{ margin: "0.35rem 0 0" }}>
+                        Target account: this brief always needs Commercial Director
+                        approval.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label htmlFor="valuePotentialGbp">Value potential (£)</label>

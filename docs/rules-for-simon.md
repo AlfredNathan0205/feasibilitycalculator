@@ -13,7 +13,7 @@ creative approach.
 
 | Ingredient         | How it's worked out                                                                                                                                             |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Customer tier      | A/T scores 100, B scores 50, C scores 25, D scores 10                                                                                                           |
+| Customer tier      | A scores 100, T scores 100 (assumed), B scores 50, C scores 25, D scores 10                                                                                     |
 | Value potential    | The value in thousands (a £200,000 brief contributes 200 points)                                                                                                |
 | New / Rework       | Multiplies the value-potential points by 1 for New or Rework of a selling reference, by 0 for rework of a non-selling reference                                 |
 | Brief type         | Multiplies the value-potential points by 1 for Exclusive, 0 for Competitive, or **minus 0.5** for ProActive — a speculative brief actively drags the score down |
@@ -56,14 +56,14 @@ the old spreadsheet worked:
 These fire independently of the commercial decision and independently of
 each other:
 
-| Trigger                    | Condition                                                 | Who signs off                |
-| -------------------------- | --------------------------------------------------------- | ---------------------------- |
-| Short deadline             | Deadline is within 14 days of submission                  | Development Director*        |
-| Creative — creation        | Creative approach is Creation/Unknown, and tier isn't A/T | Development Director*        |
-| Creative — starting point  | Creative approach is Starting Point, and tier is C or D   | Development Director*        |
-| Marketing resource         | Marketing flagged                                         | Divisional Head of Marketing |
-| PPD resource               | PPD flagged                                               | PPD Manager                  |
-| GCMS / analytical resource | GCMS flagged                                              | Analytical Manager           |
+| Trigger                    | Condition                                                    | Who signs off                |
+| -------------------------- | ------------------------------------------------------------ | ---------------------------- |
+| Short deadline             | Deadline is within 14 days of submission                     | Development Director*        |
+| Creative — creation        | Creative approach is Creation/Unknown, and tier isn't A or T | Development Director*        |
+| Creative — starting point  | Creative approach is Starting Point, and tier is C or D      | Development Director*        |
+| Marketing resource         | Marketing flagged                                            | Divisional Head of Marketing |
+| PPD resource               | PPD flagged                                                  | PPD Manager                  |
+| GCMS / analytical resource | GCMS flagged                                                 | Analytical Manager           |
 
 *Provisional, pending Pauline's routing guidance — see "Still needs your
 input" below.
@@ -121,26 +121,32 @@ example, "7 briefs would move from Declined to Pending"). That report has
 to be run and reviewed before a change goes live — the intent is that
 tuning the thresholds is never guesswork.
 
+## Tier T, and conflicts of interest (decided)
+
+- **Tier T is a separate tier from A.** T is a Target account: the work is
+  likely to be proactive, so **every tier T brief needs the Commercial
+  Director's approval**, whatever its score. Tier A brings no extra
+  approval and scores exactly as the old combined "A/T" did (100). Tier T
+  is also scored at 100, following the old spreadsheet's note "T = A
+  (100)". That is an assumption: change it in the rule set editor if T
+  should score differently. Briefs submitted before the split keep the
+  old "A/T" label and are treated as tier A.
+- **Conflict of interest goes to an Admin.** If everyone who holds an
+  approval role is the person who submitted the brief (or the Account
+  Manager it was submitted for), nobody can legitimately approve it, so
+  the requirement is flagged as escalated, recorded in the audit trail, and
+  appears in an Admin's Approvals queue. An Admin who is themselves the
+  submitter cannot decide it either.
+- **Who holds which role:** Commercial Director is Claire and Development
+  Director is Jo. Admin is Simon or Alfred.
+
 ## Still needs your input
 
-- **Pauline's routing guidance.** Exactly what the Commercial Director and
-  Development Director each sign off on is still provisional (see the
-  table above). Changing this is a data change, not a rebuild, whenever
-  she's confirmed it.
-- **Tier T.** An old note in the spreadsheet suggested tier T should be
-  treated differently from tier A, with its own automatic sign-off. But
-  the actual dropdown in the live spreadsheet only ever offers a combined
-  "A/T" option — there's no way for someone to select "T" specifically. If
-  tier T is meant to come back as its own distinct option, that's a change
-  to what Account Managers see on the form, and needs a decision on what
-  actually distinguishes a T-tier customer from an A-tier one.
-- **Who gets reassigned when there's a conflict of interest.** If an
-  approver is asked to sign off on a brief they submitted themselves (or
-  submitted on behalf of), the system correctly blocks it — but it doesn't
-  yet know who to hand it to instead, because "who is this person's line
-  manager" isn't tracked anywhere yet. Worth deciding whether that's a new
-  piece of data to capture, or whether it should just escalate to you/Admin
-  directly each time.
-- **Who actually holds Admin.** Deliberately meant to be a small, named
-  group rather than everyone with access — worth confirming who that is in
-  practice before this goes anywhere near production use.
+- **Pauline's routing guidance.** Who holds the Commercial and Development
+  Director roles is now confirmed (above), but exactly which requirement
+  types each signs off on is still provisional (see the table above).
+  Only tier T to the Commercial Director has been confirmed. Changing the
+  rest is a data change, not a rebuild.
+- **Tier T's score.** Assumed to equal tier A (100); please confirm.
+- **Roles for Selena and Pauline.** We know they approve, but not which
+  approval role each holds (Marketing, PPD, Analytical, or other).

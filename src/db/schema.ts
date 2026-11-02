@@ -351,6 +351,14 @@ export const approvalRequirements = pgTable(
       withTimezone: true,
     }),
 
+    // Self-approval escalation (docs/open-questions.md item 2, resolved):
+    // set when every current holder of the required role is the brief's
+    // submitter or on-behalf-of Account Manager, so nobody who holds the role
+    // can legitimately decide it. An escalated requirement is decided by an
+    // Admin instead, and the escalation is recorded in the audit trail.
+    escalatedAt: timestamp("escalated_at", { withTimezone: true }),
+    escalationReason: text("escalation_reason"),
+
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
