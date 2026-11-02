@@ -74,7 +74,7 @@ export const dynamic = "force-dynamic";
 export default async function PeoplePage({
   searchParams,
 }: {
-  searchParams: Promise<{ ok?: string; error?: string }>;
+  searchParams: Promise<{ ok?: string; error?: string; inactive?: string }>;
 }) {
   const session = await auth();
   if (!session) {
@@ -100,9 +100,14 @@ export default async function PeoplePage({
     );
   }
 
-  const { ok, error } = await searchParams;
+  const { ok, error, inactive } = await searchParams;
   const db = getDb();
-  const [people, roles] = await Promise.all([listPeople(db), listRoleDefinitions(db)]);
+  const [allPeople, roles] = await Promise.all([listPeople(db), listRoleDefinitions(db)]);
+  // Deactivated people (leavers, retired test accounts) are kept for the audit
+  // trail but hidden unless asked for.
+  const showInactive = inactive === "1";
+  const deactivatedCount = allPeople.filter((p) => !p.active).length;
+  const people = showInactive ? allPeople : allPeople.filter((p) => p.active);
   const roleName = Object.fromEntries(roles.map((r) => [r.key, r.displayName]));
 
   return (
@@ -111,6 +116,13 @@ export default async function PeoplePage({
         <div className="eyebrow">ADMIN</div>
         <div className="page-header">
           <h1>People and roles</h1>
+          {deactivatedCount > 0 && (
+            <a href={showInactive ? "/admin/people" : "/admin/people?inactive=1"}>
+              {showInactive
+                ? "Hide deactivated people"
+                : `Show deactivated people (${deactivatedCount})`}
+            </a>
+          )}
         </div>
         {ok && (
           <div className="card" role="status" style={{ marginBottom: "1rem" }}>
