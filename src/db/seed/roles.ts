@@ -78,4 +78,11 @@ export const rolesSeed = [
     description:
       "Provisionally assigned to commercial deferrals; also the target of the two disabled routing rules (tier-raises-approval, strategic-priority-defers) (§11 items 2, 3).",
   },
+  {
+    key: "general_manager",
+    displayName: "General Manager (veto)",
+    category: "approval_authority" as const,
+    description:
+      "May veto any open approval requirement on any brief, whoever it is routed to. A veto declines the brief until an Admin reverses it. Never required to act, so nothing waits on this role.",
+  },
 ];

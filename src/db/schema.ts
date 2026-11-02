@@ -299,6 +299,13 @@ export const decisions = pgTable(
     finalStatus: finalStatusEnum("final_status").notNull().default("pending"),
     approvalCode: text("approval_code"),
     codeIssuedAt: timestamp("code_issued_at", { withTimezone: true }),
+    // General Manager veto: set while a veto stands. A vetoed decision is
+    // always "declined" until an Admin reverses it (vetoed_* cleared, the
+    // vetoed requirement returned to pending). See services/veto.ts.
+    vetoedAt: timestamp("vetoed_at", { withTimezone: true }),
+    vetoedBy: uuid("vetoed_by").references(() => users.id),
+    vetoReason: text("veto_reason"),
+    vetoedRequirementId: uuid("vetoed_requirement_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

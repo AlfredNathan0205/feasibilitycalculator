@@ -3,9 +3,9 @@
  * role-holder admin screen) when the org changes. Roles come from
  * rolesSeed in roles.ts.
  *
- * Pauline Holmes is deliberately provisioned with no roles: CPL has said she
- * is a division head "with approvals" but has not yet said which requests
- * route to her. Add her role here once confirmed.
+ * Pauline Holmes (General Manager) holds the veto: she may veto any open
+ * requirement on any brief. No requirement is routed to her, so nothing
+ * waits on her. CPL has left any other approval role for her open.
  */
 export interface Person {
   upn: string; // lower-case; matched case-insensitively at sign-in
@@ -36,5 +36,9 @@ export const people: Person[] = [
     displayName: "Selena Wagstaff",
     roles: ["approver", "divisional_head_marketing"],
   },
-  { upn: "pauline.holmes@cplaromas.com", displayName: "Pauline Holmes", roles: [] },
+  {
+    upn: "pauline.holmes@cplaromas.com",
+    displayName: "Pauline Holmes",
+    roles: ["approver", "general_manager"],
+  },
 ];

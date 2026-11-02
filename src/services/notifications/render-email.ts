@@ -148,6 +148,38 @@ export function renderNotificationEmail(
       return { subject, html, text };
     }
 
+    case "brief_vetoed": {
+      const customerReference =
+        typeof payload.customerReference === "string" ? payload.customerReference : "—";
+      const reason = typeof payload.reason === "string" ? payload.reason : "";
+      const subject = `Brief vetoed — ${customerReference}`;
+      const text = [
+        `Brief ${customerReference} has been vetoed by the General Manager and is now declined.`,
+        reason ? `Reason: "${reason}"` : null,
+        `An Admin can reverse a veto if it was made in error.`,
+      ]
+        .filter((line): line is string => line !== null)
+        .join("\n");
+      const html = `
+        <p>Brief <strong>${escapeHtml(customerReference)}</strong> has been vetoed by the
+        General Manager and is now declined.</p>
+        ${reason ? `<p>Reason: &ldquo;${escapeHtml(reason)}&rdquo;</p>` : ""}
+        <p>An Admin can reverse a veto if it was made in error.</p>
+      `.trim();
+      return { subject, html, text };
+    }
+
+    case "veto_reversed": {
+      const customerReference =
+        typeof payload.customerReference === "string" ? payload.customerReference : "—";
+      const subject = `Veto reversed — ${customerReference}`;
+      const text = `The veto on brief ${customerReference} has been reversed by an Admin. The vetoed requirement is back in the approver queue.`;
+      const html = `<p>The veto on brief <strong>${escapeHtml(
+        customerReference,
+      )}</strong> has been reversed by an Admin. The vetoed requirement is back in the approver queue.</p>`;
+      return { subject, html, text };
+    }
+
     default:
       throw new UnknownNotificationTemplateError(template);
   }

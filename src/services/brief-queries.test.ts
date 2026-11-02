@@ -16,6 +16,17 @@ describe("briefScopeFor (pure)", () => {
     expect(briefScopeFor(session({ accessRoles: ["auditor"] })).kind).toBe("all");
   });
 
+  it("gives the General Manager (veto) every brief but not the audit trail", () => {
+    expect(
+      briefScopeFor(
+        session({
+          accessRoles: ["approver"],
+          approvalAuthorityRoles: ["general_manager"],
+        }),
+      ),
+    ).toEqual({ kind: "all", audit: false });
+  });
+
   it("restricts a submitter to their own briefs with no approval roles", () => {
     expect(briefScopeFor(session({ accessRoles: ["account_manager"] }))).toEqual({
       kind: "restricted",
@@ -103,7 +114,7 @@ describeIfDb("brief queries (integration)", () => {
     await sql.end();
   });
 
-  const asAdmin = { kind: "all" } as const;
+  const asAdmin = { kind: "all", audit: true } as const;
   const restrictedTo = (userId: string, approvalRoles: string[] = []) =>
     ({ kind: "restricted", userId, approvalRoles }) as const;
 

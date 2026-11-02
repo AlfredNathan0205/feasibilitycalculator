@@ -175,3 +175,24 @@ export function shouldEscalateRequirement(
   if (holderIds.length === 0) return false;
   return holderIds.every((id) => id === brief.submittedBy || id === brief.onBehalfOf);
 }
+
+/**
+ * General Manager veto (CPL, Nov 2026): the holder of `general_manager` may
+ * veto any open requirement on any brief, regardless of which role it is
+ * routed to. Like every approval action it also needs the Approver access
+ * role. The veto is a power to block, never a step a brief waits on.
+ */
+export function canVeto(session: AuthSession): boolean {
+  return (
+    hasAccessRole(session, "approver") &&
+    session.approvalAuthorityRoles.includes("general_manager")
+  );
+}
+
+export function requireCanVeto(session: AuthSession): void {
+  if (!canVeto(session)) {
+    throw new AuthorizationError(
+      `User ${session.userId} does not hold the veto authority`,
+    );
+  }
+}
