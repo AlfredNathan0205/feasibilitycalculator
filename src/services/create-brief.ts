@@ -17,6 +17,7 @@
 import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema.js";
+import { listApprovalRecipients } from "./notifications/recipients.js";
 import { computeStageA, computeStageB } from "../engine/decision.js";
 import type { RuleSetPayload } from "../engine/scoring.js";
 import { issueUniqueApprovalCode } from "./issue-approval-code.js";
@@ -275,6 +276,8 @@ export async function createBrief(
     // "zero requirements" — a pre-approved requirement counts as
     // satisfied even though it exists).
     let allRequirementsSatisfied = true;
+    // Who to tell about each open sign-off; one email per person per brief.
+    const approvalRequests = new Map<string, string[]>();
     for (const requirement of requirements) {
       const declaration = input.preApprovals?.[requirement.requirementType];
 
@@ -350,6 +353,17 @@ export async function createBrief(
               : null,
           })
           .returning({ id: schema.approvalRequirements.id });
+        if (stageA.commercialDecision !== "declined") {
+          const recipients = await listApprovalRecipients(tx, requirement.role, now, [
+            input.submittedBy,
+            input.onBehalfOf,
+          ]);
+          for (const userId of recipients) {
+            const types = approvalRequests.get(userId) ?? [];
+            types.push(requirement.requirementType);
+            approvalRequests.set(userId, types);
+          }
+        }
         if (escalate && inserted) {
           await tx.insert(schema.auditEvents).values({
             actorId: input.submittedBy,
@@ -366,6 +380,21 @@ export async function createBrief(
           });
         }
       }
+    }
+
+    for (const [recipientId, requirementTypes] of approvalRequests) {
+      await tx.insert(schema.notifications).values({
+        recipientId,
+        channel: "email",
+        template: "approval_requested",
+        payload: {
+          briefId: brief.id,
+          customerReference: brief.customerReference,
+          requirementTypes,
+          deadline: input.deadline.toISOString().slice(0, 10),
+        },
+        deliveryStatus: "queued",
+      });
     }
 
     // Now finalize Stage D: declined wins outright regardless of anything

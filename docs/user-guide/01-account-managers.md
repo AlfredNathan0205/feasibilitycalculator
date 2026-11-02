@@ -67,19 +67,25 @@ Check the summary, then **Submit brief**. You are taken to the result.
 
 The brief's status is one of:
 
-| Status       | Meaning                                                                     | What you do                                                                                                                                                                          |
-| ------------ | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Approved** | Commercially OK and every sign-off cleared. The **Approval Code** is shown. | Quote the code; you can go ahead.                                                                                                                                                    |
-| **Pending**  | Waiting on the commercial decision and/or one or more sign-offs.            | Wait. **Approvers are not emailed automatically** when a sign-off is raised, so tell them (the brief page shows which role each sign-off is waiting on) and check back on the brief. |
-| **Declined** | Commercially declined, or vetoed by the General Manager.                    | Do not proceed. See the brief for the reason. A new brief can be raised if the facts change.                                                                                         |
+| Status       | Meaning                                                                     | What you do                                                                                                                          |
+| ------------ | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Approved** | Commercially OK and every sign-off cleared. The **Approval Code** is shown. | Quote the code; you can go ahead.                                                                                                    |
+| **Pending**  | Waiting on the commercial decision and/or one or more sign-offs.            | Wait. The people who hold each required role are emailed automatically. The brief page shows which role each sign-off is waiting on. |
+| **Declined** | Commercially declined, or vetoed by the General Manager.                    | Do not proceed. See the brief for the reason. A new brief can be raised if the facts change.                                         |
 
 Important: a brief can show **commercially Auto-approved** while still **Pending** because a
 sign-off is outstanding. There is no Approval Code until all sign-offs clear.
 
-There is **no email when your brief is approved**. Open the brief (or **Your briefs**) to see the status and
-the Approval Code. You **are** emailed when a pre-approval you declared is revoked, when a brief of yours is
-vetoed by the General Manager, and when such a veto is reversed. Emails come from the Feasibility Calculator
-mailbox and can arrive up to about five minutes after the event.
+You are emailed when:
+
+- your brief is **approved** (the email carries the Approval Code),
+- an approver **rejects** a sign-off (the email carries their comment),
+- a pre-approval you declared is **revoked**,
+- the General Manager **vetoes** your brief, and when an Admin reverses that veto.
+
+When a Sales Coordinator submits for you, you are emailed as the Account Manager of record, and so are they. You
+are not emailed when you submit a brief; you see the result on screen. Emails come from the Feasibility Calculator
+mailbox and can arrive up to about five minutes after the event. The brief page always shows the current status.
 
 ## 4. Finding and checking a brief
 

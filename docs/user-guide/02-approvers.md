@@ -9,9 +9,14 @@ General Manager, see "The General Manager's veto" at the end.
 
 ## 1. Being asked
 
-**The app does not currently email you when a sign-off is raised for your role.** Open **Approvals** in the left menu
-regularly (the submitter may also tell you). The only email the app sends an approver is the one in section 4, when a
-pre-approval is declared in your name. Notifying approvers of new sign-offs is on the backlog.
+When a brief needs your sign-off you get an email titled **"Sign-off needed — <customer reference>"**. It lists
+each sign-off that is waiting on you, the customer deadline, and a link to your **Approvals** page. Everyone who
+holds the role is emailed, and you get one email per brief, however many of your roles it needs. Emails can arrive
+up to about five minutes after the brief is submitted.
+
+You are **not** emailed about your own briefs, and not when the brief was declined outright on score. You are not
+reminded again: if you are waiting on something, open **Approvals** in the left menu. A sign-off you can't decide
+because you submitted the brief goes to the Admins, who are emailed instead.
 
 ## 2. Your approvals page
 
@@ -31,10 +36,10 @@ Open the customer reference first if you want the full brief: inputs, score brea
 ## 3. What your decision does
 
 - **Approve:** the sign-off is cleared. When it was the last one outstanding, and the brief isn't
-  commercially declined, the brief becomes **Approved** and the Approval Code is issued. The submitter is **not**
-  emailed; they see it on the brief.
-- **Reject:** the sign-off is marked rejected with your comment. A rejected sign-off does not clear the
-  brief, so it stays without an Approval Code. (Talk to the submitter; if the brief should be stopped
+  commercially declined, the brief becomes **Approved** and the Approval Code is issued. The submitter (and the
+  Account Manager of record) is emailed the code.
+- **Reject:** the sign-off is marked rejected with your comment, and the submitter is emailed with your comment. A
+  rejected sign-off does not clear the brief, so it stays without an Approval Code. (Talk to the submitter; if the brief should be stopped
   outright, ask the General Manager or an Admin.)
 
 Decisions can't be undone from the Approvals page. If you made a mistake, tell an Admin.

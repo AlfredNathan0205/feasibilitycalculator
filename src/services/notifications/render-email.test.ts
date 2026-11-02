@@ -130,4 +130,50 @@ describe("veto emails", () => {
       ).subject,
     ).toBe("Veto reversed — ACME");
   });
+  it("renders approval_requested listing every sign-off with a link to Approvals", () => {
+    const r = renderNotificationEmail(
+      "approval_requested",
+      {
+        briefId: "b1",
+        customerReference: "ACME-9",
+        requirementTypes: ["ppd_resource", "short_deadline"],
+        deadline: "2027-02-01",
+      },
+      "https://app.example.com/",
+    );
+    expect(r.subject).toBe("Sign-off needed — ACME-9");
+    expect(r.text).toContain("PPD resource sign-off");
+    expect(r.text).toContain("Short deadline");
+    expect(r.text).toContain("2027-02-01");
+    expect(r.text).toContain("https://app.example.com/approvals");
+    expect(r.html).toContain('href="https://app.example.com/approvals"');
+  });
+
+  it("renders brief_approved with the Approval Code and a link to the brief", () => {
+    const r = renderNotificationEmail(
+      "brief_approved",
+      { briefId: "b1", customerReference: "ACME-9", approvalCode: "FC-2609-4X7K2-B" },
+      "https://app.example.com",
+    );
+    expect(r.subject).toBe("Brief approved — ACME-9");
+    expect(r.text).toContain("FC-2609-4X7K2-B");
+    expect(r.text).toContain("https://app.example.com/briefs/b1");
+  });
+
+  it("renders requirement_rejected with the comment, escaped in HTML", () => {
+    const r = renderNotificationEmail(
+      "requirement_rejected",
+      {
+        briefId: "b1",
+        customerReference: "ACME-9",
+        requirementType: "ppd_resource",
+        comment: "No <capacity> before March",
+      },
+      "https://app.example.com",
+    );
+    expect(r.subject).toBe("Sign-off rejected — ACME-9");
+    expect(r.text).toContain("No <capacity> before March");
+    expect(r.html).toContain("No &lt;capacity&gt; before March");
+    expect(r.html).not.toContain("<capacity>");
+  });
 });

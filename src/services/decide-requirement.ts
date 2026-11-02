@@ -18,6 +18,7 @@
 import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema.js";
+import { listBriefOwnerRecipients } from "./notifications/recipients.js";
 import { issueUniqueApprovalCode } from "./issue-approval-code.js";
 import { SATISFIED_REQUIREMENT_STATES } from "./satisfied-states.js";
 import { verifyRevokeToken } from "../engine/revoke-token.js";
@@ -166,6 +167,43 @@ export async function decideRequirement(
       },
       requestCorrelationId: crypto.randomUUID(),
     });
+
+    // Tell the submitter (and the Account Manager of record) when a human
+    // decision changes what they can do next: the brief is now approved with
+    // a code, or a sign-off was rejected and needs their attention.
+    if (codeJustIssued || input.decision === "reject") {
+      const [briefRow] = await tx
+        .select({
+          customerReference: schema.briefs.customerReference,
+          submittedBy: schema.briefs.submittedBy,
+          onBehalfOf: schema.briefs.onBehalfOf,
+        })
+        .from(schema.briefs)
+        .where(eq(schema.briefs.id, requirement.briefId));
+      if (briefRow) {
+        const recipients = await listBriefOwnerRecipients(tx, briefRow);
+        for (const recipientId of recipients) {
+          await tx.insert(schema.notifications).values({
+            recipientId,
+            channel: "email",
+            template: codeJustIssued ? "brief_approved" : "requirement_rejected",
+            payload: codeJustIssued
+              ? {
+                  briefId: requirement.briefId,
+                  customerReference: briefRow.customerReference,
+                  approvalCode,
+                }
+              : {
+                  briefId: requirement.briefId,
+                  customerReference: briefRow.customerReference,
+                  requirementType: requirement.requirementType,
+                  comment: input.comment ?? "",
+                },
+            deliveryStatus: "queued",
+          });
+        }
+      }
+    }
 
     return {
       requirementId: requirement.id,
