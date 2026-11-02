@@ -28,22 +28,12 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
-import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
 import * as schema from "./db/schema.js";
 import { resolveSessionRoles } from "./auth/resolve-session-roles.js";
+import { getDb } from "./lib/db.js";
 
 const devLoginEnabled = process.env.ALLOW_DEV_LOGIN === "true";
-
-function getDb() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error("DATABASE_URL must be set");
-  }
-  const sql = postgres(databaseUrl);
-  return drizzle(sql, { schema });
-}
 
 const providers = [];
 

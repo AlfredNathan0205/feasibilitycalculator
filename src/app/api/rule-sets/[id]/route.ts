@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
 import { auth } from "../../../../auth.js";
 import * as schema from "../../../../db/schema.js";
@@ -10,12 +8,7 @@ import {
   ValidationError,
   NotFoundError,
 } from "../../../../services/rule-set-editor.js";
-
-function getDb() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) throw new Error("DATABASE_URL must be set");
-  return drizzle(postgres(databaseUrl), { schema });
-}
+import { getDb } from "../../../../lib/db.js";
 
 export async function GET(
   _request: Request,

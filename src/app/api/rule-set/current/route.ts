@@ -1,15 +1,8 @@
 import { NextResponse } from "next/server";
-import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
 import { eq, desc } from "drizzle-orm";
 import { auth } from "../../../../auth.js";
 import * as schema from "../../../../db/schema.js";
-
-function getDb() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) throw new Error("DATABASE_URL must be set");
-  return drizzle(postgres(databaseUrl), { schema });
-}
+import { getDb } from "../../../../lib/db.js";
 
 /**
  * Serves the current published rule set's payload so the submission

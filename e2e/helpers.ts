@@ -31,7 +31,7 @@ export async function signInAs(page: Page, upn: string) {
   // that only renders once a session exists — the nav's user identity
   // (unique, unlike "New brief" which also appears as a page-body button
   // for account managers, causing a strict-mode ambiguity).
-  await page.locator(".shell-user").waitFor();
+  await page.locator(".shell-user-name").waitFor();
 }
 
 /** Generates a deadline far enough out to clear the 14-day short-deadline

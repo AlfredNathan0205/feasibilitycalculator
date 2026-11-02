@@ -1,18 +1,12 @@
-import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
 import { eq, desc } from "drizzle-orm";
 import { auth, signIn } from "../auth.js";
 import * as schema from "../db/schema.js";
 import { AppShell } from "./components/app-shell.js";
+import { StatusPill } from "./components/status-pill.js";
 import Image from "next/image";
+import { getDb } from "../lib/db.js";
 
 const devLoginEnabled = process.env.ALLOW_DEV_LOGIN === "true";
-
-function getDb() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) throw new Error("DATABASE_URL must be set");
-  return drizzle(postgres(databaseUrl), { schema });
-}
 
 async function getTestUsers() {
   if (!process.env.DATABASE_URL) return [];
@@ -40,12 +34,6 @@ async function getRecentBriefsFor(userId: string) {
     .where(eq(schema.briefs.submittedBy, userId))
     .orderBy(desc(schema.briefs.submittedAt))
     .limit(10);
-}
-
-function StatusPill({ status }: { status: "approved" | "pending" | "declined" }) {
-  const label =
-    status === "approved" ? "Approved" : status === "declined" ? "Declined" : "Pending";
-  return <span className={`status-pill status-${status}`}>{label}</span>;
 }
 
 export default async function Home() {
@@ -160,7 +148,7 @@ export default async function Home() {
             ? "ACCOUNT MANAGER"
             : session.accessRoles.includes("sales_coordinator")
               ? "SALES COORDINATOR"
-              : session.accessRoles[0]?.replace(/_/g, " ").toUpperCase() ?? "USER"}
+              : (session.accessRoles[0]?.replace(/_/g, " ").toUpperCase() ?? "USER")}
         </div>
         <div className="page-header">
           <h1>Your briefs</h1>
@@ -176,14 +164,15 @@ export default async function Home() {
             <p style={{ margin: 0 }}>
               Signed in as <strong>{session.user?.name}</strong>. Your role (
               {session.accessRoles.join(", ") || "none"}) doesn&apos;t submit briefs
-              directly —{" "}
+              directly. Open <a href="/briefs">Briefs</a> to search and review them
               {(session.accessRoles.includes("auditor") ||
                 session.accessRoles.includes("admin")) && (
                 <>
-                  use <a href="/verify">Verify a code</a> to look up any brief by its
-                  Approval Code.
+                  , or use <a href="/verify">Verify a code</a> to look up a brief by its
+                  Approval Code
                 </>
               )}
+              .
             </p>
           </div>
         )}
@@ -211,7 +200,9 @@ export default async function Home() {
               <tbody>
                 {recentBriefs.map((b) => (
                   <tr key={b.briefId}>
-                    <td style={{ fontWeight: 500 }}>{b.customerReference}</td>
+                    <td style={{ fontWeight: 500 }}>
+                      <a href={`/briefs/${b.briefId}`}>{b.customerReference}</a>
+                    </td>
                     <td style={{ color: "var(--cpl-ink-soft)" }}>
                       {new Date(b.submittedAt).toLocaleDateString("en-GB")}
                     </td>

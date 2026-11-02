@@ -16,9 +16,7 @@ export function AppShell({
   }
 
   const displayName = session.user?.name ?? session.user?.email ?? "User";
-  const roleLabel = session.accessRoles
-    .map((r) => r.replace(/_/g, " "))
-    .join(", ");
+  const roleLabel = session.accessRoles.map((r) => r.replace(/_/g, " ")).join(", ");
 
   return (
     <div className="shell-layout">
@@ -41,12 +39,9 @@ export function AppShell({
           <div className="shell-brand-accent" />
 
           <nav className="shell-nav">
-            {(session.accessRoles.includes("account_manager") ||
-              session.accessRoles.includes("sales_coordinator")) && (
-              <a href="/" className="shell-nav-link">
-                Your briefs
-              </a>
-            )}
+            <a href="/briefs" className="shell-nav-link">
+              Briefs
+            </a>
             {(session.accessRoles.includes("account_manager") ||
               session.accessRoles.includes("sales_coordinator")) && (
               <a href="/briefs/new" className="shell-nav-link">

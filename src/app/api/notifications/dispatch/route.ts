@@ -1,15 +1,7 @@
 import { NextResponse } from "next/server";
-import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
-import * as schema from "../../../../db/schema.js";
 import { dispatchQueuedNotifications } from "../../../../services/notifications/dispatch-notifications.js";
 import { sendEmailViaResend } from "../../../../lib/resend.js";
-
-function getDb() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) throw new Error("DATABASE_URL must be set");
-  return drizzle(postgres(databaseUrl), { schema });
-}
+import { getDb } from "../../../../lib/db.js";
 
 /**
  * Not session-gated — there's no human sitting at a browser for a

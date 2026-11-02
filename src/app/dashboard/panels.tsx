@@ -119,123 +119,123 @@ export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
           <div className="kpi-caption">distribution bands</div>
         </div>
       </div>
-    <div className="panel-grid">
-      <Panel title="Volume by customer tier">
-        {summary.volumeByTier.map((r) => (
-          <BarRow key={r.dimension} label={r.dimension} count={r.count} max={tierMax} />
-        ))}
-      </Panel>
+      <div className="panel-grid">
+        <Panel title="Volume by customer tier">
+          {summary.volumeByTier.map((r) => (
+            <BarRow key={r.dimension} label={r.dimension} count={r.count} max={tierMax} />
+          ))}
+        </Panel>
 
-      <Panel title="Volume by requirement type">
-        {summary.volumeByRequirementType.map((r) => (
-          <BarRow
-            key={r.dimension}
-            label={r.dimension.replace(/_/g, " ")}
-            count={r.count}
-            max={reqTypeMax}
-          />
-        ))}
-      </Panel>
+        <Panel title="Volume by requirement type">
+          {summary.volumeByRequirementType.map((r) => (
+            <BarRow
+              key={r.dimension}
+              label={r.dimension.replace(/_/g, " ")}
+              count={r.count}
+              max={reqTypeMax}
+            />
+          ))}
+        </Panel>
 
-      <Panel title="Outcome mix by month">
-        <SimpleTable
-          columns={[
-            { key: "month", label: "Month" },
-            {
-              key: "finalStatus",
-              label: "Status",
-              render: (v) => {
-                const status = String(v);
-                const cls =
-                  status === "approved"
-                    ? "status-approved"
-                    : status === "declined"
-                      ? "status-declined"
-                      : "status-pending";
-                return <span className={`status-pill ${cls}`}>{status}</span>;
-              },
-            },
-            { key: "count", label: "Count", num: true },
-          ]}
-          rows={summary.volumeOutcomeMixByMonth as unknown as Record<string, unknown>[]}
-        />
-      </Panel>
-
-      <Panel title="Approval rate & time-to-decision by role">
-        <SimpleTable
-          columns={[
-            { key: "requiredRoleKey", label: "Role" },
-            { key: "approvedCount", label: "Approved", num: true },
-            { key: "rejectedCount", label: "Rejected", num: true },
-            {
-              key: "approvalRate",
-              label: "Approval rate",
-              num: true,
-              format: (v) => (v === null ? "—" : `${(Number(v) * 100).toFixed(0)}%`),
-            },
-            {
-              key: "medianHoursToDecision",
-              label: "Median time",
-              num: true,
-              format: (v) => (v === null ? "—" : `${Number(v).toFixed(1)}h`),
-            },
-          ]}
-          rows={summary.approvalRateByRole as unknown as Record<string, unknown>[]}
-        />
-      </Panel>
-
-      <Panel title="Score distribution vs. current thresholds">
-        {summary.scoreDistribution.map((b) => (
-          <BarRow
-            key={b.bucketLabel}
-            label={b.bucketLabel}
-            count={b.count}
-            max={scoreMax}
-          />
-        ))}
-        <p className="helptext" style={{ marginTop: "0.6rem", marginBottom: 0 }}>
-          Current thresholds: decline ≤30, auto-approve &gt;115.
-        </p>
-      </Panel>
-
-      <Panel title="Short-deadline volume over time">
-        <p className="helptext" style={{ marginTop: 0 }}>
-          The metric that motivated this whole project.
-        </p>
-        {summary.shortDeadlineVolumeByMonth.length === 0 ? (
-          <p style={{ margin: 0 }}>None yet.</p>
-        ) : (
-          summary.shortDeadlineVolumeByMonth.map((r) => (
-            <BarRow key={r.month} label={r.month} count={r.count} max={deadlineMax} />
-          ))
-        )}
-      </Panel>
-
-      <div className="panel-grid-full">
-        <Panel title="Pre-approval usage by submitter (revocations highlighted)">
+        <Panel title="Outcome mix by month">
           <SimpleTable
             columns={[
-              { key: "submitterName", label: "Submitter" },
-              { key: "preApprovalCount", label: "Pre-approvals declared", num: true },
+              { key: "month", label: "Month" },
               {
-                key: "revokedCount",
-                label: "Revoked",
-                num: true,
-                render: (v) =>
-                  Number(v) > 0 ? (
-                    <span className="status-pill status-declined">{String(v)}</span>
-                  ) : (
-                    <span className="num" style={{ color: "var(--cpl-ink-soft)" }}>
-                      0
-                    </span>
-                  ),
+                key: "finalStatus",
+                label: "Status",
+                render: (v) => {
+                  const status = String(v);
+                  const cls =
+                    status === "approved"
+                      ? "status-approved"
+                      : status === "declined"
+                        ? "status-declined"
+                        : "status-pending";
+                  return <span className={`status-pill ${cls}`}>{status}</span>;
+                },
               },
+              { key: "count", label: "Count", num: true },
             ]}
-            rows={summary.preApprovalUsage as unknown as Record<string, unknown>[]}
+            rows={summary.volumeOutcomeMixByMonth as unknown as Record<string, unknown>[]}
           />
         </Panel>
+
+        <Panel title="Approval rate & time-to-decision by role">
+          <SimpleTable
+            columns={[
+              { key: "requiredRoleKey", label: "Role" },
+              { key: "approvedCount", label: "Approved", num: true },
+              { key: "rejectedCount", label: "Rejected", num: true },
+              {
+                key: "approvalRate",
+                label: "Approval rate",
+                num: true,
+                format: (v) => (v === null ? "—" : `${(Number(v) * 100).toFixed(0)}%`),
+              },
+              {
+                key: "medianHoursToDecision",
+                label: "Median time",
+                num: true,
+                format: (v) => (v === null ? "—" : `${Number(v).toFixed(1)}h`),
+              },
+            ]}
+            rows={summary.approvalRateByRole as unknown as Record<string, unknown>[]}
+          />
+        </Panel>
+
+        <Panel title="Score distribution vs. current thresholds">
+          {summary.scoreDistribution.map((b) => (
+            <BarRow
+              key={b.bucketLabel}
+              label={b.bucketLabel}
+              count={b.count}
+              max={scoreMax}
+            />
+          ))}
+          <p className="helptext" style={{ marginTop: "0.6rem", marginBottom: 0 }}>
+            Current thresholds: decline ≤30, auto-approve &gt;115.
+          </p>
+        </Panel>
+
+        <Panel title="Short-deadline volume over time">
+          <p className="helptext" style={{ marginTop: 0 }}>
+            The metric that motivated this whole project.
+          </p>
+          {summary.shortDeadlineVolumeByMonth.length === 0 ? (
+            <p style={{ margin: 0 }}>None yet.</p>
+          ) : (
+            summary.shortDeadlineVolumeByMonth.map((r) => (
+              <BarRow key={r.month} label={r.month} count={r.count} max={deadlineMax} />
+            ))
+          )}
+        </Panel>
+
+        <div className="panel-grid-full">
+          <Panel title="Pre-approval usage by submitter (revocations highlighted)">
+            <SimpleTable
+              columns={[
+                { key: "submitterName", label: "Submitter" },
+                { key: "preApprovalCount", label: "Pre-approvals declared", num: true },
+                {
+                  key: "revokedCount",
+                  label: "Revoked",
+                  num: true,
+                  render: (v) =>
+                    Number(v) > 0 ? (
+                      <span className="status-pill status-declined">{String(v)}</span>
+                    ) : (
+                      <span className="num" style={{ color: "var(--cpl-ink-soft)" }}>
+                        0
+                      </span>
+                    ),
+                },
+              ]}
+              rows={summary.preApprovalUsage as unknown as Record<string, unknown>[]}
+            />
+          </Panel>
+        </div>
       </div>
-    </div>
     </>
   );
 }

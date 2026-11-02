@@ -1,5 +1,3 @@
-import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
 import * as schema from "../../../../db/schema.js";
 import {
@@ -8,12 +6,7 @@ import {
   NotFoundError,
 } from "../../../../services/decide-requirement.js";
 import { AppShell } from "../../../components/app-shell.js";
-
-function getDb() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) throw new Error("DATABASE_URL must be set");
-  return drizzle(postgres(databaseUrl), { schema });
-}
+import { getDb } from "../../../../lib/db.js";
 
 /**
  * §5 Stage C revoke link. Deliberately NOT behind auth — the security

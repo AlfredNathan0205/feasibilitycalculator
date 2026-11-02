@@ -6,6 +6,44 @@ each — generally: real Postgres, real HTTP requests, or both, not just unit
 tests in isolation). Ordered roughly by priority within each section;
 priority order itself may change as items get picked up.
 
+## Capabilities pass (pre-Azure)
+
+Agreed order: build capabilities first, then migrate to CPL's Azure.
+1. [x] **Brief list + detail + audit trail view** (this pass)
+2. [ ] Role-holder admin screen (who holds PPD Manager etc.)
+3. [ ] Notification reliability: retry with backoff, delivery status view, a send interface Microsoft Graph can slot into
+4. [ ] Reminders / escalation for requirements pending too long
+5. [ ] Self-approval reassignment: default is "escalate to Admin + audit flag" (open question 2, option 3) pending Simon's answer
+6. [ ] Tier T / Commercial & Development Director routing: blocked on Simon / Pauline Holmes
+
+- [x] **Brief list and detail pages.** `/briefs` (search by customer or PV
+      reference, filter by status and tier, pagination) and `/briefs/[id]`
+      (inputs, score breakdown with rule set version, requirement states,
+      and, for Admin/Auditor only, the audit trail). Visibility is one pure
+      function, `briefScopeFor`: Admin and Auditor see everything;
+      everyone else sees briefs they submitted or were submitted for, plus
+      briefs with a requirement routed to an approval role they hold.
+      A brief the viewer can't see returns the same 404 as one that
+      doesn't exist. 11 new tests (3 pure, 8 against real Postgres) and
+      one new e2e journey (`e2e/browse-briefs.spec.ts`). Checked with real
+      screenshots as Admin, and as a submitter trying to open someone
+      else's brief. The home page table now links through to the detail.
+      Previously only submitters had any list, with no links or search.
+- [x] **Shared database pool (`src/lib/db.ts`).** Every page and route
+      used to build its own `postgres()` pool per request and never close
+      it; 20 copies of `getDb()` are now one cached pool per process
+      (`DB_POOL_MAX`, default 5). This was the cause of the "too many
+      clients" failures seen in earlier e2e runs and would have hit
+      Azure Database for PostgreSQL's connection cap in production.
+      After the full unit + e2e run, the DB held 3 connections.
+- [x] **Fixed a regression from the sidebar redesign (e36e361):** it
+      removed the `.shell-user` class that `e2e/helpers.ts` waits on after
+      sign-in, so all three existing e2e journeys timed out. Confirmed by
+      running the old helper (fails) and the fixed one (passes).
+- Formatting: `panels.tsx`, `globals.css`, `page.tsx` and `app-shell.tsx`
+  were failing `prettier --check` on main after the redesign commits;
+  reformatted (whitespace only).
+
 ## In progress / up next
 
 - [x] **Notifications: sending is now real, not just queued.** A dispatch

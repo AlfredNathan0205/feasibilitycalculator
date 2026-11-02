@@ -1,16 +1,8 @@
-import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
 import * as XLSX from "xlsx";
 import { auth } from "../../../../../auth.js";
-import * as schema from "../../../../../db/schema.js";
 import { hasAccessRole } from "../../../../../auth/authz.js";
 import { getExportableBriefRows } from "../../../../../services/reporting.js";
-
-function getDb() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) throw new Error("DATABASE_URL must be set");
-  return drizzle(postgres(databaseUrl), { schema });
-}
+import { getDb } from "../../../../../lib/db.js";
 
 export async function GET() {
   const session = await auth();

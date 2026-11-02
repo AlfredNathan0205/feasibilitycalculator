@@ -1,6 +1,4 @@
 import { revalidatePath } from "next/cache";
-import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
 import { auth } from "../../auth.js";
 import * as schema from "../../db/schema.js";
@@ -15,12 +13,7 @@ import {
   listPendingRequirementsForRoles,
 } from "../../services/decide-requirement.js";
 import { AppShell } from "../components/app-shell.js";
-
-function getDb() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) throw new Error("DATABASE_URL must be set");
-  return drizzle(postgres(databaseUrl), { schema });
-}
+import { getDb } from "../../lib/db.js";
 
 const REQUIREMENT_LABELS: Record<string, string> = {
   short_deadline: "Short deadline",

@@ -1,17 +1,10 @@
-import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
 import { auth } from "../../../auth.js";
 import * as schema from "../../../db/schema.js";
 import { hasAccessRole } from "../../../auth/authz.js";
 import { verifyApprovalCode } from "../../../engine/approval-code.js";
 import { AppShell } from "../../components/app-shell.js";
-
-function getDb() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) throw new Error("DATABASE_URL must be set");
-  return drizzle(postgres(databaseUrl), { schema });
-}
+import { getDb } from "../../../lib/db.js";
 
 const DECISION_LABEL: Record<string, string> = {
   auto_approved: "Auto-Approved",
