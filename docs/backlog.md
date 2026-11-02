@@ -10,7 +10,7 @@ priority order itself may change as items get picked up.
 
 Agreed order: build capabilities first, then migrate to CPL's Azure.
 1. [x] **Brief list + detail + audit trail view** (this pass)
-2. [ ] Role-holder admin screen (who holds PPD Manager etc.)
+2. [x] People and roles admin screen (`/admin/people`): add a person by work email, assign/end roles, deactivate, last-Admin guard, audited. Named CPL people live in `src/db/seed/people.ts` (load with `provision-people.ts`). Pauline Holmes has no approval role yet (CPL to confirm). Role changes apply at the next sign-in (roles are baked into the session token).
 3. [ ] Notification reliability: retry with backoff, delivery status view, a send interface Microsoft Graph can slot into
 4. [ ] Reminders / escalation for requirements pending too long
 5. [x] Self-approval escalation to Admin (this pass, see below)

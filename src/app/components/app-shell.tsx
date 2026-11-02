@@ -65,6 +65,11 @@ export function AppShell({
                 Rule sets
               </a>
             )}
+            {session.accessRoles.includes("admin") && (
+              <a href="/admin/people" className="shell-nav-link">
+                People and roles
+              </a>
+            )}
             {(session.accessRoles.includes("auditor") ||
               session.accessRoles.includes("admin")) && (
               <a href="/verify" className="shell-nav-link">
