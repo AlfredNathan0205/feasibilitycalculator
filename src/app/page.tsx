@@ -62,7 +62,7 @@ export default async function Home() {
                   alt="CPL Aromas"
                   width={44}
                   height={44}
-                  style={{ borderRadius: 8 }}
+                  style={{ display: "block" }}
                 />
               </div>
               <h1>Welcome</h1>
@@ -95,7 +95,7 @@ export default async function Home() {
                 alt="CPL Aromas"
                 width={44}
                 height={44}
-                style={{ borderRadius: 8 }}
+                style={{ display: "block" }}
               />
             </div>
             <h1>Welcome</h1>

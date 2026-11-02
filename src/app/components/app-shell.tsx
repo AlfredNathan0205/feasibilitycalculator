@@ -28,7 +28,7 @@ export function AppShell({
               alt="CPL Aromas"
               width={28}
               height={28}
-              style={{ borderRadius: 6, display: "block" }}
+              style={{ display: "block" }}
               priority
             />
             <div>
