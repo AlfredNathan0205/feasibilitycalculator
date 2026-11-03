@@ -29,6 +29,13 @@
       "when": 1793651461610,
       "tag": "0003_veto",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793653947326,
+      "tag": "0004_notification_suppressed",
+      "breakpoints": true
     }
   ]
 }

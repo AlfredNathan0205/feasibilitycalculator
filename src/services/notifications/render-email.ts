@@ -1,6 +1,6 @@
 /**
- * Pure rendering of the two email templates the outbox currently queues
- * (see create-brief.ts and decide-requirement.ts). Deliberately has no
+ * Pure rendering of the email templates the outbox queues
+ * (see create-brief.ts, decide-requirement.ts and veto.ts). Deliberately has no
  * DB access and no network calls — dispatch-notifications.ts does the I/O
  * and hands this function whatever it already has in hand, which keeps
  * template wording/structure testable without Postgres or a real send.
@@ -177,6 +177,87 @@ export function renderNotificationEmail(
       const html = `<p>The veto on brief <strong>${escapeHtml(
         customerReference,
       )}</strong> has been reversed by an Admin. The vetoed requirement is back in the approver queue.</p>`;
+      return { subject, html, text };
+    }
+
+    case "approval_requested": {
+      const customerReference =
+        typeof payload.customerReference === "string" ? payload.customerReference : "—";
+      const types = Array.isArray(payload.requirementTypes)
+        ? payload.requirementTypes.map((t) => requirementLabel(t))
+        : [];
+      const deadline =
+        typeof payload.deadline === "string" && payload.deadline
+          ? payload.deadline
+          : null;
+      const url = `${base}/approvals`;
+      const subject = `Sign-off needed — ${customerReference}`;
+      const text = [
+        `Brief ${customerReference} needs your sign-off:`,
+        ...types.map((t) => `  - ${t}`),
+        deadline ? `Customer deadline: ${deadline}` : null,
+        ``,
+        `Open your approvals: ${url}`,
+      ]
+        .filter((line): line is string => line !== null)
+        .join("\n");
+      const html = `
+        <p>Brief <strong>${escapeHtml(customerReference)}</strong> needs your sign-off:</p>
+        <ul>${types.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>
+        ${deadline ? `<p>Customer deadline: <strong>${escapeHtml(deadline)}</strong></p>` : ""}
+        <p><a href="${escapeHtml(url)}">Open your approvals</a></p>
+      `.trim();
+      return { subject, html, text };
+    }
+
+    case "brief_approved": {
+      const customerReference =
+        typeof payload.customerReference === "string" ? payload.customerReference : "—";
+      const code = typeof payload.approvalCode === "string" ? payload.approvalCode : "";
+      const briefId = typeof payload.briefId === "string" ? payload.briefId : "";
+      const url = `${base}/briefs/${encodeURIComponent(briefId)}`;
+      const subject = `Brief approved — ${customerReference}`;
+      const text = [
+        `Brief ${customerReference} has all the sign-offs it needs and is approved.`,
+        code ? `Approval Code: ${code}` : null,
+        ``,
+        `View the brief: ${url}`,
+      ]
+        .filter((line): line is string => line !== null)
+        .join("\n");
+      const html = `
+        <p>Brief <strong>${escapeHtml(customerReference)}</strong> has all the sign-offs it
+        needs and is approved.</p>
+        ${code ? `<p>Approval Code: <strong>${escapeHtml(code)}</strong></p>` : ""}
+        <p><a href="${escapeHtml(url)}">View the brief</a></p>
+      `.trim();
+      return { subject, html, text };
+    }
+
+    case "requirement_rejected": {
+      const customerReference =
+        typeof payload.customerReference === "string" ? payload.customerReference : "—";
+      const requirementType = requirementLabel(payload.requirementType);
+      const comment = typeof payload.comment === "string" ? payload.comment : "";
+      const briefId = typeof payload.briefId === "string" ? payload.briefId : "";
+      const url = `${base}/briefs/${encodeURIComponent(briefId)}`;
+      const subject = `Sign-off rejected — ${customerReference}`;
+      const text = [
+        `The ${requirementType} sign-off on brief ${customerReference} was rejected.`,
+        comment ? `Comment: "${comment}"` : null,
+        `The brief will not receive an Approval Code unless that sign-off is cleared.`,
+        ``,
+        `View the brief: ${url}`,
+      ]
+        .filter((line): line is string => line !== null)
+        .join("\n");
+      const html = `
+        <p>The <strong>${escapeHtml(requirementType)}</strong> sign-off on brief
+        <strong>${escapeHtml(customerReference)}</strong> was rejected.</p>
+        ${comment ? `<p>Comment: &ldquo;${escapeHtml(comment)}&rdquo;</p>` : ""}
+        <p>The brief will not receive an Approval Code unless that sign-off is cleared.</p>
+        <p><a href="${escapeHtml(url)}">View the brief</a></p>
+      `.trim();
       return { subject, html, text };
     }
 

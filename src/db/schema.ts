@@ -107,6 +107,7 @@ export const notificationDeliveryStatusEnum = pgEnum("notification_delivery_stat
   "queued",
   "sent",
   "failed",
+  "suppressed", // deliberately not sent: recipient not on EMAIL_ALLOWED_RECIPIENTS
 ]);
 
 // ---------------------------------------------------------------------------

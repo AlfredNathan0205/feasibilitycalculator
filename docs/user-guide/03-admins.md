@@ -112,6 +112,7 @@ both the veto and its reversal stay in the audit trail.
 ## 7. Things to know
 
 - Nothing is ever deleted. Briefs, decisions and audit events are a permanent record.
-- **Emails:** the app emails only for pre-approval declared/revoked, vetoes and veto reversals. It does **not** email approvers
-  when a sign-off is raised: remind them to check **Approvals**, or consider asking for that feature.
+- **Emails:** approvers are emailed when a sign-off is raised for their role, and submitters when their brief is approved or a
+  sign-off is rejected (full list in the quick reference). When a sign-off has escalated to Admins, **you** are
+  the people emailed. There are no reminders for sign-offs left waiting; check **Approvals** now and then.
 - Technical problems (sign-in failures, errors, missing emails): contact CPL IT.

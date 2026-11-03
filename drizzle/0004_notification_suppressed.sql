@@ -1,0 +1,1 @@
+ALTER TYPE "public"."notification_delivery_status" ADD VALUE 'suppressed';

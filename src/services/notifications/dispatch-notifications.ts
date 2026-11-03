@@ -45,6 +45,25 @@ export interface DispatchOptions {
   /** Cap on how many queued notifications a single call processes, so one
    * dispatch invocation can't run unboundedly long. Default 50. */
   batchSize?: number;
+  /** Safety net for test deployments: when set, email is only sent to these
+   * addresses (or "@domain" entries); everything else is marked "suppressed"
+   * and never leaves the system. Unset means no restriction. Comes from the
+   * EMAIL_ALLOWED_RECIPIENTS environment variable (comma-separated). */
+  allowedRecipients?: string[];
+}
+
+export function parseAllowedRecipients(raw: string | undefined): string[] | undefined {
+  const entries = (raw ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return entries.length > 0 ? entries : undefined;
+}
+
+function isAllowed(email: string, allowed: string[] | undefined): boolean {
+  if (!allowed) return true;
+  const e = email.toLowerCase();
+  return allowed.some((a) => (a.startsWith("@") ? e.endsWith(a) : e === a));
 }
 
 export interface DispatchResult {
@@ -54,6 +73,8 @@ export interface DispatchResult {
   /** Notifications another concurrent run had already claimed — not an
    * error, just informational. */
   skippedLocked: number;
+  /** Held back by the recipient allowlist (marked "suppressed"). */
+  suppressed: number;
   failures: Array<{ notificationId: string; error: string }>;
 }
 
@@ -76,6 +97,7 @@ export async function dispatchQueuedNotifications(
     sent: 0,
     failed: 0,
     skippedLocked: 0,
+    suppressed: 0,
     failures: [],
   };
 
@@ -112,6 +134,14 @@ export async function dispatchQueuedNotifications(
         return { status: "failed" as const, error: message };
       }
 
+      if (!isAllowed(recipient.email, options.allowedRecipients)) {
+        await tx
+          .update(schema.notifications)
+          .set({ deliveryStatus: "suppressed" })
+          .where(eq(schema.notifications.id, id));
+        return { status: "suppressed" as const };
+      }
+
       try {
         const rendered = renderNotificationEmail(
           claimed.template,
@@ -141,6 +171,11 @@ export async function dispatchQueuedNotifications(
 
     if (outcome.status === "skipped") {
       result.skippedLocked += 1;
+      continue;
+    }
+
+    if (outcome.status === "suppressed") {
+      result.suppressed += 1;
       continue;
     }
 

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { dispatchQueuedNotifications } from "../../../../services/notifications/dispatch-notifications.js";
+import {
+  dispatchQueuedNotifications,
+  parseAllowedRecipients,
+} from "../../../../services/notifications/dispatch-notifications.js";
 import { getEmailSender } from "../../../../lib/mail.js";
 import { getDb } from "../../../../lib/db.js";
 
@@ -47,6 +50,7 @@ async function handleDispatch(request: Request) {
   try {
     const result = await dispatchQueuedNotifications(db, getEmailSender(), {
       appBaseUrl,
+      allowedRecipients: parseAllowedRecipients(process.env.EMAIL_ALLOWED_RECIPIENTS),
     });
     return NextResponse.json(result);
   } catch (err) {

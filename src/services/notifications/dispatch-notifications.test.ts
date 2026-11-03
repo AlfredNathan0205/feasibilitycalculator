@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";
@@ -66,6 +66,16 @@ describeIfDb("dispatchQueuedNotifications (integration)", () => {
 
   afterAll(async () => {
     await sql.end();
+  });
+
+  // Other suites queue notifications too (approver emails on every brief).
+  // Park whatever is waiting so each test sees only its own queue; the
+  // dispatcher works through a bounded batch, oldest first.
+  beforeEach(async () => {
+    await db
+      .update(schema.notifications)
+      .set({ deliveryStatus: "suppressed" })
+      .where(eq(schema.notifications.deliveryStatus, "queued"));
   });
 
   function farFutureDate(days = 60) {

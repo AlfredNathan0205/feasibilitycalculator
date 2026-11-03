@@ -42,5 +42,14 @@
 
 ## Emails the app sends
 
-Pre-approval declared (to the named manager) · Pre-approval revoked (to the submitter) · Brief vetoed (to the submitter) · Veto reversed (to the submitter).
-Not sent: "sign-off needed" to approvers; "approved" to submitters. Check **Approvals** / the brief.
+| Email                                   | Sent to                                                                                   |
+| --------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Sign-off needed                         | Everyone who holds the approval role (Admins if the submitter would be the only approver) |
+| Brief approved (with the Approval Code) | The submitter, and the Account Manager of record if different                             |
+| Sign-off rejected (with the comment)    | The submitter, and the Account Manager of record if different                             |
+| Pre-approval declared                   | The manager named                                                                         |
+| Pre-approval revoked                    | The submitter                                                                             |
+| Brief vetoed / Veto reversed            | The submitter                                                                             |
+
+Not sent: reminders about sign-offs that are still waiting; a confirmation to the person who just submitted a brief.
+Emails can take up to about five minutes.
