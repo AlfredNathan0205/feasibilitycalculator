@@ -49,6 +49,16 @@ export function AppShell({
                 New brief
               </a>
             )}
+            {(session.accessRoles.includes("account_manager") ||
+              session.accessRoles.includes("sales_coordinator") ||
+              session.accessRoles.includes("auditor") ||
+              session.accessRoles.includes("admin") ||
+              (session.accessRoles.includes("approver") &&
+                session.approvalAuthorityRoles?.includes("commercial_director"))) && (
+              <a href="/niche" className="shell-nav-link">
+                Niche brands
+              </a>
+            )}
             {(session.accessRoles.includes("approver") ||
               session.accessRoles.includes("admin")) && (
               <a href="/approvals" className="shell-nav-link">
@@ -67,6 +77,11 @@ export function AppShell({
             {session.accessRoles.includes("admin") && (
               <a href="/admin/rule-sets" className="shell-nav-link">
                 Rule sets
+              </a>
+            )}
+            {session.accessRoles.includes("admin") && (
+              <a href="/admin/niche-frameworks" className="shell-nav-link">
+                Niche frameworks
               </a>
             )}
             {session.accessRoles.includes("admin") && (

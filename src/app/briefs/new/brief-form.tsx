@@ -3,6 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { computeStageA, computeStageB } from "../../../engine/decision.js";
 import type { RuleSetPayload } from "../../../engine/scoring.js";
+import {
+  deriveNicheForBrief,
+  type CurrentAssessmentFacts,
+} from "../../../engine/niche-brief.js";
+import type {
+  NicheBand,
+  NicheFrameworkPayload,
+  NicheRoute,
+} from "../../../engine/niche-assessment.js";
 
 // Shown until the published rule set loads; the real list comes from its tierWeights.
 const FALLBACK_TIERS = ["A", "B", "C", "D"];
@@ -26,7 +35,45 @@ const REQUIREMENT_LABELS: Record<string, string> = {
   marketing_resource: "Marketing resource",
   ppd_resource: "PPD resource",
   gcms_resource: "GCMS / analytical resource",
+  niche_growth_partner: "Niche Tier 2 sign-off",
+  niche_development_route: "Niche development route",
+  niche_charging_model: "Niche charging model",
 };
+
+const ROUTE_LABELS: Record<string, string> = {
+  standard: "Standard",
+  charging_model: "Charging model",
+  junior_perfumer_development: "Junior perfumer development",
+  perfumer_passion_project: "Perfumer passion project",
+  decline: "Decline",
+};
+
+/** Always paired with the band name, never a bare "Tier 1" (customer tiers are A, T, B, C, D). */
+const BAND_LABELS: Record<string, string> = {
+  strategic_partner: "Niche Tier 1 · Strategic Partner",
+  growth_partner: "Niche Tier 2 · Growth Partner",
+  development_opportunity: "Development Opportunity",
+  charge_or_decline: "Charge or Decline",
+};
+
+interface NicheOptions {
+  brands: Array<{
+    id: string;
+    name: string;
+    customerReference: string | null;
+    current: {
+      id: string;
+      reference: string;
+      band: NicheBand;
+      score: number;
+      validUntil: string;
+      frameworkId: string;
+      assessor: string;
+      reviewer: string;
+    } | null;
+  }>;
+  frameworks: Record<string, { version: number; payload: NicheFrameworkPayload }>;
+}
 
 interface FormState {
   customerReference: string;
@@ -35,7 +82,13 @@ interface FormState {
   newRework: string;
   briefType: string;
   customerApproval: string;
-  nicheFfPreApproved: boolean;
+  /** Is this brief for a niche brand? */
+  nicheBrand: boolean;
+  nicheBrandText: string;
+  nicheRoute: string;
+  nicheRouteRationale: string;
+  /** "Fine Fragrance pre-approved (not a niche brand)", with nicheFfRationale. */
+  fineFragranceManual: boolean;
   nicheFfRationale: string;
   strategicPriority: boolean;
   strategicPriorityRationale: string;
@@ -54,7 +107,11 @@ const initialState: FormState = {
   newRework: NEW_REWORK[0]!,
   briefType: BRIEF_TYPES[0]!,
   customerApproval: CUSTOMER_APPROVALS[0]!,
-  nicheFfPreApproved: false,
+  nicheBrand: false,
+  nicheBrandText: "",
+  nicheRoute: "",
+  nicheRouteRationale: "",
+  fineFragranceManual: false,
   nicheFfRationale: "",
   strategicPriority: false,
   strategicPriorityRationale: "",
@@ -75,6 +132,7 @@ type SubmitResult =
         score: number;
         approvalCode: string | null;
         requirementCount: number;
+        nicheWarning?: string | null;
       };
     }
   | { kind: "error"; message: string };
@@ -85,12 +143,33 @@ const DECISION_LABEL: Record<string, string> = {
   declined: "Declined",
 };
 
+/** Drops the form's niche UI-only fields before they are spread into the request body. */
+function stripNicheUiState(f: FormState) {
+  const {
+    nicheBrand,
+    nicheBrandText,
+    nicheRoute,
+    nicheRouteRationale,
+    fineFragranceManual,
+    nicheFfRationale,
+    ...rest
+  } = f;
+  void nicheBrand;
+  void nicheBrandText;
+  void nicheRoute;
+  void nicheRouteRationale;
+  void fineFragranceManual;
+  void nicheFfRationale;
+  return rest;
+}
+
 export function BriefForm() {
   const [ruleSet, setRuleSet] = useState<RuleSetPayload | null>(null);
   const [roleHolders, setRoleHolders] = useState<
     { roleKey: string; userId: string; displayName: string }[]
   >([]);
   const [form, setForm] = useState<FormState>(initialState);
+  const [nicheOptions, setNicheOptions] = useState<NicheOptions | null>(null);
   const [preApprovals, setPreApprovals] = useState<
     Record<string, { enabled: boolean; nominatedManagerId: string; comment: string }>
   >({});
@@ -121,6 +200,10 @@ export function BriefForm() {
         setForm((f) => (keys.includes(f.tier) ? f : { ...f, tier: keys[0] ?? f.tier }));
       })
       .catch(() => setRuleSet(null));
+    fetch("/api/niche/brief-options")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setNicheOptions(data))
+      .catch(() => setNicheOptions(null));
     fetch("/api/role-holders/current")
       .then((r) => r.json())
       .then((data) => setRoleHolders(data.holders ?? []))
@@ -139,6 +222,51 @@ export function BriefForm() {
     return Math.round((deadline.getTime() - todayUtc) / (24 * 60 * 60 * 1000));
   }, [form.deadline]);
 
+  const nicheBrandChoice = useMemo(
+    () =>
+      form.nicheBrand
+        ? (nicheOptions?.brands.find(
+            (b) => b.name.toLowerCase() === form.nicheBrandText.trim().toLowerCase(),
+          ) ?? null)
+        : null,
+    [form.nicheBrand, form.nicheBrandText, nicheOptions],
+  );
+
+  // Mirrors the server's derivation (same pure function); the server re-derives
+  // from its own lookup at submission and never trusts the band shown here.
+  const niche = useMemo(() => {
+    let current: CurrentAssessmentFacts | null = null;
+    const c = nicheBrandChoice?.current;
+    const fw = c ? nicheOptions?.frameworks[c.frameworkId] : undefined;
+    if (c && fw) {
+      current = {
+        id: c.id,
+        reference: c.reference,
+        band: c.band,
+        score: c.score,
+        validUntil: c.validUntil,
+        frameworkVersion: fw.version,
+        framework: fw.payload,
+      };
+    }
+    const derived = deriveNicheForBrief({
+      nicheBrandSelected: form.nicheBrand && !!nicheBrandChoice,
+      current,
+      clientAssessmentId: current?.id ?? null,
+      route: (form.nicheRoute as NicheRoute) || null,
+      routeRationale: form.nicheRouteRationale,
+      manualFineFragrance: !form.nicheBrand && form.fineFragranceManual,
+      manualRationale: form.nicheFfRationale,
+      allowManualFineFragrance:
+        ruleSet?.nicheAssessment?.allowManualFineFragrance ?? true,
+      clientNicheFfPreApproved: false,
+    });
+    const band = current
+      ? current.framework.bands.find((b) => b.key === current.band)
+      : null;
+    return { derived, current, band };
+  }, [form, nicheBrandChoice, nicheOptions, ruleSet]);
+
   const preview = useMemo(() => {
     if (!ruleSet) return null;
     const value = Number(form.valuePotentialGbp) || 0;
@@ -152,7 +280,9 @@ export function BriefForm() {
           customerApproval: form.customerApproval,
           strategicPriority: form.strategicPriority,
           creativeApproach: form.creativeApproach,
-          nicheFfPreApproved: form.nicheFfPreApproved,
+          nicheFfPreApproved: niche.derived.ok && niche.derived.nicheFfPreApproved,
+          nicheBand: niche.derived.ok ? niche.derived.nicheBand : null,
+          nicheRoute: niche.derived.ok ? niche.derived.nicheRoute : null,
           marketingFlag: form.marketingFlag,
           ppdFlag: form.ppdFlag,
           gcmsFlag: form.gcmsFlag,
@@ -169,7 +299,9 @@ export function BriefForm() {
           customerApproval: form.customerApproval,
           strategicPriority: form.strategicPriority,
           creativeApproach: form.creativeApproach,
-          nicheFfPreApproved: form.nicheFfPreApproved,
+          nicheFfPreApproved: niche.derived.ok && niche.derived.nicheFfPreApproved,
+          nicheBand: niche.derived.ok ? niche.derived.nicheBand : null,
+          nicheRoute: niche.derived.ok ? niche.derived.nicheRoute : null,
           marketingFlag: form.marketingFlag,
           ppdFlag: form.ppdFlag,
           gcmsFlag: form.gcmsFlag,
@@ -181,7 +313,7 @@ export function BriefForm() {
     } catch {
       return null;
     }
-  }, [ruleSet, form, daysUntilDeadline]);
+  }, [ruleSet, form, daysUntilDeadline, niche]);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -196,9 +328,20 @@ export function BriefForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
+          ...stripNicheUiState(form),
           valuePotentialGbp: Number(form.valuePotentialGbp) || 0,
-          nicheFfRationale: form.nicheFfRationale || null,
+          nicheFfPreApproved: false, // derived by the server from the assessment or the manual path
+          nicheBrandId: form.nicheBrand ? (nicheBrandChoice?.id ?? null) : null,
+          nicheAssessmentId: form.nicheBrand
+            ? (nicheBrandChoice?.current?.id ?? null)
+            : null,
+          nicheRoute: form.nicheBrand ? form.nicheRoute || null : null,
+          nicheRouteRationale: form.nicheBrand ? form.nicheRouteRationale || null : null,
+          fineFragranceManualFlag: !form.nicheBrand && form.fineFragranceManual,
+          nicheFfRationale:
+            !form.nicheBrand && form.fineFragranceManual
+              ? form.nicheFfRationale || null
+              : null,
           strategicPriorityRationale: form.strategicPriorityRationale || null,
           pvReference: form.pvReference || null,
           preApprovals: Object.fromEntries(
@@ -226,6 +369,7 @@ export function BriefForm() {
 
   function goNext() {
     if (formRef.current && !formRef.current.reportValidity()) return;
+    if (step === 1 && !niche.derived.ok) return; // the reason is shown beside the niche fields
     setStep((s) => (s === 1 ? 2 : s === 2 ? 3 : s));
   }
   function goBack() {
@@ -269,6 +413,13 @@ export function BriefForm() {
             )}
           </div>
         </div>
+
+        {data.nicheWarning && (
+          <p className="helptext" role="status">
+            This niche brand had no current approved assessment, so the brief was scored
+            as a standard brief.
+          </p>
+        )}
 
         {data.approvalCode ? (
           <div
@@ -486,26 +637,167 @@ export function BriefForm() {
               <div className="field-group-label">Flags &amp; exceptions</div>
               <div className="field-row">
                 <div>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={form.nicheFfPreApproved}
-                      onChange={(e) => set("nicheFfPreApproved", e.target.checked)}
-                    />
-                    Niche / Fine Fragrance pre-approved
-                  </label>
-                  {form.nicheFfPreApproved && (
+                  <div className="field-group-label" id="niche-q">
+                    Is this brief for a niche brand?
+                  </div>
+                  <div
+                    role="radiogroup"
+                    aria-labelledby="niche-q"
+                    style={{ display: "flex", gap: "1rem" }}
+                  >
+                    {[
+                      { v: true, t: "Yes" },
+                      { v: false, t: "No" },
+                    ].map((o) => (
+                      <label key={o.t}>
+                        <input
+                          type="radio"
+                          name="nicheBrand"
+                          checked={form.nicheBrand === o.v}
+                          onChange={() => set("nicheBrand", o.v)}
+                        />{" "}
+                        {o.t}
+                      </label>
+                    ))}
+                  </div>
+
+                  {form.nicheBrand && (
                     <div style={{ marginTop: "0.5em" }}>
-                      <label htmlFor="nicheFfRationale">Rationale (required)</label>
-                      <textarea
-                        id="nicheFfRationale"
+                      <label htmlFor="nicheBrandText">Niche brand</label>
+                      <input
+                        id="nicheBrandText"
+                        list="niche-brand-list"
                         required
-                        rows={2}
-                        value={form.nicheFfRationale}
-                        onChange={(e) => set("nicheFfRationale", e.target.value)}
+                        autoComplete="off"
+                        value={form.nicheBrandText}
+                        onChange={(e) => set("nicheBrandText", e.target.value)}
                       />
+                      <datalist id="niche-brand-list">
+                        {nicheOptions?.brands.map((b) => (
+                          <option key={b.id} value={b.name} />
+                        ))}
+                      </datalist>
+                      <p className="helptext" style={{ marginBottom: 0 }}>
+                        Not listed?{" "}
+                        <a href="/niche/brands/new" target="_blank" rel="noreferrer">
+                          Create brand
+                        </a>
+                        , then come back and pick it.
+                      </p>
+                      {form.nicheBrandText.trim() && !nicheBrandChoice && (
+                        <p className="field-error" role="alert">
+                          Choose a brand from the list.
+                        </p>
+                      )}
+
+                      {nicheBrandChoice &&
+                        (niche.current ? (
+                          <div
+                            className="card"
+                            style={{
+                              marginTop: "0.6em",
+                              background: "var(--cpl-purple-tint)",
+                            }}
+                          >
+                            <span className={`status-pill niche-${niche.current.band}`}>
+                              {BAND_LABELS[niche.current.band]}
+                            </span>{" "}
+                            score {niche.current.score} /{" "}
+                            {niche.current.framework.maxScore}
+                            <div className="helptext" style={{ margin: "0.4em 0 0" }}>
+                              {niche.current.reference}, valid until{" "}
+                              {niche.current.validUntil}. Assessed by{" "}
+                              {nicheBrandChoice.current?.assessor}, reviewed by{" "}
+                              {nicheBrandChoice.current?.reviewer}.
+                            </div>
+                          </div>
+                        ) : (
+                          <p
+                            className="field-error"
+                            role="alert"
+                            style={{ marginTop: "0.6em" }}
+                          >
+                            No current Niche Brand Assessment for {nicheBrandChoice.name}.
+                            This brief will be scored as a standard brief.{" "}
+                            <a
+                              href={`/niche/assessments/new?brandId=${nicheBrandChoice.id}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Start one
+                            </a>
+                          </p>
+                        ))}
+
+                      {niche.band && niche.band.allowedRoutes.length > 1 && (
+                        <div style={{ marginTop: "0.6em" }}>
+                          <label htmlFor="nicheRoute">
+                            Route for this brand (required)
+                          </label>
+                          <select
+                            id="nicheRoute"
+                            required
+                            value={form.nicheRoute}
+                            onChange={(e) => set("nicheRoute", e.target.value)}
+                          >
+                            <option value="">Choose a route</option>
+                            {niche.band.allowedRoutes.map((r) => (
+                              <option key={r} value={r}>
+                                {ROUTE_LABELS[r]}
+                              </option>
+                            ))}
+                          </select>
+                          <label
+                            htmlFor="nicheRouteRationale"
+                            style={{ marginTop: "0.5em" }}
+                          >
+                            Rationale for the route (required)
+                          </label>
+                          <textarea
+                            id="nicheRouteRationale"
+                            required
+                            rows={2}
+                            value={form.nicheRouteRationale}
+                            onChange={(e) => set("nicheRouteRationale", e.target.value)}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
+
+                  {!form.nicheBrand &&
+                    (ruleSet?.nicheAssessment?.allowManualFineFragrance ?? true) && (
+                      <div style={{ marginTop: "0.5em" }}>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={form.fineFragranceManual}
+                            onChange={(e) => set("fineFragranceManual", e.target.checked)}
+                          />
+                          Fine Fragrance pre-approved (not a niche brand)
+                        </label>
+                        {form.fineFragranceManual && (
+                          <div style={{ marginTop: "0.5em" }}>
+                            <label htmlFor="nicheFfRationale">Rationale (required)</label>
+                            <textarea
+                              id="nicheFfRationale"
+                              required
+                              rows={2}
+                              value={form.nicheFfRationale}
+                              onChange={(e) => set("nicheFfRationale", e.target.value)}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  {!niche.derived.ok &&
+                    form.nicheBrand &&
+                    form.nicheBrandText.trim() &&
+                    nicheBrandChoice && (
+                      <p className="field-error" role="alert">
+                        {niche.derived.error}
+                      </p>
+                    )}
                 </div>
 
                 <div>
@@ -596,6 +888,21 @@ export function BriefForm() {
             >
               {DECISION_LABEL[preview.stageA.commercialDecision]}
             </span>
+            {niche.derived.ok && niche.derived.snapshot && niche.band && (
+              <div className="helptext" style={{ margin: "0.4em 0 0" }}>
+                Niche outcome: {BAND_LABELS[niche.derived.snapshot.band]} (
+                {niche.derived.snapshot.reference})
+                {niche.derived.nicheFfPreApproved
+                  ? ", so the commercial decision is auto-approved"
+                  : `, route: ${ROUTE_LABELS[niche.derived.snapshot.route]}`}
+                .
+              </div>
+            )}
+            {niche.derived.ok && niche.derived.fineFragranceManualFlag && (
+              <div className="helptext" style={{ margin: "0.4em 0 0" }}>
+                Fine Fragrance pre-approved (not a niche brand).
+              </div>
+            )}
           </div>
 
           <div>
@@ -790,6 +1097,21 @@ export function BriefForm() {
             >
               {DECISION_LABEL[preview.stageA.commercialDecision]}
             </span>
+            {niche.derived.ok && niche.derived.snapshot && niche.band && (
+              <div className="helptext" style={{ margin: "0.4em 0 0" }}>
+                Niche outcome: {BAND_LABELS[niche.derived.snapshot.band]} (
+                {niche.derived.snapshot.reference})
+                {niche.derived.nicheFfPreApproved
+                  ? ", so the commercial decision is auto-approved"
+                  : `, route: ${ROUTE_LABELS[niche.derived.snapshot.route]}`}
+                .
+              </div>
+            )}
+            {niche.derived.ok && niche.derived.fineFragranceManualFlag && (
+              <div className="helptext" style={{ margin: "0.4em 0 0" }}>
+                Fine Fragrance pre-approved (not a niche brand).
+              </div>
+            )}
           </div>
 
           {Object.entries(preApprovals).filter(([, v]) => v.enabled).length > 0 && (
