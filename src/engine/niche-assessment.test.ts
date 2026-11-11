@@ -151,3 +151,21 @@ describe("allowedRoutesFor", () => {
     ]);
   });
 });
+
+import { addMonthsIso, normaliseBrandName, todayLondon } from "./niche-assessment.js";
+
+describe("date and name helpers", () => {
+  it("adds months with month-end clamping", () => {
+    expect(addMonthsIso("2026-11-11", 12)).toBe("2027-11-11");
+    expect(addMonthsIso("2026-01-31", 1)).toBe("2026-02-28");
+    expect(addMonthsIso("2027-12-31", 2)).toBe("2028-02-29");
+    expect(addMonthsIso("2026-02-29".replace("29", "28"), 12)).toBe("2027-02-28");
+  });
+  it("todayLondon uses the London calendar day", () => {
+    expect(todayLondon(new Date("2026-07-01T23:30:00Z"))).toBe("2026-07-02"); // BST
+    expect(todayLondon(new Date("2026-12-01T23:30:00Z"))).toBe("2026-12-01"); // GMT
+  });
+  it("normalises brand names", () => {
+    expect(normaliseBrandName("  Maison   DUPONT ")).toBe("maison dupont");
+  });
+});

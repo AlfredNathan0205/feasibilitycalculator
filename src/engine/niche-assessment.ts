@@ -206,3 +206,29 @@ export function allowedRoutesFor(
   if (!b) throw new Error(`Unknown band: "${band}"`);
   return [...b.allowedRoutes];
 }
+
+/** Today's date as ISO yyyy-mm-dd in Europe/London. */
+export function todayLondon(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+/** Add whole months to an ISO date, clamping to month end (31 Jan + 1 = 28/29 Feb). */
+export function addMonthsIso(iso: string, months: number): string {
+  const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
+  const total = y * 12 + (m - 1) + months;
+  const ny = Math.floor(total / 12);
+  const nm = (total % 12) + 1;
+  const last = new Date(Date.UTC(ny, nm, 0)).getUTCDate();
+  const nd = Math.min(d, last);
+  return `${ny}-${String(nm).padStart(2, "0")}-${String(nd).padStart(2, "0")}`;
+}
+
+/** Lowercased, trimmed, internal whitespace collapsed (brand de-duplication key). */
+export function normaliseBrandName(name: string): string {
+  return name.trim().replace(/\s+/g, " ").toLowerCase();
+}
