@@ -18,6 +18,7 @@
 import type { RuleSetPayload, ScoringInputs } from "./scoring.js";
 import { computeScore } from "./scoring.js";
 import { canonicalTier, isTierAOrT } from "./tiers.js";
+import type { NicheBand, NicheRoute } from "./niche-assessment.js";
 
 export type CommercialDecision = "auto_approved" | "pending" | "declined";
 
@@ -29,7 +30,10 @@ export type RequirementType =
   | "ppd_resource"
   | "gcms_resource"
   | "tier_auto_approval" // tier T: Commercial Director approval (enabled by the tier-T rule set)
-  | "strategic_priority_deferral"; // disabled by default, §11 item 3
+  | "strategic_priority_deferral" // disabled by default, §11 item 3
+  | "niche_growth_partner" // niche band 2: Commercial Director sign-off
+  | "niche_development_route" // junior perfumer / passion project route: Development Director
+  | "niche_charging_model"; // charging model route: Commercial Director
 
 export interface RequiredApproval {
   requirementType: RequirementType;
@@ -38,6 +42,12 @@ export interface RequiredApproval {
 
 export interface DecisionInputs extends ScoringInputs {
   nicheFfPreApproved: boolean;
+  /** Band of the current approved niche assessment at submission; null/absent
+   * for every brief that does not involve a niche assessment (including every
+   * row of the parity golden dataset). */
+  nicheBand?: NicheBand | null;
+  /** Route chosen on the brief; "standard" for bands 1 and 2. */
+  nicheRoute?: NicheRoute | null;
   marketingFlag: boolean;
   ppdFlag: boolean;
   gcmsFlag: boolean;
@@ -55,11 +65,14 @@ export interface StageAResult {
 }
 
 /**
- * Stage A: commercial decision. First match wins (§5):
+ * Stage A: commercial decision. First match wins (§5, niche spec §6.5):
  *   1. Rework (Of Selling) OR Niche/FF Pre-Approved -> Auto-Approved
- *   2. score <= decline threshold -> Declined
- *   3. score > auto threshold -> Auto-Approved
- *   4. otherwise -> Pending
+ *   2. Niche band charge_or_decline with route "decline" -> Declined
+ *      (below rule 1, so a rework of a selling product is never declined by a
+ *      niche assessment)
+ *   3. score <= decline threshold -> Declined
+ *   4. score > auto threshold -> Auto-Approved
+ *   5. otherwise -> Pending
  */
 export function computeStageA(
   inputs: DecisionInputs,
@@ -70,6 +83,11 @@ export function computeStageA(
   let commercialDecision: CommercialDecision;
   if (inputs.newRework === "Rework (Of Selling)" || inputs.nicheFfPreApproved) {
     commercialDecision = "auto_approved";
+  } else if (
+    inputs.nicheBand === "charge_or_decline" &&
+    inputs.nicheRoute === "decline"
+  ) {
+    commercialDecision = "declined";
   } else if (total <= ruleSet.thresholds.declineAtOrBelow) {
     // Exactly the threshold is a decline (§3: "Exactly 30 is a decline").
     commercialDecision = "declined";
@@ -144,6 +162,18 @@ export function computeStageB(
   // set that introduces tier T; until then the routing entry is disabled and
   // addIfEnabled skips it.
   if (canonicalTier(inputs.customerTier) === "T") addIfEnabled("tier_auto_approval");
+
+  // Niche brand assessment requirements (niche spec §6.7). Raised only when the
+  // rule set enables them, so published rule sets without these entries behave
+  // exactly as before.
+  if (inputs.nicheBand === "growth_partner") addIfEnabled("niche_growth_partner");
+  if (
+    inputs.nicheRoute === "junior_perfumer_development" ||
+    inputs.nicheRoute === "perfumer_passion_project"
+  ) {
+    addIfEnabled("niche_development_route");
+  }
+  if (inputs.nicheRoute === "charging_model") addIfEnabled("niche_charging_model");
 
   return requirements;
 }

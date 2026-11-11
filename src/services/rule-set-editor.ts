@@ -17,6 +17,7 @@ import { desc, eq, max } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema.js";
 import { computeStageA } from "../engine/decision.js";
+import type { NicheBand } from "../engine/niche-assessment.js";
 import type { RuleSetPayload } from "../engine/scoring.js";
 
 export class ValidationError extends Error {
@@ -153,6 +154,8 @@ export async function replayRuleSet(
       submittedAt: schema.briefs.submittedAt,
       oldCommercialDecision: schema.decisions.commercialDecision,
       oldScore: schema.decisions.computedScore,
+      nicheRoute: schema.briefs.nicheRoute,
+      nicheSnapshot: schema.decisions.nicheSnapshot,
     })
     .from(schema.briefs)
     .innerJoin(schema.decisions, eq(schema.decisions.briefId, schema.briefs.id));
@@ -186,6 +189,10 @@ export async function replayRuleSet(
       strategicPriority: row.strategicPriority,
       creativeApproach: row.creativeApproach,
       nicheFfPreApproved: row.nicheFfPreApproved,
+      // Niche assessment inputs as they were at submission (null for every
+      // brief that did not involve one), so a replay explains the same facts.
+      nicheBand: (row.nicheSnapshot as { band?: NicheBand } | null)?.band ?? null,
+      nicheRoute: row.nicheRoute,
       marketingFlag: row.marketingFlag,
       ppdFlag: row.ppdFlag,
       gcmsFlag: row.gcmsFlag,
