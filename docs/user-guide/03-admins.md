@@ -125,3 +125,10 @@ both the veto and its reversal stay in the audit trail.
   sign-off is rejected (full list in the quick reference). When a sign-off has escalated to Admins, **you** are
   the people emailed. There are no reminders for sign-offs left waiting; check **Approvals** now and then.
 - Technical problems (sign-in failures, errors, missing emails): contact CPL IT.
+
+## Niche brands and frameworks
+
+Admins can deactivate and merge brands (**Niche brands** > a brand). **Admin > Niche frameworks** holds
+the assessment questions, weights, band thresholds and routes. Create a draft, edit it, run the
+replay to see which assessments would change band, then publish. Existing assessments keep their
+original version. If the assessor is the only Commercial Director, the review comes to an Admin.

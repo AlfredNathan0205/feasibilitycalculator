@@ -348,3 +348,10 @@ curl -b cookies.txt -X POST http://localhost:3000/api/briefs \
 
 Then visit `/verify/FC-...` (signed in as the Admin or Auditor test user) to
 see the full audit record.
+
+# Niche Brand Assessment
+
+The V5.1 Niche Brand Assessment is built into the app. It decides whether a brief for a niche
+brand is pre-approved. See [docs/niche-brand-assessment.md](docs/niche-brand-assessment.md).
+Seed it with `npm run seed:niche`, then publish the niche routing rule set with
+`src/db/seed/add-niche-routing-draft.ts`.

@@ -87,3 +87,11 @@ A veto:
 Only an **Admin** can reverse a veto, and they must give a reason. Reversal returns the sign-off to
 the approver's queue and the brief to Pending. Use the veto for genuine reasons (capacity, a conflict with
 strategy), not as a routine step: it is visible to everyone who can see the brief.
+
+## Niche brand assessments
+
+If you are the Commercial Director, **Niche brands > Review queue** lists assessments waiting for you.
+Open one to see the answers and score, then approve or reject (a rejection needs a comment). You
+cannot review an assessment you completed yourself. The Commercial Director also signs off
+Growth Partner and charging-model briefs, and the Development Director signs off development
+routes; these appear under **Approvals** like any other sign-off.

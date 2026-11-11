@@ -12,6 +12,15 @@ status and Approval Code (once issued). Click a customer reference to open the b
 The left-hand menu has **Briefs** (search everything you can see) and, for people who also
 approve, **Approvals**.
 
+## Niche brands
+
+For a niche brand, open **Niche brands**, add the brand if it is not listed, and click **Start
+assessment**. Answer the 14 Yes/No questions (the outcome updates as you go), add anything the
+reviewer should know in the comment box, and **Submit for review**. The Commercial Director reviews
+it, and you get an email either way. An approved assessment is valid for 12 months. In the brief
+form, answer **Is this brief for a niche brand?** and pick the brand. If its assessment has
+expired or does not exist, the form warns you and the brief is scored as a standard brief.
+
 ## 2. Submitting a brief
 
 Click **New brief**. The form has three steps.

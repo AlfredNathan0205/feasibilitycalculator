@@ -79,6 +79,14 @@ Two rules that are firm and don't bend, by your own earlier instruction:
   skip has been removed, per your instruction that resource requests
   always need sign-off.
 
+## Niche brands
+
+A brief for a niche brand relies on the brand's current Niche Brand Assessment (see
+[niche-brand-assessment.md](niche-brand-assessment.md)). Strategic Partner is pre-approved, Growth
+Partner needs the Commercial Director, Development Opportunity needs a route and the Development
+Director, and Charge or Decline needs the charging model or is declined. A Rework (Of Selling) brief
+still wins over a niche decline.
+
 ## Getting ahead of a sign-off ("pre-approval")
 
 If an Account Manager has already spoken to the relevant manager and got

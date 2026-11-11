@@ -186,6 +186,12 @@ Agreed order: build capabilities first, then migrate to CPL's Azure.
 
 ## Done and verified
 
+- [x] **Niche Brand Assessment** (branch `feat/niche-brand-assessment`): engine with all-16,384
+      parity against the V5.1 tool, schema and migration 0005, services and authorisation,
+      decision ladder, rule set rollout draft, brand register, assessment form, review queue,
+      print page, brief wizard and detail, framework admin with replay, notifications and expiry
+      reminders, dashboard and exports, browser tests. Not yet applied to Supabase production.
+
 - [x] **UI redesign, real-screenshot-verified fix pass.** After three
       earlier redesign passes were done "blind" (verified only by
       checking rendered HTML/classes, never actual pixels), the person

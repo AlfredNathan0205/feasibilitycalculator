@@ -54,6 +54,14 @@ async function main() {
       approvalAuthorityRole: "commercial_director",
     },
     {
+      entraObjectId: "77777777-7777-7777-7777-777777777777",
+      upn: "dd@cpl.example",
+      displayName: "Dana Development (Development Director, Approver)",
+      email: "dd@cpl.example",
+      accessRole: "approver",
+      approvalAuthorityRole: "development_director",
+    },
+    {
       entraObjectId: "66666666-6666-6666-6666-666666666666",
       upn: "sc@cpl.example",
       displayName: "Sasha Coordinator (Sales Coordinator)",

@@ -54,3 +54,9 @@ for example one submitter pre-approving a lot, or a role with a long median time
 
 - Auditors can't see the people list or change anything.
 - There is no export yet; the data is in the database, and CPL IT can run a query on request.
+
+## Niche brands
+
+Auditors can see every brand and assessment, the dashboard **Niche brands** panel, and the
+niche-assessment export (CSV or XLSX, one column per question). A brief's detail page shows the
+assessment it relied on, with its framework version.
