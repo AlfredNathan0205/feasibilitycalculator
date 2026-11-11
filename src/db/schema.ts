@@ -310,7 +310,9 @@ export const nicheAssessments = pgTable(
       .notNull()
       .references(() => users.id),
     assessmentDate: date("assessment_date").notNull(),
-    answers: jsonb("answers").notNull().default(sql`'{}'::jsonb`),
+    answers: jsonb("answers")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     score: integer("score"),
     sectionScores: jsonb("section_scores"),
     band: nicheBandEnum("band"),
@@ -322,7 +324,9 @@ export const nicheAssessments = pgTable(
     escalatedAt: timestamp("escalated_at", { withTimezone: true }),
     escalationReason: text("escalation_reason"),
     validUntil: date("valid_until"),
-    supersedesId: uuid("supersedes_id").references((): AnyPgColumn => nicheAssessments.id),
+    supersedesId: uuid("supersedes_id").references(
+      (): AnyPgColumn => nicheAssessments.id,
+    ),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -346,7 +350,10 @@ export const nicheAssessments = pgTable(
       "niche_assessments_reviewer_not_assessor_ck",
       sql`${t.reviewedBy} IS NULL OR ${t.reviewedBy} <> ${t.assessorId} OR ${t.escalatedAt} IS NOT NULL`,
     ),
-    check("niche_assessments_date_not_future_ck", sql`${t.assessmentDate} <= CURRENT_DATE`),
+    check(
+      "niche_assessments_date_not_future_ck",
+      sql`${t.assessmentDate} <= CURRENT_DATE`,
+    ),
   ],
 );
 
@@ -389,7 +396,9 @@ export const briefs = pgTable(
     ),
     nicheRoute: nicheRouteEnum("niche_route"),
     nicheRouteRationale: text("niche_route_rationale"),
-    fineFragranceManualFlag: boolean("fine_fragrance_manual_flag").notNull().default(false),
+    fineFragranceManualFlag: boolean("fine_fragrance_manual_flag")
+      .notNull()
+      .default(false),
 
     creativeApproach: text("creative_approach").notNull(),
 
