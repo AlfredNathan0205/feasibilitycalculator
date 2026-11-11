@@ -26,6 +26,7 @@ import {
   type NicheFrameworkPayload,
 } from "../engine/niche-assessment.js";
 import { NotFoundError, ValidationError } from "./decide-requirement.js";
+import { queueOutcome, queueReviewRequest } from "./niche-notifications.js";
 
 type Db = PostgresJsDatabase<typeof schema>;
 type Assessment = typeof schema.nicheAssessments.$inferSelect;
@@ -521,6 +522,7 @@ export async function submitAssessment(
         },
       );
     }
+    await queueReviewRequest(tx, after!, fw.payload.reviewerRoleKey, escalate);
     return after!;
   });
 }
@@ -609,6 +611,7 @@ export async function reviewAssessment(
         before,
         after,
       );
+      await queueOutcome(tx, after!, "rejected", comment, null);
       return after!;
     }
 
@@ -649,6 +652,7 @@ export async function reviewAssessment(
         },
       );
     }
+    await queueOutcome(tx, after!, "approved", comment, after!.validUntil);
     return after!;
   });
 }

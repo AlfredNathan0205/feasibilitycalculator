@@ -6,6 +6,7 @@ import * as schema from "../db/schema.js";
 import type { AuthSession } from "../auth/authz.js";
 import { AuthorizationError } from "../auth/authz.js";
 import { ValidationError } from "./decide-requirement.js";
+import { enqueueExpiringReminders } from "./niche-notifications.js";
 import {
   addMonthsIso,
   todayLondon,
@@ -409,4 +410,55 @@ describeIfDb("niche assessments (integration, each test rolls back)", () => {
       ).rejects.toThrow(/deactivated/);
     });
   });
+
+  async function queued(tx: Db, template: string, assessmentId: string) {
+    const rows = await tx
+      .select()
+      .from(schema.notifications)
+      .where(eq(schema.notifications.template, template));
+    return rows.filter(
+      (r) => (r.payload as { assessmentId?: string }).assessmentId === assessmentId,
+    );
+  }
+
+  it("notifies reviewers on submit (not the assessor), the assessor on outcome, and Admins when escalated", async () => {
+    await inRollback(async (tx) => {
+      await setup(tx);
+      const am = await person(tx, "AM", ["account_manager"]);
+      const cd = await person(tx, "CD", ["approver"], ["commercial_director"]);
+      const { a } = await submittedAssessment(tx, am.session);
+      const req = await queued(tx, "niche_assessment_review_request", a.id);
+      expect(req.map((r) => r.recipientId)).toEqual([cd.user.id]);
+      await reviewAssessment(tx, cd.session, a.id, { decision: "approve" });
+      const out = await queued(tx, "niche_assessment_outcome", a.id);
+      expect(out.map((r) => r.recipientId)).toEqual([am.user.id]);
+    });
+  });
+
+  it("expiry reminders are sent once, only inside the window, and not for expired or superseded assessments", async () => {
+    await inRollback(async (tx) => {
+      await setup(tx);
+      const am = await person(tx, "AM", ["account_manager"]);
+      const cd = await person(tx, "CD", ["approver"], ["commercial_director"]);
+      const { a } = await submittedAssessment(tx, am.session);
+      const approved = await reviewAssessment(tx, cd.session, a.id, {
+        decision: "approve",
+      });
+      expect(await enqueueExpiringReminders(tx, todayLondon())).toBe(0); // 12 months away
+      const first = await enqueueExpiringReminders(
+        tx,
+        addDaysIso(approved.validUntil!, -10),
+      );
+      expect(first).toBeGreaterThanOrEqual(1);
+      expect((await queued(tx, "niche_assessment_expiring", a.id)).length).toBe(1);
+      await enqueueExpiringReminders(tx, addDaysIso(approved.validUntil!, -5));
+      expect((await queued(tx, "niche_assessment_expiring", a.id)).length).toBe(1);
+    });
+  });
 });
+
+function addDaysIso(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}

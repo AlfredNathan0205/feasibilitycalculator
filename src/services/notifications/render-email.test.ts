@@ -176,4 +176,36 @@ describe("veto emails", () => {
     expect(r.html).toContain("No &lt;capacity&gt; before March");
     expect(r.html).not.toContain("<capacity>");
   });
+
+  it("renders the three niche assessment templates", () => {
+    const base = {
+      assessmentId: "a1",
+      reference: "NBA-2026-0001",
+      brandName: "Maison <X>",
+      band: "strategic_partner",
+      score: 86,
+    };
+    const req = renderNotificationEmail(
+      "niche_assessment_review_request",
+      base,
+      "https://x.test/",
+    );
+    expect(req.subject).toContain("Maison <X>");
+    expect(req.html).toContain("Maison &lt;X&gt;");
+    expect(req.text).toContain("https://x.test/niche/assessments/a1");
+    expect(req.text).toContain("Niche Tier 1 · Strategic Partner, score 86/100");
+    const out = renderNotificationEmail(
+      "niche_assessment_outcome",
+      { ...base, decision: "rejected", comment: "Too early" },
+      "https://x.test",
+    );
+    expect(out.subject).toContain("rejected");
+    expect(out.text).toContain("Too early");
+    const exp = renderNotificationEmail(
+      "niche_assessment_expiring",
+      { ...base, validUntil: "2027-06-01" },
+      "https://x.test",
+    );
+    expect(exp.text).toContain("2027-06-01");
+  });
 });
