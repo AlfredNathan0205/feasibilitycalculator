@@ -105,7 +105,7 @@ both the veto and its reversal stay in the audit trail.
   pre-approval usage. Use the **Account Manager** box at the top to narrow every brief panel to one person (for
   example to review a team member's work); approval rates by role always show the whole team. **Export CSV / XLSX**
   respects the same selection and includes an Account Manager column.
-  The General Manager can also open the dashboard (without exports).
+  The General Manager and the Commercial Director can also open the dashboard (without exports).
 - **Verify a code:** paste an Approval Code to open the brief it belongs to.
 
 ## 6. Housekeeping checklist

@@ -2,7 +2,7 @@ import { and, desc, eq, exists, ilike, inArray, or, sql, type SQL } from "drizzl
 import { alias } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema.js";
-import { canVeto, type AuthSession } from "../auth/authz.js";
+import { hasLeadershipView, type AuthSession } from "../auth/authz.js";
 
 type Db = PostgresJsDatabase<typeof schema>;
 
@@ -10,7 +10,8 @@ type Db = PostgresJsDatabase<typeof schema>;
  * Which briefs a signed-in user may see. Pure and exported so the rule is
  * testable without a database:
  *  - Admin and Auditor see every brief (Auditor's whole job is lookup).
- *  - The General Manager (veto) sees every brief, without the audit trail.
+ *  - The General Manager (veto) and the Commercial Director see every brief,
+ *    without the audit trail.
  *  - Everyone else sees briefs they submitted or that were submitted on
  *    their behalf, plus — for approvers — briefs holding a requirement
  *    routed to an approval-authority role they currently hold.
@@ -24,9 +25,10 @@ export function briefScopeFor(session: AuthSession): BriefScope {
   if (session.accessRoles.includes("admin") || session.accessRoles.includes("auditor")) {
     return { kind: "all", audit: true };
   }
-  // The General Manager can veto any brief, so can see every brief — but
-  // not the audit trail, which stays with Admin and Auditor.
-  if (canVeto(session)) return { kind: "all", audit: false };
+  // The General Manager can veto any brief, and sales leadership oversees the
+  // teams' work, so both see every brief — but not the audit trail, which
+  // stays with Admin and Auditor.
+  if (hasLeadershipView(session)) return { kind: "all", audit: false };
   return {
     kind: "restricted",
     userId: session.userId,

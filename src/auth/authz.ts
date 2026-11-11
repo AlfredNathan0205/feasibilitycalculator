@@ -198,13 +198,24 @@ export function requireCanVeto(session: AuthSession): void {
 }
 
 /**
- * Who may open the Dashboard: Admin and Auditor (as always) and the General
- * Manager, who already sees every brief. Exports stay with Admin and Auditor.
+ * Sales leadership oversight (CPL, Nov 2026): the General Manager and the
+ * Commercial Director / Sales Director (an approver holding `commercial_director`)
+ * may see every brief and the dashboard, to keep an eye on the teams' work.
+ * They do not see the audit trail, and exports stay with Admin and Auditor.
  */
+export function hasLeadershipView(session: AuthSession): boolean {
+  return (
+    canVeto(session) ||
+    (hasAccessRole(session, "approver") &&
+      session.approvalAuthorityRoles.includes("commercial_director"))
+  );
+}
+
+/** Who may open the Dashboard: Admin, Auditor and sales leadership. */
 export function canViewDashboard(session: AuthSession): boolean {
   return (
     hasAccessRole(session, "admin") ||
     hasAccessRole(session, "auditor") ||
-    canVeto(session)
+    hasLeadershipView(session)
   );
 }
