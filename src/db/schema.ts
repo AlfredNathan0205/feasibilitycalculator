@@ -35,6 +35,7 @@ import {
   uniqueIndex,
   index,
   check,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -91,6 +92,9 @@ export const requirementTypeEnum = pgEnum("requirement_type", [
   "gcms_resource",
   "tier_auto_approval", // disabled by default — §11 item 2
   "strategic_priority_deferral", // disabled by default — §11 item 3
+  "niche_growth_partner", // niche assessment band 2 — Commercial Director sign-off
+  "niche_development_route", // junior perfumer / passion project route — Development Director
+  "niche_charging_model", // charging model route — Commercial Director
 ]);
 
 export const requirementStateEnum = pgEnum("requirement_state", [
@@ -108,6 +112,37 @@ export const notificationDeliveryStatusEnum = pgEnum("notification_delivery_stat
   "sent",
   "failed",
   "suppressed", // deliberately not sent: recipient not on EMAIL_ALLOWED_RECIPIENTS
+]);
+
+// --- Niche Brand Assessment enums (build spec §4.1) ---
+
+export const nicheFrameworkStatusEnum = pgEnum("niche_framework_status", [
+  "draft",
+  "published",
+  "superseded",
+]);
+
+export const nicheAssessmentStatusEnum = pgEnum("niche_assessment_status", [
+  "draft",
+  "submitted",
+  "approved",
+  "rejected",
+  "withdrawn",
+]);
+
+export const nicheBandEnum = pgEnum("niche_band", [
+  "strategic_partner",
+  "growth_partner",
+  "development_opportunity",
+  "charge_or_decline",
+]);
+
+export const nicheRouteEnum = pgEnum("niche_route", [
+  "standard", // band 1 or 2: no route choice needed
+  "charging_model",
+  "junior_perfumer_development",
+  "perfumer_passion_project",
+  "decline",
 ]);
 
 // ---------------------------------------------------------------------------
@@ -206,6 +241,116 @@ export const ruleSets = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Niche Brand Assessment (build spec §4). Framework is versioned and
+// immutable once published, mirroring rule_sets. Answers, score, section
+// scores and band are frozen once an assessment leaves draft (trigger in
+// migration 0005).
+// ---------------------------------------------------------------------------
+
+export const nicheBrands = pgTable(
+  "niche_brands",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    // Lowercased, trimmed, internal whitespace collapsed — prevents duplicates
+    // that differ only by case or spacing.
+    normalisedName: text("normalised_name").notNull(),
+    customerReference: text("customer_reference"),
+    website: text("website"),
+    notes: text("notes"),
+    active: boolean("active").notNull().default(true),
+    mergedIntoId: uuid("merged_into_id").references((): AnyPgColumn => nicheBrands.id),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("niche_brands_normalised_name_key").on(t.normalisedName)],
+);
+
+export const nicheFrameworks = pgTable(
+  "niche_frameworks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    version: integer("version").notNull(),
+    status: nicheFrameworkStatusEnum("status").notNull().default("draft"),
+    payload: jsonb("payload").notNull(),
+    sourceNote: text("source_note").notNull(),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    publishedBy: uuid("published_by").references(() => users.id),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    supersededAt: timestamp("superseded_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("niche_frameworks_version_key").on(t.version),
+    // At most one published framework at a time.
+    uniqueIndex("niche_frameworks_one_published_idx")
+      .on(t.status)
+      .where(sql`${t.status} = 'published'`),
+  ],
+);
+
+export const nicheAssessments = pgTable(
+  "niche_assessments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reference: text("reference").notNull(), // e.g. NBA-2026-0042
+    brandId: uuid("brand_id")
+      .notNull()
+      .references(() => nicheBrands.id),
+    frameworkId: uuid("framework_id")
+      .notNull()
+      .references(() => nicheFrameworks.id),
+    status: nicheAssessmentStatusEnum("status").notNull().default("draft"),
+    assessorId: uuid("assessor_id")
+      .notNull()
+      .references(() => users.id),
+    assessmentDate: date("assessment_date").notNull(),
+    answers: jsonb("answers").notNull().default(sql`'{}'::jsonb`),
+    score: integer("score"),
+    sectionScores: jsonb("section_scores"),
+    band: nicheBandEnum("band"),
+    reviewerComment: text("reviewer_comment"),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }),
+    reviewedBy: uuid("reviewed_by").references(() => users.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    reviewComment: text("review_comment"),
+    escalatedAt: timestamp("escalated_at", { withTimezone: true }),
+    escalationReason: text("escalation_reason"),
+    validUntil: date("valid_until"),
+    supersedesId: uuid("supersedes_id").references((): AnyPgColumn => nicheAssessments.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("niche_assessments_reference_key").on(t.reference),
+    index("niche_assessments_brand_id_idx").on(t.brandId),
+    index("niche_assessments_status_idx").on(t.status),
+    check(
+      "niche_assessments_submitted_fields_ck",
+      sql`${t.status} NOT IN ('submitted','approved','rejected') OR (${t.score} IS NOT NULL AND ${t.band} IS NOT NULL AND ${t.sectionScores} IS NOT NULL AND ${t.submittedAt} IS NOT NULL)`,
+    ),
+    check(
+      "niche_assessments_approved_fields_ck",
+      sql`${t.status} <> 'approved' OR (${t.reviewedBy} IS NOT NULL AND ${t.reviewedAt} IS NOT NULL AND ${t.validUntil} IS NOT NULL)`,
+    ),
+    check(
+      "niche_assessments_rejection_comment_ck",
+      sql`${t.status} <> 'rejected' OR (${t.reviewComment} IS NOT NULL AND length(btrim(${t.reviewComment})) > 0)`,
+    ),
+    check(
+      "niche_assessments_reviewer_not_assessor_ck",
+      sql`${t.reviewedBy} IS NULL OR ${t.reviewedBy} <> ${t.assessorId} OR ${t.escalatedAt} IS NOT NULL`,
+    ),
+    check("niche_assessments_date_not_future_ck", sql`${t.assessmentDate} <= CURRENT_DATE`),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // briefs — submission identity and inputs (§8)
 // Rationale fields are NOT NULL whenever their trigger flag is TRUE — enforced
 // here with CHECK constraints per the spec's instruction that a blank must be
@@ -234,6 +379,17 @@ export const briefs = pgTable(
 
     strategicPriority: boolean("strategic_priority").notNull().default(false),
     strategicPriorityRationale: text("strategic_priority_rationale"),
+
+    // Niche Brand Assessment link (build spec §4.6). nicheFfPreApproved is now
+    // derived by the service from a current approved assessment (or the manual
+    // fine-fragrance path); the columns above stay for historical briefs.
+    nicheBrandId: uuid("niche_brand_id").references(() => nicheBrands.id),
+    nicheAssessmentId: uuid("niche_assessment_id").references(
+      (): AnyPgColumn => nicheAssessments.id,
+    ),
+    nicheRoute: nicheRouteEnum("niche_route"),
+    nicheRouteRationale: text("niche_route_rationale"),
+    fineFragranceManualFlag: boolean("fine_fragrance_manual_flag").notNull().default(false),
 
     creativeApproach: text("creative_approach").notNull(),
 
@@ -270,6 +426,14 @@ export const briefs = pgTable(
       sql`${t.strategicPriority} = false OR (${t.strategicPriorityRationale} IS NOT NULL AND length(btrim(${t.strategicPriorityRationale})) > 0)`,
     ),
     check("briefs_deadline_future_ck", sql`${t.deadline} > CURRENT_DATE`),
+    check(
+      "briefs_niche_assessment_brand_ck",
+      sql`${t.nicheAssessmentId} IS NULL OR ${t.nicheBrandId} IS NOT NULL`,
+    ),
+    check(
+      "briefs_niche_route_rationale_ck",
+      sql`${t.nicheRoute} IS NULL OR ${t.nicheRoute} = 'standard' OR (${t.nicheRouteRationale} IS NOT NULL AND length(btrim(${t.nicheRouteRationale})) > 0)`,
+    ),
   ],
 );
 
@@ -307,6 +471,9 @@ export const decisions = pgTable(
     vetoedBy: uuid("vetoed_by").references(() => users.id),
     vetoReason: text("veto_reason"),
     vetoedRequirementId: uuid("vetoed_requirement_id"),
+    // Snapshot of the niche assessment in force at decision time (spec §4.7):
+    // { assessmentId, reference, frameworkVersion, score, band, route, validUntil }
+    nicheSnapshot: jsonb("niche_snapshot"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
