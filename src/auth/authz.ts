@@ -196,3 +196,15 @@ export function requireCanVeto(session: AuthSession): void {
     );
   }
 }
+
+/**
+ * Who may open the Dashboard: Admin and Auditor (as always) and the General
+ * Manager, who already sees every brief. Exports stay with Admin and Auditor.
+ */
+export function canViewDashboard(session: AuthSession): boolean {
+  return (
+    hasAccessRole(session, "admin") ||
+    hasAccessRole(session, "auditor") ||
+    canVeto(session)
+  );
+}

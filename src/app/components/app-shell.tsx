@@ -8,6 +8,7 @@ export function AppShell({
   session: {
     user?: { name?: string | null; email?: string | null };
     accessRoles: string[];
+    approvalAuthorityRoles?: string[];
   } | null;
   children: React.ReactNode;
 }) {
@@ -55,7 +56,9 @@ export function AppShell({
               </a>
             )}
             {(session.accessRoles.includes("admin") ||
-              session.accessRoles.includes("auditor")) && (
+              session.accessRoles.includes("auditor") ||
+              (session.accessRoles.includes("approver") &&
+                session.approvalAuthorityRoles?.includes("general_manager"))) && (
               <a href="/dashboard" className="shell-nav-link">
                 Dashboard
               </a>

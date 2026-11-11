@@ -1,4 +1,5 @@
 import { and, desc, eq, exists, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema.js";
 import { canVeto, type AuthSession } from "../auth/authz.js";
@@ -60,6 +61,9 @@ export interface BriefListFilters {
   q?: string;
   status?: "pending" | "approved" | "declined";
   tier?: string;
+  /** Briefs where this person is the Account Manager of record: they
+   * submitted it, or a Sales Coordinator submitted it on their behalf. */
+  accountManagerId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -72,6 +76,8 @@ export interface BriefListRow {
   deadline: string;
   submittedAt: Date;
   submitterName: string | null;
+  /** Set when a Sales Coordinator submitted on behalf of an Account Manager. */
+  onBehalfOfName: string | null;
   computedScore: string;
   commercialDecision: "auto_approved" | "pending" | "declined";
   finalStatus: "pending" | "approved" | "declined";
@@ -118,7 +124,16 @@ export async function listBriefs(
   }
   if (filters.status) conditions.push(eq(schema.decisions.finalStatus, filters.status));
   if (filters.tier) conditions.push(eq(schema.briefs.tier, filters.tier));
+  if (filters.accountManagerId) {
+    conditions.push(
+      or(
+        eq(schema.briefs.submittedBy, filters.accountManagerId),
+        eq(schema.briefs.onBehalfOf, filters.accountManagerId),
+      ),
+    );
+  }
   const where = and(...conditions);
+  const onBehalfOfUser = alias(schema.users, "on_behalf_of_user");
 
   const [countRow] = await db
     .select({ total: sql<number>`count(*)::int` })
@@ -135,6 +150,7 @@ export async function listBriefs(
       deadline: schema.briefs.deadline,
       submittedAt: schema.briefs.submittedAt,
       submitterName: schema.users.displayName,
+      onBehalfOfName: onBehalfOfUser.displayName,
       computedScore: schema.decisions.computedScore,
       commercialDecision: schema.decisions.commercialDecision,
       finalStatus: schema.decisions.finalStatus,
@@ -147,6 +163,7 @@ export async function listBriefs(
     .from(schema.briefs)
     .innerJoin(schema.decisions, eq(schema.decisions.briefId, schema.briefs.id))
     .innerJoin(schema.users, eq(schema.users.id, schema.briefs.submittedBy))
+    .leftJoin(onBehalfOfUser, eq(onBehalfOfUser.id, schema.briefs.onBehalfOf))
     .where(where)
     .orderBy(desc(schema.briefs.submittedAt))
     .limit(pageSize)

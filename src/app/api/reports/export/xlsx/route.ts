@@ -4,7 +4,9 @@ import { hasAccessRole } from "../../../../../auth/authz.js";
 import { getExportableBriefRows } from "../../../../../services/reporting.js";
 import { getDb } from "../../../../../lib/db.js";
 
-export async function GET() {
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function GET(request: Request) {
   const session = await auth();
   if (!session) {
     return new Response("Not signed in", { status: 401 });
@@ -14,7 +16,10 @@ export async function GET() {
   }
 
   const db = getDb();
-  const rows = (await getExportableBriefRows(db)) as unknown as Record<string, unknown>[];
+  const am = new URL(request.url).searchParams.get("am");
+  const rows = (await getExportableBriefRows(db, {
+    accountManagerId: am && UUID.test(am) ? am : undefined,
+  })) as unknown as Record<string, unknown>[];
 
   const worksheet = XLSX.utils.json_to_sheet(rows);
   const workbook = XLSX.utils.book_new();

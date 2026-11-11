@@ -2,17 +2,18 @@
 
 ## Which button, which role
 
-| I want to…                   | Where                         | Role needed                                      |
-| ---------------------------- | ----------------------------- | ------------------------------------------------ |
-| Submit a brief               | Home → **New brief**          | Account Manager / Sales Coordinator              |
-| See my briefs / search       | **Briefs**                    | anyone signed in (you see what your role allows) |
-| Approve or reject a sign-off | **Approvals**                 | Approver + the approval role                     |
-| Veto a sign-off              | **Approvals → Veto**          | General Manager (veto)                           |
-| Reverse a veto               | Brief page → **Reverse veto** | Admin                                            |
-| Add a person or change roles | **People and roles**          | Admin                                            |
-| Change scoring rules         | **Rule sets**                 | Admin                                            |
-| Look up a code               | **Verify a code**             | Auditor or Admin                                 |
-| See trends                   | **Dashboard**                 | Auditor or Admin                                 |
+| I want to…                       | Where                                                                   | Role needed                                      |
+| -------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------ |
+| Submit a brief                   | Home → **New brief**                                                    | Account Manager / Sales Coordinator              |
+| See my briefs / search           | **Briefs**                                                              | anyone signed in (you see what your role allows) |
+| Approve or reject a sign-off     | **Approvals**                                                           | Approver + the approval role                     |
+| Veto a sign-off                  | **Approvals → Veto**                                                    | General Manager (veto)                           |
+| Reverse a veto                   | Brief page → **Reverse veto**                                           | Admin                                            |
+| Add a person or change roles     | **People and roles**                                                    | Admin                                            |
+| Change scoring rules             | **Rule sets**                                                           | Admin                                            |
+| Look up a code                   | **Verify a code**                                                       | Auditor or Admin                                 |
+| See trends                       | **Dashboard**                                                           | Auditor, Admin or General Manager                |
+| See one Account Manager's briefs | **Briefs → Account Manager** filter, or **Dashboard → Account Manager** | Admin, Auditor or General Manager                |
 
 ## The outcome, in order
 

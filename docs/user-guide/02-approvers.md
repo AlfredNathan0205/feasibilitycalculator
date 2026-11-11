@@ -64,7 +64,8 @@ _Pre-approval declared on your behalf_, with the submitter's comment and a **rev
 
 If you hold the **General Manager (veto)** role (Pauline Holmes):
 
-- You can see **every brief** (not the audit trail).
+- You can see **every brief** (not the audit trail), filter the **Briefs** list by Account Manager, and open the
+  **Dashboard** (without the CSV/XLSX exports).
 - Nothing is ever routed to you, so nothing waits on you.
 - On the **Approvals** page, under **Veto**, you see every sign-off that is still open on any brief, whoever
   it is routed to. Type a **reason** (required) and press **Veto**.

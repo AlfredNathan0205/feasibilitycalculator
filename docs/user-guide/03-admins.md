@@ -2,8 +2,9 @@
 
 Admins look after **people and roles**, the **scoring rules**, **escalated sign-offs** and **vetoes**.
 It is a deliberately small group (currently Alfred Muthunathan, Simon Roper and Tia O'Neil).
-Admins can see every brief, the audit trail and the dashboard, but **cannot submit briefs** unless
-they are also given the Account Manager role.
+Admins can see every brief, the audit trail and the dashboard, but can only **submit briefs** if they are also given
+the Account Manager role. Simon and Tia hold both. Add the role on **People and roles**; it applies the next
+time they sign in. A sign-off on a brief an Admin submitted goes to another Admin, never back to them.
 
 Your menu: **Briefs**, **Approvals**, **Dashboard**, **Rule sets**, **People and roles**, **Verify a code**.
 
@@ -93,10 +94,18 @@ both the veto and its reversal stay in the audit trail.
 
 ## 5. Looking things up
 
-- **Briefs:** every brief, searchable by customer or PV reference, filterable by status and tier. Opening one shows the
-  full **audit trail** (submission, each decision, escalations, vetoes, role-related events).
-- **Dashboard:** volumes and outcomes by month, approval rates and decision times by role, score distribution,
-  pre-approval usage by submitter (and how many were revoked), and short-deadline volume.
+- **Briefs:** every brief, searchable by customer or PV reference, filterable by status, tier and **Account Manager**.
+  Pick a name in the **Account Manager** box and press **Filter** to see just that person's briefs, including any a Sales
+  Coordinator raised on their behalf. Opening a brief shows the full **audit trail** (submission, each decision,
+  escalations, vetoes, role-related events).
+- **Dashboard:** a **month-by-month table** (briefs, value potential, and how many Marketing, PPD, GCMS and Creative
+  sign-offs they raised, plus short-deadline briefs), a **By Account Manager** table (briefs, approved, pending,
+  declined, sign-offs still waiting, value, with links to that person's dashboard and briefs), volume by tier and
+  requirement type, outcome mix by month, approval rates and decision times by role, score distribution and
+  pre-approval usage. Use the **Account Manager** box at the top to narrow every brief panel to one person (for
+  example to review a team member's work); approval rates by role always show the whole team. **Export CSV / XLSX**
+  respects the same selection and includes an Account Manager column.
+  The General Manager can also open the dashboard (without exports).
 - **Verify a code:** paste an Approval Code to open the brief it belongs to.
 
 ## 6. Housekeeping checklist

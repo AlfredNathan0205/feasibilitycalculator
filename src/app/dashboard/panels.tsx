@@ -75,7 +75,13 @@ function BarRow({ label, count, max }: { label: string; count: number; max: numb
   );
 }
 
-export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
+export function DashboardPanels({
+  summary,
+  filtered = false,
+}: {
+  summary: DashboardSummary;
+  filtered?: boolean;
+}) {
   const tierMax = Math.max(1, ...summary.volumeByTier.map((r) => r.count));
   const reqTypeMax = Math.max(1, ...summary.volumeByRequirementType.map((r) => r.count));
   const scoreMax = Math.max(1, ...summary.scoreDistribution.map((b) => b.count));
@@ -120,6 +126,79 @@ export function DashboardPanels({ summary }: { summary: DashboardSummary }) {
         </div>
       </div>
       <div className="panel-grid">
+        <div className="panel-grid-full">
+          <Panel title="Month by month: briefs and the resource they draw on">
+            <p className="helptext" style={{ marginTop: 0 }}>
+              Sign-offs raised in the month a brief was submitted. Marketing, PPD and GCMS
+              show how much of each team&rsquo;s time was asked for; Creative covers both
+              creative sign-offs.
+            </p>
+            <SimpleTable
+              columns={[
+                { key: "month", label: "Month" },
+                { key: "briefs", label: "Briefs", num: true },
+                {
+                  key: "valuePotentialGbp",
+                  label: "Value potential",
+                  num: true,
+                  format: (v) => `£${Number(v).toLocaleString("en-GB")}`,
+                },
+                { key: "marketing", label: "Marketing", num: true },
+                { key: "ppd", label: "PPD", num: true },
+                { key: "gcms", label: "GCMS", num: true },
+                { key: "creative", label: "Creative", num: true },
+                { key: "shortDeadline", label: "Short deadline", num: true },
+              ]}
+              rows={summary.monthlyActivity as unknown as Record<string, unknown>[]}
+            />
+          </Panel>
+        </div>
+
+        {!filtered && (
+          <div className="panel-grid-full">
+            <Panel title="By Account Manager">
+              <p className="helptext" style={{ marginTop: 0 }}>
+                Counted against the Account Manager a brief was raised for. Outstanding
+                sign-offs are those still waiting on an approver.
+              </p>
+              <SimpleTable
+                columns={[
+                  {
+                    key: "accountManagerName",
+                    label: "Account Manager",
+                    render: (v) => <span style={{ fontWeight: 500 }}>{String(v)}</span>,
+                  },
+                  { key: "total", label: "Briefs", num: true },
+                  { key: "approved", label: "Approved", num: true },
+                  { key: "pending", label: "Pending", num: true },
+                  { key: "declined", label: "Declined", num: true },
+                  { key: "outstandingSignOffs", label: "Sign-offs waiting", num: true },
+                  {
+                    key: "valuePotentialGbp",
+                    label: "Value potential",
+                    num: true,
+                    format: (v) => `£${Number(v).toLocaleString("en-GB")}`,
+                  },
+                  {
+                    key: "accountManagerId",
+                    label: "",
+                    render: (v) => (
+                      <span>
+                        <a href={`/dashboard?am=${String(v)}`}>Dashboard</a>
+                        {" · "}
+                        <a href={`/briefs?am=${String(v)}`}>Briefs</a>
+                      </span>
+                    ),
+                  },
+                ]}
+                rows={
+                  summary.briefsByAccountManager as unknown as Record<string, unknown>[]
+                }
+              />
+            </Panel>
+          </div>
+        )}
+
         <Panel title="Volume by customer tier">
           {summary.volumeByTier.map((r) => (
             <BarRow key={r.dimension} label={r.dimension} count={r.count} max={tierMax} />
