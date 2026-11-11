@@ -7,3 +7,4 @@ parity/golden-dataset.csv
 src/db/seed/ruleset-v1.generated.json
 package-lock.json
 docs/backlog.md
+parity/niche/*.html
