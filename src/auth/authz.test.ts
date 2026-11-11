@@ -8,6 +8,7 @@ import {
   checkSelfApproval,
   requireCanDecideRequirement,
   shouldEscalateRequirement,
+  canViewDashboard,
   AuthorizationError,
   type AuthSession,
 } from "./authz.js";
@@ -290,5 +291,36 @@ describe("shouldEscalateRequirement", () => {
 
   it("does not escalate when there are no holders: that is a role-mapping gap, not a conflict", () => {
     expect(shouldEscalateRequirement([], brief)).toBe(false);
+  });
+});
+
+describe("canViewDashboard", () => {
+  it("allows Admin, Auditor and the General Manager", () => {
+    expect(canViewDashboard(session({ accessRoles: ["admin"] }))).toBe(true);
+    expect(canViewDashboard(session({ accessRoles: ["auditor"] }))).toBe(true);
+    expect(
+      canViewDashboard(
+        session({
+          accessRoles: ["approver"],
+          approvalAuthorityRoles: ["general_manager"],
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("refuses everyone else, including approvers without the veto and Account Managers", () => {
+    expect(
+      canViewDashboard(
+        session({
+          accessRoles: ["approver"],
+          approvalAuthorityRoles: ["commercial_director"],
+        }),
+      ),
+    ).toBe(false);
+    expect(canViewDashboard(session({ accessRoles: ["account_manager"] }))).toBe(false);
+    // The veto role alone, without the Approver access role, is not enough.
+    expect(
+      canViewDashboard(session({ approvalAuthorityRoles: ["general_manager"] })),
+    ).toBe(false);
   });
 });

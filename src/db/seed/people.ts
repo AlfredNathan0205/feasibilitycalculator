@@ -19,8 +19,16 @@ export const people: Person[] = [
     displayName: "Alfred Muthunathan",
     roles: ["admin"],
   },
-  { upn: "simon.roper@cplaromas.com", displayName: "Simon Roper", roles: ["admin"] },
-  { upn: "tia.oneill@cplaromas.com", displayName: "Tia O'Neil", roles: ["admin"] },
+  {
+    upn: "simon.roper@cplaromas.com",
+    displayName: "Simon Roper",
+    roles: ["admin", "account_manager"],
+  },
+  {
+    upn: "tia.oneill@cplaromas.com",
+    displayName: "Tia O'Neil",
+    roles: ["admin", "account_manager"],
+  },
   {
     upn: "claire.holland@cplaromas.com",
     displayName: "Claire Holland",

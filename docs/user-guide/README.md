@@ -47,13 +47,13 @@ Role changes take effect **the next time you sign in**, so sign out and in again
 
 ## Roles at a glance
 
-| Role                                           | Can do                                                                                                         |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Account Manager** / **Sales Coordinator**    | Submit briefs; see their own briefs and outcomes. (Currently the two roles behave identically in the screens.) |
-| **Approver** (plus one or more approval roles) | Approve or reject the sign-offs assigned to their role.                                                        |
-| **General Manager (veto)**                     | See every brief; veto any open sign-off.                                                                       |
-| **Auditor**                                    | Read-only access to all briefs, decisions, audit trail and the dashboard.                                      |
-| **Admin**                                      | Everything an Auditor sees, plus people and roles, scoring rules and veto reversals. Cannot submit briefs.     |
+| Role                                           | Can do                                                                                                                                  |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **Account Manager** / **Sales Coordinator**    | Submit briefs; see their own briefs and outcomes. (Currently the two roles behave identically in the screens.)                          |
+| **Approver** (plus one or more approval roles) | Approve or reject the sign-offs assigned to their role.                                                                                 |
+| **General Manager (veto)**                     | See every brief; veto any open sign-off.                                                                                                |
+| **Auditor**                                    | Read-only access to all briefs, decisions, audit trail and the dashboard.                                                               |
+| **Admin**                                      | Everything an Auditor sees, plus people and roles, scoring rules and veto reversals. Submits briefs only if also given Account Manager. |
 
 The sign-offs and who holds them (CPL's current setup):
 

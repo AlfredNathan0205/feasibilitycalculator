@@ -33,8 +33,10 @@ The audit trail is **append-only**: the database prevents any event from being e
 
 ## 4. Dashboard
 
-Overview of volumes and outcomes by month, approval rate and time-to-decision by role, the score distribution, how often
-pre-approval is used (and revoked) by submitter, and short-deadline volume. Use it to spot bottlenecks and unusual behaviour,
+A month-by-month table of briefs, value and the Marketing, PPD, GCMS and Creative sign-offs they raised; a table of briefs
+by Account Manager; volumes and outcomes by month, approval rate and time-to-decision by role, the score distribution,
+how often pre-approval is used (and revoked) by submitter, and short-deadline volume. The **Account Manager** box at the
+top narrows the brief panels to one person. On the **Briefs** list the same box filters by Account Manager. Use it to spot bottlenecks and unusual behaviour,
 for example one submitter pre-approving a lot, or a role with a long median time to decide.
 
 ## 5. Questions an audit might ask, and where to look

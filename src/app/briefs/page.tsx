@@ -7,18 +7,28 @@ import {
 import { AppShell } from "../components/app-shell.js";
 import { StatusPill } from "../components/status-pill.js";
 import { getDb } from "../../lib/db.js";
+import { listAccountManagersWithBriefs } from "../../services/reporting.js";
 
 const STATUSES = ["pending", "approved", "declined"] as const;
 // "A/T" is the legacy merged value on briefs submitted before A and T were split.
 const TIERS = ["A", "T", "A/T", "B", "C", "D"];
 
-type SearchParams = { q?: string; status?: string; tier?: string; page?: string };
+type SearchParams = {
+  q?: string;
+  status?: string;
+  tier?: string;
+  am?: string;
+  page?: string;
+};
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function pageHref(params: SearchParams, page: number) {
   const usp = new URLSearchParams();
   if (params.q) usp.set("q", params.q);
   if (params.status) usp.set("status", params.status);
   if (params.tier) usp.set("tier", params.tier);
+  if (params.am) usp.set("am", params.am);
   usp.set("page", String(page));
   return `/briefs?${usp.toString()}`;
 }
@@ -46,10 +56,16 @@ export default async function BriefsPage({
     q: params.q,
     status: STATUSES.find((s) => s === params.status),
     tier: TIERS.find((t) => t === params.tier),
+    accountManagerId: params.am && UUID.test(params.am) ? params.am : undefined,
     page: Math.max(Number.parseInt(params.page ?? "1", 10) || 1, 1),
   };
 
-  const result = await listBriefs(getDb(), briefScopeFor(session), filters);
+  const scope = briefScopeFor(session);
+  const result = await listBriefs(getDb(), scope, filters);
+  // The Account Manager filter is for people who can see every brief
+  // (Admin, Auditor, General Manager); everyone else only sees their own.
+  const accountManagers =
+    scope.kind === "all" ? await listAccountManagersWithBriefs(getDb()) : [];
   const totalPages = Math.max(Math.ceil(result.total / result.pageSize), 1);
   const seesAll =
     session.accessRoles.includes("admin") || session.accessRoles.includes("auditor");
@@ -94,6 +110,19 @@ export default async function BriefsPage({
                 ))}
               </select>
             </div>
+            {accountManagers.length > 0 && (
+              <div>
+                <label htmlFor="am">Account Manager</label>
+                <select id="am" name="am" defaultValue={filters.accountManagerId ?? ""}>
+                  <option value="">Anyone</option>
+                  {accountManagers.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <label htmlFor="tier">Tier</label>
               <select id="tier" name="tier" defaultValue={filters.tier ?? ""}>
@@ -126,7 +155,7 @@ export default async function BriefsPage({
                   <th>Customer</th>
                   <th>Tier</th>
                   <th className="num">Value</th>
-                  <th>Submitted by</th>
+                  <th>Account Manager</th>
                   <th>Submitted</th>
                   <th>Deadline</th>
                   <th className="num">Score</th>
@@ -144,7 +173,14 @@ export default async function BriefsPage({
                     <td className="num">
                       £{Number(b.valuePotentialGbp).toLocaleString("en-GB")}
                     </td>
-                    <td>{b.submitterName ?? "—"}</td>
+                    <td>
+                      {b.onBehalfOfName ?? b.submitterName ?? "—"}
+                      {b.onBehalfOfName && (
+                        <span className="helptext" style={{ marginLeft: "0.5em" }}>
+                          (by {b.submitterName})
+                        </span>
+                      )}
+                    </td>
                     <td style={{ color: "var(--cpl-ink-soft)" }}>
                       {new Date(b.submittedAt).toLocaleDateString("en-GB")}
                     </td>
