@@ -295,6 +295,17 @@ describe("shouldEscalateRequirement", () => {
 });
 
 describe("canViewDashboard", () => {
+  it("allows the Commercial Director, who oversees sales", () => {
+    expect(
+      canViewDashboard(
+        session({
+          accessRoles: ["approver"],
+          approvalAuthorityRoles: ["commercial_director"],
+        }),
+      ),
+    ).toBe(true);
+  });
+
   it("allows Admin, Auditor and the General Manager", () => {
     expect(canViewDashboard(session({ accessRoles: ["admin"] }))).toBe(true);
     expect(canViewDashboard(session({ accessRoles: ["auditor"] }))).toBe(true);
@@ -308,12 +319,12 @@ describe("canViewDashboard", () => {
     ).toBe(true);
   });
 
-  it("refuses everyone else, including approvers without the veto and Account Managers", () => {
+  it("refuses everyone else, including other approvers and Account Managers", () => {
     expect(
       canViewDashboard(
         session({
           accessRoles: ["approver"],
-          approvalAuthorityRoles: ["commercial_director"],
+          approvalAuthorityRoles: ["ppd_manager"],
         }),
       ),
     ).toBe(false);

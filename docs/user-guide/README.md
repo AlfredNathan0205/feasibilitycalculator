@@ -51,7 +51,7 @@ Role changes take effect **the next time you sign in**, so sign out and in again
 | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | **Account Manager** / **Sales Coordinator**    | Submit briefs; see their own briefs and outcomes. (Currently the two roles behave identically in the screens.)                          |
 | **Approver** (plus one or more approval roles) | Approve or reject the sign-offs assigned to their role.                                                                                 |
-| **General Manager (veto)**                     | See every brief; veto any open sign-off.                                                                                                |
+| **General Manager (veto)**                     | See every brief and the dashboard; veto any open sign-off.                                                                              |
 | **Auditor**                                    | Read-only access to all briefs, decisions, audit trail and the dashboard.                                                               |
 | **Admin**                                      | Everything an Auditor sees, plus people and roles, scoring rules and veto reversals. Submits briefs only if also given Account Manager. |
 

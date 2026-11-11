@@ -58,7 +58,8 @@ export function AppShell({
             {(session.accessRoles.includes("admin") ||
               session.accessRoles.includes("auditor") ||
               (session.accessRoles.includes("approver") &&
-                session.approvalAuthorityRoles?.includes("general_manager"))) && (
+                (session.approvalAuthorityRoles?.includes("general_manager") ||
+                  session.approvalAuthorityRoles?.includes("commercial_director")))) && (
               <a href="/dashboard" className="shell-nav-link">
                 Dashboard
               </a>

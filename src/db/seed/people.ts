@@ -50,6 +50,11 @@ export const people: Person[] = [
     roles: ["account_manager"],
   },
   {
+    upn: "kellie.ellis@cplaromas.com",
+    displayName: "Kellie Ellis",
+    roles: ["account_manager"],
+  },
+  {
     upn: "pauline.holmes@cplaromas.com",
     displayName: "Pauline Holmes",
     roles: ["approver", "general_manager"],

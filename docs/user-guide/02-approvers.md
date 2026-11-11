@@ -2,7 +2,7 @@
 
 You are asked to approve or reject the sign-offs routed to your role, for example PPD resource,
 marketing resource, a short deadline, a creative approach, or a Tier T brief. If you are the
-General Manager, see "The General Manager's veto" at the end.
+General Manager or the Commercial Director, see sections 6 and 7 at the end.
 
 > You need the **Approver** access role plus the specific approval role (for example PPD
 > Manager). Without both you see nothing to approve. Ask an Admin if something is missing.
@@ -60,7 +60,13 @@ _Pre-approval declared on your behalf_, with the submitter's comment and a **rev
 - Approve a brief **you submitted** or one submitted for you as Account Manager. If every holder of a role is in that
   position, the sign-off is **escalated to an Admin** and recorded as such.
 
-## 6. The General Manager's veto
+## 6. Seeing everyone's briefs (General Manager and Commercial Director)
+
+If you hold the **Commercial Director** role (Claire Holland) you also see **every brief**, not only the ones routed to
+you. Use the **Account Manager** box on **Briefs** to look at one person's work, and open the **Dashboard** for
+month-by-month volume and resource. You can't see the audit trail or use the CSV/XLSX exports.
+
+## 7. The General Manager's veto
 
 If you hold the **General Manager (veto)** role (Pauline Holmes):
 

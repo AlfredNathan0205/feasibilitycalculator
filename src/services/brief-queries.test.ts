@@ -27,6 +27,26 @@ describe("briefScopeFor (pure)", () => {
     ).toEqual({ kind: "all", audit: false });
   });
 
+  it("gives the Commercial Director every brief but not the audit trail", () => {
+    expect(
+      briefScopeFor(
+        session({
+          accessRoles: ["approver"],
+          approvalAuthorityRoles: ["commercial_director"],
+        }),
+      ),
+    ).toEqual({ kind: "all", audit: false });
+    // Without the Approver access role the approval role grants nothing.
+    expect(
+      briefScopeFor(
+        session({
+          accessRoles: ["account_manager"],
+          approvalAuthorityRoles: ["commercial_director"],
+        }),
+      ).kind,
+    ).toBe("restricted");
+  });
+
   it("restricts a submitter to their own briefs with no approval roles", () => {
     expect(briefScopeFor(session({ accessRoles: ["account_manager"] }))).toEqual({
       kind: "restricted",
