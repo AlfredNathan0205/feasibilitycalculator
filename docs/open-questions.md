@@ -92,5 +92,8 @@ built.
 ## Niche Brand Assessment decisions D1-D10 (resolved)
 
 All ten product decisions for the Niche Brand Assessment are settled and recorded in
-[niche-brand-assessment.md](niche-brand-assessment.md). Nothing is open there. (Still open
-elsewhere: the Tier T weight, Pauline's approval role, stale-approval reminders.)
+[niche-brand-assessment.md](niche-brand-assessment.md). Nothing is open there. (Resolved 12 Nov 2026: the Tier T
+weight of 100 is correct; Pauline Holmes is the General Manager, and Claire
+Holland and Jo Lambert report to her; the Admins are Simon Roper and Tia
+O'Neil. Still open: stale-approval reminders, and Pauline's routing guidance
+for Commercial/Development Director scope.)

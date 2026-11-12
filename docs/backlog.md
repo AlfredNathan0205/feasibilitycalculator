@@ -37,8 +37,8 @@ Agreed order: build capabilities first, then migrate to CPL's Azure.
       "A/T" value still works everywhere and behaves as A, so historical
       briefs, replays and the 7,776-case parity set are unaffected. T is
       deliberately NOT aliased: it is an unknown tier until a rule set
-      that defines it is published. T's weight (100) is an assumption from
-      the workbook's note "T = A (100)"; confirm with CPL.
+      that defines it is published. T's weight (100) came from the workbook's
+      note "T = A (100)"; CPL confirmed it is correct (12 Nov 2026).
       **Rollout is a rule-set change, not a code deploy:** run
       `npx tsx src/db/seed/add-tier-t-draft.ts <admin-upn>`, open the draft
       in Admin > Rule sets, run the replay, then publish. Until it is
@@ -182,7 +182,12 @@ Agreed order: build capabilities first, then migrate to CPL's Azure.
 - [ ] Line-manager reassignment target for the self-approval conflict —
       no relationship modeled yet (`docs/open-questions.md` item 2).
       Blocks the revoke-notification flow above too.
-- [ ] Who holds Admin in practice (§12 item 4).
+- [x] Who holds Admin in practice (§12 item 4): Simon Roper and Tia O'Neil,
+      no change (confirmed 12 Nov 2026).
+- Reporting lines (confirmed 12 Nov 2026): Pauline Holmes is the General
+  Manager; Claire Holland (Commercial Director) and Jo Lambert (Development
+  Director) report to her. Not modelled in the schema; self-approval
+  conflicts still escalate to Admin (`docs/open-questions.md`).
 
 ## Done and verified
 
