@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -38,8 +39,9 @@ export function NavLink({
         (path.startsWith("/briefs/") && !path.startsWith("/briefs/new"))
       : path === href || path.startsWith(`${href}/`);
   return (
-    <a
+    <Link
       href={href}
+      prefetch={false}
       className={`shell-nav-link${active ? " shell-nav-link-active" : ""}`}
       aria-current={active ? "page" : undefined}
     >
@@ -53,6 +55,6 @@ export function NavLink({
         {ICONS[icon]}
       </svg>
       {children}
-    </a>
+    </Link>
   );
 }
