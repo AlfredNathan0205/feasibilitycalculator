@@ -28,24 +28,44 @@ type Db = PostgresJsDatabase<typeof schema>;
  * Pool size: DB_POOL_MAX (default 5). Keep it small on serverless, where
  * every warm instance holds its own pool.
  */
-const globalForDb = globalThis as unknown as { __cplDb?: Db };
+const globalForDb = globalThis as unknown as {
+  __cplDb?: Db;
+  __cplSql?: ReturnType<typeof postgres>;
+  __cplLastUse?: number;
+};
+
+/**
+ * If the instance has been idle longer than this, it may have been frozen and
+ * its pooled sockets silently dropped by the pooler, so build a new pool
+ * rather than risk writing into a dead socket.
+ */
+const STALE_AFTER_MS = 3000;
 
 export function getDb(): Db {
-  if (globalForDb.__cplDb) return globalForDb.__cplDb;
+  const now = Date.now();
+  const stale =
+    globalForDb.__cplLastUse !== undefined &&
+    now - globalForDb.__cplLastUse > STALE_AFTER_MS;
+  globalForDb.__cplLastUse = now;
+  if (globalForDb.__cplDb && !stale) return globalForDb.__cplDb;
+
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL must be set");
+  // A request that started on the old pool may still be issuing queries, so
+  // close it after a delay instead of immediately.
+  const old = globalForDb.__cplSql;
+  if (old) {
+    setTimeout(() => void old.end({ timeout: 5 }).catch(() => {}), 60_000).unref?.();
+  }
   const max = Number.parseInt(process.env.DB_POOL_MAX ?? "5", 10) || 5;
-  globalForDb.__cplDb = drizzle(
-    postgres(databaseUrl, {
-      max,
-      prepare: false,
-      idle_timeout: 5,
-      max_lifetime: 120,
-      connect_timeout: 10,
-    }),
-    {
-      schema,
-    },
-  );
+  const sql = postgres(databaseUrl, {
+    max,
+    prepare: false,
+    idle_timeout: 5,
+    max_lifetime: 120,
+    connect_timeout: 10,
+  });
+  globalForDb.__cplSql = sql;
+  globalForDb.__cplDb = drizzle(sql, { schema });
   return globalForDb.__cplDb;
 }
