@@ -30,6 +30,7 @@ type Sql = ReturnType<typeof postgres>;
 const READ_TIMEOUT_MS =
   Number.parseInt(process.env.DB_READ_TIMEOUT_MS ?? "8000", 10) || 8000;
 const WRITE_TIMEOUT_MS = 30_000;
+const IDLE_RECONNECT_MS = 2000;
 const READ_ATTEMPTS = 3;
 const RETRYABLE_CODES = new Set([
   "CONNECTION_ENDED",
@@ -107,6 +108,8 @@ function createClient(databaseUrl: string): Sql {
  */
 function createGuardedClient(databaseUrl: string): Sql {
   let active = createClient(databaseUrl);
+  let inFlight = 0;
+  let lastActivity = Date.now();
 
   const replace = (stuck: Sql) => {
     if (active !== stuck) return; // someone else already replaced it
@@ -120,6 +123,23 @@ function createGuardedClient(databaseUrl: string): Sql {
     const timeout = isRead ? READ_TIMEOUT_MS : WRITE_TIMEOUT_MS;
 
     const exec = async (asValues: boolean) => {
+      // A serverless instance is frozen between requests, and sockets that sat
+      // idle through a freeze are dead (they otherwise cost an 8 s stall on
+      // the first query of the next request). If nothing has run for a moment,
+      // start from a fresh pool; connecting is far cheaper than waiting.
+      if (inFlight === 0 && Date.now() - lastActivity > IDLE_RECONNECT_MS) {
+        replace(active);
+      }
+      inFlight++;
+      try {
+        return await run(asValues);
+      } finally {
+        inFlight--;
+        lastActivity = Date.now();
+      }
+    };
+
+    const run = async (asValues: boolean) => {
       for (let attempt = 1; ; attempt++) {
         const client = active;
         const pending = client.unsafe(query, params as never, opts as never);

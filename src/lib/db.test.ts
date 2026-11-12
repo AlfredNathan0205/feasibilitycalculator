@@ -28,6 +28,15 @@ describeIfDb("getDb stall guard", () => {
     expect(rows[0]?.n).toBe(2);
   });
 
+  it("starts from a fresh pool after an idle gap and still answers", async () => {
+    const { getDb } = await import("./db.js");
+    const db = getDb();
+    await db.execute(sql`select 1`);
+    await new Promise((r) => setTimeout(r, 2300));
+    const rows = await db.execute(sql`select 3 as n`);
+    expect(rows[0]?.n).toBe(3);
+  });
+
   it("does not retry writes", async () => {
     const { getDb } = await import("./db.js");
     const db = getDb();
