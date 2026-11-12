@@ -26,14 +26,25 @@ describe("isWorkingTimeLondon", () => {
 
 describe("reminderConfigFromEnv", () => {
   it("uses defaults and ignores nonsense", () => {
-    expect(reminderConfigFromEnv({})).toEqual(DEFAULT_REMINDER_CONFIG);
+    expect(reminderConfigFromEnv({})).toEqual({
+      ...DEFAULT_REMINDER_CONFIG,
+      since: undefined,
+    });
     expect(
       reminderConfigFromEnv({
         APPROVAL_REMINDER_AFTER_HOURS: "24",
         APPROVAL_REMINDER_REPEAT_HOURS: "abc",
         APPROVAL_ESCALATE_AFTER_HOURS: "-5",
       }),
-    ).toEqual({ ...DEFAULT_REMINDER_CONFIG, remindAfterHours: 24 });
+    ).toEqual({ ...DEFAULT_REMINDER_CONFIG, remindAfterHours: 24, since: undefined });
+    expect(
+      reminderConfigFromEnv({
+        APPROVAL_REMINDERS_SINCE: "2026-11-12",
+      }).since?.toISOString(),
+    ).toBe("2026-11-12T00:00:00.000Z");
+    expect(
+      reminderConfigFromEnv({ APPROVAL_REMINDERS_SINCE: "nonsense" }).since,
+    ).toBeUndefined();
   });
 });
 
@@ -220,6 +231,25 @@ describeIfDb("approval reminders (integration, each test rolls back)", () => {
 
       const r = await enqueueApprovalReminders(tx, NOW, cfg);
       expect(r).toEqual({ reminders: 0, escalations: 0 });
+    });
+  });
+
+  it("ignores sign-offs raised before the 'since' date", async () => {
+    await inRollback(async (tx) => {
+      await clear(tx, ["ppd_manager", "admin"]);
+      const submitter = await user(tx, "submitter");
+      const ppd = await user(tx, "ppd");
+      await hold(tx, ppd.id, "ppd_manager");
+      await raised(tx, submitter.id, 100); // raised ~4 days before NOW
+      const since = new Date(NOW.getTime() - 24 * 3_600_000); // yesterday
+      expect(await enqueueApprovalReminders(tx, NOW, { ...cfg, since })).toEqual({
+        reminders: 0,
+        escalations: 0,
+      });
+      const older = new Date(NOW.getTime() - 200 * 3_600_000);
+      expect(
+        (await enqueueApprovalReminders(tx, NOW, { ...cfg, since: older })).reminders,
+      ).toBe(1);
     });
   });
 

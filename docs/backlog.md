@@ -12,7 +12,7 @@ Agreed order: build capabilities first, then migrate to CPL's Azure.
 1. [x] **Brief list + detail + audit trail view** (this pass)
 2. [x] People and roles admin screen (`/admin/people`): add a person by work email, assign/end roles, deactivate, last-Admin guard, audited. Named CPL people live in `src/db/seed/people.ts` (load with `provision-people.ts`). Pauline Holmes has no approval role yet (CPL to confirm). Role changes apply at the next sign-in (roles are baked into the session token).
 3. [ ] Notification reliability: retry with backoff, delivery status view, reminders for stale approvals. (Done: Graph sender; approver, approval and rejection emails; recipient allowlist.)
-4. [x] Reminders / escalation for requirements pending too long (built; off until `APPROVAL_REMINDERS_ENABLED=true`, see `src/services/approval-reminders.ts`). Thresholds are assumptions pending CPL.
+4. [x] Reminders / escalation for requirements pending too long (built; off until `APPROVAL_REMINDERS_ENABLED=true`, see `src/services/approval-reminders.ts`). Thresholds (48 h / 48 h / 120 h) accepted by Alfred on 12 Nov 2026; `APPROVAL_REMINDERS_SINCE` ignores older test data.
 5. [x] Self-approval escalation to Admin (this pass, see below)
 6. [x] Tier T as a separate tier (this pass, see below). Remaining: which requirement types the Commercial and Development Directors sign off on is still provisional pending Pauline Holmes
 

@@ -16,12 +16,13 @@
  * role except the submitter and Account Manager of record, or the Admins when
  * that leaves nobody.
  *
- * The thresholds are assumptions, not CPL decisions: they are set with
+ * Thresholds (adopted from the agreed defaults, 12 Nov 2026) are set with
  * APPROVAL_REMINDER_AFTER_HOURS, APPROVAL_REMINDER_REPEAT_HOURS and
- * APPROVAL_ESCALATE_AFTER_HOURS. Idempotent: state lives in the notifications
+ * APPROVAL_ESCALATE_AFTER_HOURS. APPROVAL_REMINDERS_SINCE (an ISO date) skips
+ * sign-offs raised before it, so test data from before go-live is ignored. Idempotent: state lives in the notifications
  * table, so running it every few minutes (the dispatch cron) is safe.
  */
-import { and, desc, eq, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema.js";
 import { listApprovalRecipients } from "./notifications/recipients.js";
@@ -32,6 +33,8 @@ export interface ReminderConfig {
   remindAfterHours: number;
   repeatEveryHours: number;
   escalateAfterHours: number;
+  /** Ignore sign-offs raised before this moment (e.g. test data from before go-live). */
+  since?: Date;
 }
 
 export const DEFAULT_REMINDER_CONFIG: ReminderConfig = {
@@ -47,7 +50,11 @@ export function reminderConfigFromEnv(
     const n = Number.parseFloat(v ?? "");
     return Number.isFinite(n) && n > 0 ? n : d;
   };
+  const since = env.APPROVAL_REMINDERS_SINCE
+    ? new Date(env.APPROVAL_REMINDERS_SINCE)
+    : undefined;
   return {
+    since: since && !Number.isNaN(since.getTime()) ? since : undefined,
     remindAfterHours: num(
       env.APPROVAL_REMINDER_AFTER_HOURS,
       DEFAULT_REMINDER_CONFIG.remindAfterHours,
@@ -156,6 +163,9 @@ export async function enqueueApprovalReminders(
         eq(schema.approvalRequirements.state, "pending"),
         eq(schema.decisions.finalStatus, "pending"),
         lte(schema.approvalRequirements.createdAt, staleBefore),
+        config.since
+          ? gte(schema.approvalRequirements.createdAt, config.since)
+          : undefined,
       ),
     );
   if (rows.length === 0) return { reminders: 0, escalations: 0 };
