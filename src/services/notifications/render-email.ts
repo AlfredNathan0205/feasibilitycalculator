@@ -323,6 +323,53 @@ export function renderNotificationEmail(
       return { subject, html, text };
     }
 
+    case "approval_reminder":
+    case "approval_escalation": {
+      const items = Array.isArray(payload.items)
+        ? (payload.items as Array<Record<string, unknown>>)
+        : [];
+      const total = typeof payload.total === "number" ? payload.total : items.length;
+      const escalation = template === "approval_escalation";
+      const ref = (i: Record<string, unknown>) =>
+        typeof i.customerReference === "string" ? i.customerReference : "—";
+      const days = (i: Record<string, unknown>) =>
+        typeof i.waitingDays === "number" ? i.waitingDays : 0;
+      const roleName = (i: Record<string, unknown>) =>
+        typeof i.roleKey === "string" ? i.roleKey.replace(/_/g, " ") : "";
+      const line = (i: Record<string, unknown>) =>
+        `${ref(i)}: ${requirementLabel(i.requirementType)}` +
+        (escalation && roleName(i) ? ` (${roleName(i)})` : "") +
+        `, waiting ${days(i)} ${days(i) === 1 ? "day" : "days"}` +
+        (typeof i.deadline === "string" && i.deadline
+          ? `, customer deadline ${i.deadline}`
+          : "");
+      const url = `${base}/approvals`;
+      const noun = total === 1 ? "sign-off" : "sign-offs";
+      const subject = escalation
+        ? `${total} ${noun} waiting too long`
+        : `Reminder: ${total} ${noun} waiting for you`;
+      const intro = escalation
+        ? `${total} ${noun} ${total === 1 ? "has" : "have"} been waiting longer than expected with other approvers:`
+        : `You have ${total} ${noun} waiting:`;
+      const more = total > items.length ? `…and ${total - items.length} more.` : "";
+      const text = [
+        intro,
+        ...items.map((i) => `  - ${line(i)}`),
+        more,
+        ``,
+        `Open the approvals: ${url}`,
+      ]
+        .filter((l) => l !== "")
+        .join("\n");
+      const html = `
+        <p>${escapeHtml(intro)}</p>
+        <ul>${items.map((i) => `<li>${escapeHtml(line(i))}</li>`).join("")}</ul>
+        ${more ? `<p>${escapeHtml(more)}</p>` : ""}
+        <p><a href="${escapeHtml(url)}">Open the approvals</a></p>
+      `.trim();
+      return { subject, html, text };
+    }
+
     default:
       throw new UnknownNotificationTemplateError(template);
   }

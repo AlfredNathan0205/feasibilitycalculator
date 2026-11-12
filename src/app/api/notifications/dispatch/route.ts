@@ -6,6 +6,7 @@ import {
 import { getEmailSender } from "../../../../lib/mail.js";
 import { getDb } from "../../../../lib/db.js";
 import { enqueueExpiringReminders } from "../../../../services/niche-notifications.js";
+import { enqueueApprovalReminders } from "../../../../services/approval-reminders.js";
 
 /**
  * Not session-gated — there's no human sitting at a browser for a
@@ -51,6 +52,11 @@ async function handleDispatch(request: Request) {
   try {
     // Idempotent: each expiring assessment is queued at most once.
     await enqueueExpiringReminders(db);
+    // Digests for sign-offs waiting too long. Off until APPROVAL_REMINDERS_ENABLED=true,
+    // so real approvers are not emailed about test data on first deploy.
+    if (process.env.APPROVAL_REMINDERS_ENABLED === "true") {
+      await enqueueApprovalReminders(db);
+    }
     const result = await dispatchQueuedNotifications(db, getEmailSender(), {
       appBaseUrl,
       allowedRecipients: parseAllowedRecipients(process.env.EMAIL_ALLOWED_RECIPIENTS),
