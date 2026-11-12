@@ -3,6 +3,7 @@ import { auth } from "../../../auth.js";
 import { hasAccessRole } from "../../../auth/authz.js";
 import { createBrief, ValidationError } from "../../../services/create-brief.js";
 import { getDb } from "../../../lib/db.js";
+import { NICHE_ROUTES, type NicheRoute } from "../../../engine/niche-assessment.js";
 
 /**
  * POST /api/briefs — §5/§9 submission wizard's final step.
@@ -66,6 +67,10 @@ export async function POST(request: Request) {
     );
   }
 
+  if (body.nicheRoute && !NICHE_ROUTES.includes(body.nicheRoute as NicheRoute)) {
+    return NextResponse.json({ error: "Unknown niche route" }, { status: 400 });
+  }
+
   const deadline = new Date(body.deadline as string);
   if (Number.isNaN(deadline.getTime())) {
     return NextResponse.json({ error: "deadline must be a valid date" }, { status: 400 });
@@ -82,6 +87,11 @@ export async function POST(request: Request) {
       customerApproval: body.customerApproval as string,
       nicheFfPreApproved: Boolean(body.nicheFfPreApproved),
       nicheFfRationale: (body.nicheFfRationale as string) ?? null,
+      nicheBrandId: (body.nicheBrandId as string) || null,
+      nicheAssessmentId: (body.nicheAssessmentId as string) || null,
+      nicheRoute: (body.nicheRoute as NicheRoute) || null,
+      nicheRouteRationale: (body.nicheRouteRationale as string) ?? null,
+      fineFragranceManualFlag: Boolean(body.fineFragranceManualFlag),
       strategicPriority: Boolean(body.strategicPriority),
       strategicPriorityRationale: (body.strategicPriorityRationale as string) ?? null,
       creativeApproach: body.creativeApproach as string,

@@ -67,6 +67,18 @@ export default async function DashboardPage({
               >
                 Export XLSX
               </a>
+              <a
+                className="btn btn-secondary"
+                href="/api/reports/export/niche-assessments/csv"
+              >
+                Niche assessments CSV
+              </a>
+              <a
+                className="btn btn-secondary"
+                href="/api/reports/export/niche-assessments/xlsx"
+              >
+                Niche assessments XLSX
+              </a>
             </div>
           )}
         </div>

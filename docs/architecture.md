@@ -68,8 +68,9 @@ Every brief goes through four stages, named to match the build spec:
 
 1. **Stage A — commercial decision.** Pure function
    (`engine/decision.ts::computeStageA`). Score the brief, then: Rework (Of
-   Selling) or Niche/FF pre-approved → auto-approved; score ≤ 30 →
-   declined; score > 115 → auto-approved; otherwise → pending. These
+   Selling) or Niche/FF pre-approved → auto-approved; a niche brand in
+   the Charge or Decline band with the Decline route → declined (below the
+   Rework rule); score ≤ 30 → declined; score > 115 → auto-approved; otherwise → pending. These
    thresholds are the _current published rule set's_ values, not hardcoded
    — see "Rule sets are versioned data" below.
 
@@ -96,6 +97,17 @@ Every brief goes through four stages, named to match the build spec:
 `services/decide-requirement.ts` re-runs Stage D whenever a requirement is
 later approved, rejected, or revoked, since the brief's status can change
 long after submission.
+
+## Niche Brand Assessment
+
+Brands, assessments and frameworks are three tables (`niche_brands`, `niche_assessments`,
+`niche_frameworks`). The scoring is a pure engine (`engine/niche-assessment.ts`) with parity against
+the original V5.1 tool. A brief never trusts the client about niche status: `create-brief.ts` looks
+up the brand's current assessment and derives the pre-approval, route and requirements with
+`engine/niche-brief.ts`, storing a snapshot on the decision. Frameworks follow the same
+draft, replay, publish lifecycle as rule sets. Database triggers freeze an assessment's
+answers, score and band once submitted, and a published framework's payload. See
+[niche-brand-assessment.md](niche-brand-assessment.md).
 
 ## Rule sets are versioned data, not constants
 

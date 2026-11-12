@@ -1,4 +1,5 @@
 import type { DashboardSummary } from "../../services/reporting.js";
+import { NICHE_BAND_LABELS } from "../components/labels.js";
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -311,6 +312,67 @@ export function DashboardPanels({
                 },
               ]}
               rows={summary.preApprovalUsage as unknown as Record<string, unknown>[]}
+            />
+          </Panel>
+        </div>
+        <div className="panel-grid-full">
+          <Panel title="Niche brands">
+            <div className="kpi-strip" style={{ marginBottom: "1rem" }}>
+              <div className="kpi-card">
+                <div className="kpi-label">Awaiting review</div>
+                <div className="kpi-value">{summary.niche.awaitingReview}</div>
+                <div className="kpi-caption">
+                  <a href="/niche/review">review queue</a>
+                </div>
+              </div>
+              <div className="kpi-card">
+                <div className="kpi-label">Expiring in 30 days</div>
+                <div className="kpi-value">{summary.niche.expiringSoon.length}</div>
+                <div className="kpi-caption">current assessments</div>
+              </div>
+            </div>
+            <h3>Brands by current assessment outcome</h3>
+            <SimpleTable
+              columns={[
+                {
+                  key: "band",
+                  label: "Outcome",
+                  format: (v) => NICHE_BAND_LABELS[String(v)] ?? String(v),
+                },
+                { key: "count", label: "Brands", num: true },
+              ]}
+              rows={
+                summary.niche.assessmentsByBand as unknown as Record<string, unknown>[]
+              }
+            />
+            <h3>Expiring within 30 days</h3>
+            <SimpleTable
+              columns={[
+                { key: "brandName", label: "Brand" },
+                { key: "reference", label: "Assessment" },
+                { key: "validUntil", label: "Valid until" },
+              ]}
+              rows={summary.niche.expiringSoon as unknown as Record<string, unknown>[]}
+            />
+            <h3>Brief outcomes by niche path</h3>
+            <SimpleTable
+              columns={[
+                {
+                  key: "path",
+                  label: "Path",
+                  format: (v) =>
+                    v === "none"
+                      ? "Standard brief"
+                      : v === "manual_fine_fragrance"
+                        ? "Fine Fragrance pre-approved (not a niche brand)"
+                        : (NICHE_BAND_LABELS[String(v)] ?? String(v)),
+                },
+                { key: "finalStatus", label: "Outcome" },
+                { key: "count", label: "Briefs", num: true },
+              ]}
+              rows={
+                summary.niche.briefOutcomesByNiche as unknown as Record<string, unknown>[]
+              }
             />
           </Panel>
         </div>

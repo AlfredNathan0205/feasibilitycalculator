@@ -36,6 +36,13 @@
       "when": 1793653947326,
       "tag": "0004_notification_suppressed",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794397576472,
+      "tag": "0005_niche_brand_assessment",
+      "breakpoints": true
     }
   ]
 }

@@ -45,6 +45,29 @@ async function main() {
       accessRole: "approver",
       approvalAuthorityRole: "general_manager",
     },
+    {
+      entraObjectId: "55555555-5555-5555-5555-555555555555",
+      upn: "cd@cpl.example",
+      displayName: "Callum Commercial (Commercial Director, Approver)",
+      email: "cd@cpl.example",
+      accessRole: "approver",
+      approvalAuthorityRole: "commercial_director",
+    },
+    {
+      entraObjectId: "77777777-7777-7777-7777-777777777777",
+      upn: "dd@cpl.example",
+      displayName: "Dana Development (Development Director, Approver)",
+      email: "dd@cpl.example",
+      accessRole: "approver",
+      approvalAuthorityRole: "development_director",
+    },
+    {
+      entraObjectId: "66666666-6666-6666-6666-666666666666",
+      upn: "sc@cpl.example",
+      displayName: "Sasha Coordinator (Sales Coordinator)",
+      email: "sc@cpl.example",
+      accessRole: "sales_coordinator",
+    },
   ] as const;
 
   for (const tu of testUsers) {

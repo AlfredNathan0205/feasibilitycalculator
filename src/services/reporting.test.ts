@@ -13,6 +13,8 @@ import {
   getShortDeadlineVolumeByMonth,
   getDashboardSummary,
   getExportableBriefRows,
+  getNicheSummary,
+  getNicheAssessmentExportRows,
 } from "./reporting.js";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -137,5 +139,40 @@ describeIfDb("reporting (integration, against real accumulated data)", () => {
     const first = rows[0] as Record<string, unknown>;
     expect(first).toHaveProperty("customerReference");
     expect(first).toHaveProperty("approvalCode");
+  });
+
+  it("getExportableBriefRows includes the niche columns", async () => {
+    const rows = await getExportableBriefRows(db);
+    const first = rows[0] as Record<string, unknown>;
+    for (const k of [
+      "nicheBrand",
+      "nicheAssessmentReference",
+      "nicheBand",
+      "nicheScore",
+      "nicheRoute",
+      "nicheRouteRationale",
+      "manualFineFragrancePath",
+    ]) {
+      expect(first).toHaveProperty(k);
+    }
+  });
+
+  it("getNicheSummary: outcome counts add up to the number of briefs", async () => {
+    const n = await getNicheSummary(db);
+    const total = n.briefOutcomesByNiche.reduce((sum, r) => sum + r.count, 0);
+    const [actual] = (await db.execute(
+      sql`SELECT count(*)::int AS count FROM briefs b JOIN decisions d ON d.brief_id = b.id`,
+    )) as unknown as { count: number }[];
+    expect(total).toBe(actual!.count);
+    expect(n.awaitingReview).toBeGreaterThanOrEqual(0);
+  });
+
+  it("getNicheAssessmentExportRows: one row per assessment with a column per criterion", async () => {
+    const rows = await getNicheAssessmentExportRows(db);
+    const [actual] = (await db.execute(
+      sql`SELECT count(*)::int AS count FROM niche_assessments`,
+    )) as unknown as { count: number }[];
+    expect(rows.length).toBe(actual!.count);
+    if (rows.length > 0) expect(rows[0]).toHaveProperty("fin_100k_3y");
   });
 });

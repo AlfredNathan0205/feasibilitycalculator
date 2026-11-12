@@ -21,6 +21,16 @@ const REQUIREMENT_TYPE_LABELS: Record<string, string> = {
   gcms_resource: "GCMS resource sign-off",
   tier_auto_approval: "Tier auto-approval",
   strategic_priority_deferral: "Strategic priority deferral",
+  niche_growth_partner: "Niche growth partner approval",
+  niche_development_route: "Niche development route approval",
+  niche_charging_model: "Niche charging model approval",
+};
+
+const NICHE_BAND_NAMES: Record<string, string> = {
+  strategic_partner: "Niche Tier 1 · Strategic Partner",
+  growth_partner: "Niche Tier 2 · Growth Partner",
+  development_opportunity: "Development Opportunity",
+  charge_or_decline: "Charge or Decline",
 };
 
 function requirementLabel(requirementType: unknown): string {
@@ -258,6 +268,58 @@ export function renderNotificationEmail(
         <p>The brief will not receive an Approval Code unless that sign-off is cleared.</p>
         <p><a href="${escapeHtml(url)}">View the brief</a></p>
       `.trim();
+      return { subject, html, text };
+    }
+
+    case "niche_assessment_review_request":
+    case "niche_assessment_outcome":
+    case "niche_assessment_expiring": {
+      const str = (v: unknown, d = "—") => (typeof v === "string" && v ? v : d);
+      const reference = str(payload.reference);
+      const brandName = str(payload.brandName);
+      const id = typeof payload.assessmentId === "string" ? payload.assessmentId : "";
+      const url = `${base}/niche/assessments/${encodeURIComponent(id)}`;
+      const band =
+        typeof payload.band === "string"
+          ? (NICHE_BAND_NAMES[payload.band] ?? payload.band)
+          : null;
+      const score = typeof payload.score === "number" ? payload.score : null;
+      const result = band
+        ? `${band}${score !== null ? `, score ${score}/100` : ""}`
+        : null;
+      let subject: string;
+      let lines: string[];
+      if (template === "niche_assessment_review_request") {
+        subject = `Niche assessment to review — ${brandName}`;
+        lines = [
+          `A Niche Brand Assessment (${reference}) for ${brandName} is waiting for your review.`,
+          result ? `Outcome: ${result}` : "",
+          payload.escalated === true
+            ? "You are asked because the normal reviewer is the assessor."
+            : "",
+        ];
+      } else if (template === "niche_assessment_outcome") {
+        const approved = payload.decision === "approved";
+        subject = `Niche assessment ${approved ? "approved" : "rejected"} — ${brandName}`;
+        const comment = str(payload.comment, "");
+        lines = [
+          `Your Niche Brand Assessment (${reference}) for ${brandName} was ${approved ? "approved" : "rejected"}.`,
+          result ? `Outcome: ${result}` : "",
+          approved && typeof payload.validUntil === "string"
+            ? `Valid until ${payload.validUntil}.`
+            : "",
+          comment ? `Reviewer comment: "${comment}"` : "",
+        ];
+      } else {
+        subject = `Niche assessment expiring — ${brandName}`;
+        lines = [
+          `The Niche Brand Assessment (${reference}) for ${brandName} expires on ${str(payload.validUntil)}.`,
+          "After that, briefs for this brand are scored as standard briefs until a new assessment is approved.",
+        ];
+      }
+      const kept = lines.filter(Boolean);
+      const text = [...kept, "", `Open the assessment: ${url}`].join("\n");
+      const html = `${kept.map((l) => `<p>${escapeHtml(l)}</p>`).join("")}<p><a href="${escapeHtml(url)}">Open the assessment</a></p>`;
       return { subject, html, text };
     }
 

@@ -9,6 +9,12 @@ import {
   requireCanDecideRequirement,
   shouldEscalateRequirement,
   canViewDashboard,
+  canViewNiche,
+  canEditNiche,
+  canManageNicheBrands,
+  canManageNicheFrameworks,
+  canReviewNicheAssessment,
+  requireCanReviewNicheAssessment,
   AuthorizationError,
   type AuthSession,
 } from "./authz.js";
@@ -333,5 +339,72 @@ describe("canViewDashboard", () => {
     expect(
       canViewDashboard(session({ approvalAuthorityRoles: ["general_manager"] })),
     ).toBe(false);
+  });
+});
+
+describe("niche assessment permissions (spec §8)", () => {
+  const s = (
+    accessRoles: string[],
+    approvalAuthorityRoles: string[] = [],
+    userId = "u",
+  ) => ({
+    userId,
+    accessRoles,
+    approvalAuthorityRoles,
+  });
+  const reviewer = s(["approver"], ["commercial_director"], "rev");
+
+  it("view: AM, SC, reviewer approver, Auditor, Admin only", () => {
+    for (const role of ["account_manager", "sales_coordinator", "auditor", "admin"]) {
+      expect(canViewNiche(s([role]))).toBe(true);
+    }
+    expect(canViewNiche(reviewer)).toBe(true);
+    expect(canViewNiche(s(["approver"], ["ppd_manager"]))).toBe(false);
+    expect(canViewNiche(s([]))).toBe(false);
+  });
+  it("create/edit brands and assessments: AM, SC, Admin; never Auditor or approver", () => {
+    for (const role of ["account_manager", "sales_coordinator", "admin"]) {
+      expect(canEditNiche(s([role]))).toBe(true);
+    }
+    expect(canEditNiche(s(["auditor"]))).toBe(false);
+    expect(canEditNiche(reviewer)).toBe(false);
+  });
+  it("deactivate/merge brands and manage frameworks: Admin only", () => {
+    expect(canManageNicheBrands(s(["admin"]))).toBe(true);
+    expect(canManageNicheBrands(s(["account_manager"]))).toBe(false);
+    expect(canManageNicheFrameworks(s(["admin"]))).toBe(true);
+    expect(canManageNicheFrameworks(s(["auditor"]))).toBe(false);
+    expect(canManageNicheFrameworks(reviewer)).toBe(false);
+  });
+  it("review: needs approver access plus the reviewer role, never the assessor", () => {
+    const a = { assessorId: "am", escalated: false };
+    expect(canReviewNicheAssessment(reviewer, a)).toBe(true);
+    expect(canReviewNicheAssessment(s(["approver"], ["ppd_manager"]), a)).toBe(false);
+    expect(canReviewNicheAssessment(s([], ["commercial_director"]), a)).toBe(false);
+    expect(canReviewNicheAssessment(s(["admin"]), a)).toBe(false);
+    expect(
+      canReviewNicheAssessment(s(["approver"], ["commercial_director"], "am"), a),
+    ).toBe(false);
+    expect(canReviewNicheAssessment(s(["auditor"]), a)).toBe(false);
+    expect(() => requireCanReviewNicheAssessment(s(["auditor"]), a)).toThrow(
+      AuthorizationError,
+    );
+  });
+  it("review when escalated: Admin only, still never the assessor", () => {
+    const a = { assessorId: "am", escalated: true };
+    expect(canReviewNicheAssessment(s(["admin"]), a)).toBe(true);
+    expect(canReviewNicheAssessment(reviewer, a)).toBe(false);
+    expect(canReviewNicheAssessment(s(["admin"], [], "am"), a)).toBe(false);
+  });
+  it("a different reviewer role key from the framework is honoured", () => {
+    const a = { assessorId: "am", escalated: false };
+    expect(
+      canReviewNicheAssessment(
+        s(["approver"], ["development_director"]),
+        a,
+        "development_director",
+      ),
+    ).toBe(true);
+    expect(canReviewNicheAssessment(reviewer, a, "development_director")).toBe(false);
   });
 });

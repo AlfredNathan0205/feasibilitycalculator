@@ -11,6 +11,7 @@ test("only an Admin can open People and roles; an Admin can add a person, give a
 
   await signInAs(page, "admin@cpl.example");
   await page.goto("/admin/people");
+  await page.waitForLoadState("networkidle");
   const email = `e2e-people-${Date.now()}@cpl.example`;
   await page.getByLabel("Name").fill("E2E Person");
   await page.getByLabel(/Work email/).fill(email);

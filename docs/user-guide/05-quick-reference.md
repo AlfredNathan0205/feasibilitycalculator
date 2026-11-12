@@ -54,3 +54,12 @@
 
 Not sent: reminders about sign-offs that are still waiting; a confirmation to the person who just submitted a brief.
 Emails can take up to about five minutes.
+
+## Niche outcomes
+
+| Outcome                          | Score  | Brief effect                                    |
+| -------------------------------- | ------ | ----------------------------------------------- |
+| Niche Tier 1 · Strategic Partner | 80-100 | Pre-approved                                    |
+| Niche Tier 2 · Growth Partner    | 55-79  | Commercial Director signs off                   |
+| Development Opportunity          | 35-54  | Route + Development Director signs off          |
+| Charge or Decline                | 0-34   | Charging model (Commercial Director) or decline |

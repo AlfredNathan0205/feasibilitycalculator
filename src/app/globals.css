@@ -902,3 +902,128 @@ button {
     transition: none !important;
   }
 }
+
+/* ── Niche Brand Assessment ── */
+
+.niche-strategic_partner {
+  background: var(--cpl-green-tint);
+  border-color: var(--cpl-green);
+  color: var(--cpl-green);
+}
+.niche-growth_partner {
+  background: #fff7e0;
+  border-color: #b8860b;
+  color: #7a5a00;
+}
+.niche-development_opportunity {
+  background: #fff0e3;
+  border-color: #c25e0a;
+  color: #8a4205;
+}
+.niche-charge_or_decline {
+  background: var(--cpl-red-tint);
+  border-color: var(--cpl-red);
+  color: var(--cpl-red);
+}
+.niche-incomplete {
+  background: var(--cpl-pending-bg);
+  border-color: var(--cpl-pending-border);
+  color: var(--cpl-pending-text);
+}
+
+.niche-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .niche-layout {
+    grid-template-columns: 1fr;
+  }
+}
+.niche-summary {
+  position: sticky;
+  top: 1rem;
+}
+.niche-section {
+  border-left: 4px solid var(--cpl-purple);
+}
+.niche-section-desc {
+  font-style: italic;
+  color: var(--cpl-ink-soft);
+  margin: 0.2em 0 0.75em;
+}
+.niche-criterion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75em 0;
+  border-top: 1px solid var(--cpl-border);
+}
+.niche-criterion-text {
+  flex: 1;
+}
+.niche-weight {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--cpl-ink-soft);
+  margin-left: 0.5em;
+}
+.niche-yesno {
+  display: inline-flex;
+  border: 1px solid var(--cpl-border-strong);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.niche-yesno label {
+  margin: 0;
+  padding: 0.4em 1em;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background: var(--cpl-white);
+  color: var(--cpl-ink-soft);
+}
+.niche-yesno label + label {
+  border-left: 1px solid var(--cpl-border-strong);
+}
+.niche-yesno input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.niche-yesno label:has(input:checked) {
+  background: var(--cpl-purple);
+  color: var(--cpl-white);
+}
+.niche-yesno label:has(input:focus-visible) {
+  outline: 2px solid var(--cpl-purple-ink);
+  outline-offset: 2px;
+}
+.niche-yesno-readonly {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.niche-progress {
+  height: 8px;
+  background: var(--cpl-border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 0.5em 0 0.9em;
+}
+.niche-progress > div {
+  height: 100%;
+  background: var(--cpl-purple);
+}
+
+@media print {
+  .shell-sidebar,
+  .no-print {
+    display: none !important;
+  }
+  .shell-main {
+    margin-left: 0 !important;
+  }
+}

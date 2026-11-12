@@ -5,6 +5,7 @@ import {
 } from "../../../../services/notifications/dispatch-notifications.js";
 import { getEmailSender } from "../../../../lib/mail.js";
 import { getDb } from "../../../../lib/db.js";
+import { enqueueExpiringReminders } from "../../../../services/niche-notifications.js";
 
 /**
  * Not session-gated — there's no human sitting at a browser for a
@@ -48,6 +49,8 @@ async function handleDispatch(request: Request) {
   const db = getDb();
 
   try {
+    // Idempotent: each expiring assessment is queued at most once.
+    await enqueueExpiringReminders(db);
     const result = await dispatchQueuedNotifications(db, getEmailSender(), {
       appBaseUrl,
       allowedRecipients: parseAllowedRecipients(process.env.EMAIL_ALLOWED_RECIPIENTS),

@@ -23,6 +23,13 @@ import type { RuleSetPayload } from "../engine/scoring.js";
 import { issueUniqueApprovalCode } from "./issue-approval-code.js";
 import { generateRevokeToken } from "../engine/revoke-token.js";
 import { shouldEscalateRequirement } from "../auth/authz.js";
+import { deriveNicheForBrief, type NicheBriefDerivation } from "../engine/niche-brief.js";
+import {
+  todayLondon,
+  type NicheFrameworkPayload,
+  type NicheRoute,
+} from "../engine/niche-assessment.js";
+import { getCurrentAssessment } from "./niche-assessments.js";
 
 /** §5 Stage C: a per-requirement pre-approval declaration, made inline at
  * submission time (the spec's step-2-of-the-wizard concept, folded into
@@ -42,8 +49,20 @@ export interface BriefSubmissionInput {
   newRework: string;
   briefType: string;
   customerApproval: string;
+  /** Legacy flag. Since the Niche Brand Assessment build this cannot be true
+   * on its own: it is derived from a current approved assessment (nicheBrandId)
+   * or set by the manual fine fragrance path (fineFragranceManualFlag). */
   nicheFfPreApproved: boolean;
   nicheFfRationale?: string | null;
+  /** Niche brand the brief is for. The server looks up its current approved
+   * assessment itself and never trusts a client-supplied band. */
+  nicheBrandId?: string | null;
+  /** The assessment the client believes is in force; must match the server's lookup. */
+  nicheAssessmentId?: string | null;
+  nicheRoute?: NicheRoute | null;
+  nicheRouteRationale?: string | null;
+  /** "Fine Fragrance pre-approved (not a niche brand)", with nicheFfRationale. */
+  fineFragranceManualFlag?: boolean;
   strategicPriority: boolean;
   strategicPriorityRationale?: string | null;
   creativeApproach: string;
@@ -86,11 +105,6 @@ function validateInput(input: BriefSubmissionInput, now: Date): void {
   const today = now.toISOString().slice(0, 10);
   if (deadlineDay <= today) {
     throw new ValidationError("check this date");
-  }
-  if (input.nicheFfPreApproved && !input.nicheFfRationale?.trim()) {
-    throw new ValidationError(
-      "A rationale is required when Niche/FF Pre-Approved is set",
-    );
   }
   if (input.strategicPriority && !input.strategicPriorityRationale?.trim()) {
     throw new ValidationError("A rationale is required when Strategic Priority is set");
@@ -183,6 +197,60 @@ async function getCurrentPublishedRuleSet(db: PostgresJsDatabase<typeof schema>)
   return ruleSet;
 }
 
+type DerivedNiche = Extract<NicheBriefDerivation, { ok: true }>;
+
+/**
+ * Looks up the brand's current approved assessment server-side and derives the
+ * niche inputs (spec §6.3). Throws ValidationError for tampered or
+ * inconsistent client input (§6.8 rule 3).
+ */
+async function resolveNiche(
+  db: PostgresJsDatabase<typeof schema>,
+  input: BriefSubmissionInput,
+  ruleSet: RuleSetPayload,
+  now: Date,
+): Promise<DerivedNiche> {
+  let current = null;
+  if (input.nicheBrandId) {
+    const [brand] = await db
+      .select()
+      .from(schema.nicheBrands)
+      .where(eq(schema.nicheBrands.id, input.nicheBrandId));
+    if (!brand || !brand.active || brand.mergedIntoId) {
+      throw new ValidationError("That niche brand is not available");
+    }
+    const a = await getCurrentAssessment(db, brand.id, todayLondon(now));
+    if (a) {
+      const [fw] = await db
+        .select()
+        .from(schema.nicheFrameworks)
+        .where(eq(schema.nicheFrameworks.id, a.frameworkId));
+      current = {
+        id: a.id,
+        reference: a.reference,
+        band: a.band!,
+        score: a.score!,
+        validUntil: a.validUntil!,
+        frameworkVersion: fw!.version,
+        framework: fw!.payload as NicheFrameworkPayload,
+      };
+    }
+  }
+  const derived = deriveNicheForBrief({
+    nicheBrandSelected: Boolean(input.nicheBrandId),
+    current,
+    clientAssessmentId: input.nicheAssessmentId ?? null,
+    route: input.nicheRoute ?? null,
+    routeRationale: input.nicheRouteRationale ?? null,
+    manualFineFragrance: Boolean(input.fineFragranceManualFlag),
+    manualRationale: input.nicheFfRationale ?? null,
+    allowManualFineFragrance: ruleSet.nicheAssessment?.allowManualFineFragrance ?? true,
+    clientNicheFfPreApproved: input.nicheFfPreApproved,
+  });
+  if (!derived.ok) throw new ValidationError(derived.error);
+  return derived;
+}
+
 export interface CreateBriefResult {
   briefId: string;
   decisionId: string;
@@ -191,6 +259,8 @@ export interface CreateBriefResult {
   score: number;
   approvalCode: string | null;
   requirementCount: number;
+  /** Set when a niche brand had no current approved assessment (brief scored as standard). */
+  nicheWarning?: "no_current_assessment" | null;
 }
 
 export async function createBrief(
@@ -205,6 +275,8 @@ export async function createBrief(
 
   const daysUntilDeadline = daysBetween(now, input.deadline);
 
+  const niche = await resolveNiche(db, input, ruleSet, now);
+
   const decisionInputs = {
     customerTier: input.tier,
     valuePotentialGbp: input.valuePotentialGbp,
@@ -213,7 +285,9 @@ export async function createBrief(
     customerApproval: input.customerApproval,
     strategicPriority: input.strategicPriority,
     creativeApproach: input.creativeApproach,
-    nicheFfPreApproved: input.nicheFfPreApproved,
+    nicheFfPreApproved: niche.nicheFfPreApproved,
+    nicheBand: niche.nicheBand,
+    nicheRoute: niche.nicheRoute,
     marketingFlag: input.marketingFlag,
     ppdFlag: input.ppdFlag,
     gcmsFlag: input.gcmsFlag,
@@ -233,8 +307,13 @@ export async function createBrief(
         newRework: input.newRework,
         briefType: input.briefType,
         customerApproval: input.customerApproval,
-        nicheFfPreApproved: input.nicheFfPreApproved,
-        nicheFfRationale: input.nicheFfRationale ?? null,
+        nicheFfPreApproved: niche.nicheFfPreApproved,
+        nicheFfRationale: niche.nicheFfRationale,
+        nicheBrandId: input.nicheBrandId ?? null,
+        nicheAssessmentId: niche.snapshot?.assessmentId ?? null,
+        nicheRoute: niche.nicheRoute,
+        nicheRouteRationale: niche.nicheRouteRationale,
+        fineFragranceManualFlag: niche.fineFragranceManualFlag,
         strategicPriority: input.strategicPriority,
         strategicPriorityRationale: input.strategicPriorityRationale ?? null,
         creativeApproach: input.creativeApproach,
@@ -266,6 +345,7 @@ export async function createBrief(
         finalStatus: "pending",
         approvalCode: null,
         codeIssuedAt: null,
+        nicheSnapshot: niche.snapshot,
       })
       .returning();
     if (!decision) throw new Error("Failed to insert decision");
@@ -431,6 +511,11 @@ export async function createBrief(
         score: stageA.score,
         requirementCount: requirements.length,
         approvalCode,
+        niche: niche.snapshot
+          ? { ...niche.snapshot }
+          : niche.fineFragranceManualFlag
+            ? { manualFineFragrance: true }
+            : null,
       },
       requestCorrelationId: crypto.randomUUID(),
     });
@@ -443,6 +528,7 @@ export async function createBrief(
       score: stageA.score,
       approvalCode,
       requirementCount: requirements.length,
+      nicheWarning: niche.warning,
     };
   });
 }

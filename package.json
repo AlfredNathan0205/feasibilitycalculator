@@ -20,7 +20,9 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "db:migrate:run": "node scripts/migrate.mjs",
-    "seed:people": "tsx src/db/seed/provision-people.ts"
+    "seed:people": "tsx src/db/seed/provision-people.ts",
+    "seed:niche": "tsx src/db/seed/seed-niche.ts",
+    "seed:generate-niche": "tsx src/db/seed/generate-niche-framework-v1.ts"
   },
   "keywords": [],
   "author": "",

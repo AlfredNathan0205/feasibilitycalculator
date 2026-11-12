@@ -12,6 +12,10 @@ import { getDb } from "../../../lib/db.js";
 import { hasAccessRole } from "../../../auth/authz.js";
 import { reverseVeto } from "../../../services/veto.js";
 import { ValidationError } from "../../../services/decide-requirement.js";
+import * as schema from "../../../db/schema.js";
+import { eq } from "drizzle-orm";
+import { NICHE_ROUTE_LABELS } from "../../components/labels.js";
+import { NichePill } from "../../components/niche-pill.js";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -53,6 +57,21 @@ export default async function BriefDetailPage({
   const { brief, decision } = detail;
   const breakdown = (decision.scoreBreakdown ?? {}) as Record<string, number>;
   const isAdmin = hasAccessRole(session, "admin");
+  const niche = decision.nicheSnapshot as {
+    assessmentId: string;
+    reference: string;
+    frameworkVersion: number;
+    score: number;
+    band: string;
+    route: string;
+    validUntil: string;
+  } | null;
+  const [nicheBrand] = brief.nicheBrandId
+    ? await getDb()
+        .select({ name: schema.nicheBrands.name })
+        .from(schema.nicheBrands)
+        .where(eq(schema.nicheBrands.id, brief.nicheBrandId))
+    : [];
 
   async function reverseVetoAction(formData: FormData) {
     "use server";
@@ -175,11 +194,49 @@ export default async function BriefDetailPage({
               <dd>{brief.creativeApproach}</dd>
               <dt>Deadline</dt>
               <dd>{new Date(brief.deadline).toLocaleDateString("en-GB")}</dd>
-              <dt>Niche / FF pre-approved</dt>
-              <dd>
-                {yesNo(brief.nicheFfPreApproved)}
-                {brief.nicheFfRationale ? ` — ${brief.nicheFfRationale}` : ""}
-              </dd>
+              {brief.nicheBrandId ? (
+                <>
+                  <dt>Niche brand</dt>
+                  <dd>
+                    {nicheBrand?.name ?? "Unknown brand"}
+                    {niche ? (
+                      <div style={{ marginTop: "0.3em" }}>
+                        <NichePill band={niche.band} /> score {niche.score}, assessment{" "}
+                        <a href={`/niche/assessments/${niche.assessmentId}`}>
+                          {niche.reference}
+                        </a>{" "}
+                        (framework v{niche.frameworkVersion}, valid until{" "}
+                        {new Date(niche.validUntil).toLocaleDateString("en-GB")}). Route:{" "}
+                        {NICHE_ROUTE_LABELS[niche.route] ?? niche.route}
+                        {brief.nicheRouteRationale
+                          ? ` — ${brief.nicheRouteRationale}`
+                          : ""}
+                      </div>
+                    ) : (
+                      <div className="helptext">
+                        No current approved assessment at submission; scored as a standard
+                        brief.
+                      </div>
+                    )}
+                  </dd>
+                </>
+              ) : brief.fineFragranceManualFlag ? (
+                <>
+                  <dt>Fine Fragrance path</dt>
+                  <dd>
+                    Manual fine fragrance path (not a niche brand)
+                    {brief.nicheFfRationale ? ` — ${brief.nicheFfRationale}` : ""}
+                  </dd>
+                </>
+              ) : (
+                <>
+                  <dt>Niche / FF pre-approved</dt>
+                  <dd>
+                    {yesNo(brief.nicheFfPreApproved)}
+                    {brief.nicheFfRationale ? ` — ${brief.nicheFfRationale}` : ""}
+                  </dd>
+                </>
+              )}
               <dt>Strategic priority</dt>
               <dd>
                 {yesNo(brief.strategicPriority)}

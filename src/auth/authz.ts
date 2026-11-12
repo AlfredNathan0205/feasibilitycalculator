@@ -219,3 +219,81 @@ export function canViewDashboard(session: AuthSession): boolean {
     hasLeadershipView(session)
   );
 }
+
+// ---------------------------------------------------------------------------
+// Niche Brand Assessment (build spec §8). Pure, like everything above.
+// The Auditor can view but never mutate: no mutating function here admits the
+// auditor role on its own.
+// ---------------------------------------------------------------------------
+
+/** Role that reviews niche assessments when the framework does not say otherwise. */
+export const DEFAULT_NICHE_REVIEWER_ROLE = "commercial_director";
+
+/** Holds the Approver access role AND the framework's reviewer authority role. */
+export function holdsNicheReviewerRole(
+  session: AuthSession,
+  reviewerRoleKey: string = DEFAULT_NICHE_REVIEWER_ROLE,
+): boolean {
+  return (
+    hasAccessRole(session, "approver") &&
+    session.approvalAuthorityRoles.includes(reviewerRoleKey)
+  );
+}
+
+/** View brands and assessments: AM, SC, reviewer-role approver, Auditor, Admin. */
+export function canViewNiche(session: AuthSession, reviewerRoleKey?: string): boolean {
+  return (
+    hasAccessRole(session, "account_manager") ||
+    hasAccessRole(session, "sales_coordinator") ||
+    hasAccessRole(session, "auditor") ||
+    hasAccessRole(session, "admin") ||
+    holdsNicheReviewerRole(session, reviewerRoleKey)
+  );
+}
+
+/** Create or edit a brand, and create / edit own draft / submit / withdraw an assessment. */
+export function canEditNiche(session: AuthSession): boolean {
+  return (
+    hasAccessRole(session, "account_manager") ||
+    hasAccessRole(session, "sales_coordinator") ||
+    hasAccessRole(session, "admin")
+  );
+}
+
+/** Deactivate or merge brands. */
+export function canManageNicheBrands(session: AuthSession): boolean {
+  return hasAccessRole(session, "admin");
+}
+
+/** Manage framework versions, replay and publish. */
+export function canManageNicheFrameworks(session: AuthSession): boolean {
+  return hasAccessRole(session, "admin");
+}
+
+/**
+ * Review (approve or reject) an assessment. Never the assessor. A normal
+ * assessment is reviewed by an Approver holding the framework's reviewer role;
+ * an escalated one (the assessor is the only reviewer) by an Admin.
+ */
+export function canReviewNicheAssessment(
+  session: AuthSession,
+  assessment: { assessorId: string; escalated: boolean },
+  reviewerRoleKey?: string,
+): boolean {
+  if (assessment.assessorId === session.userId) return false;
+  return assessment.escalated
+    ? hasAccessRole(session, "admin")
+    : holdsNicheReviewerRole(session, reviewerRoleKey);
+}
+
+export function requireCanReviewNicheAssessment(
+  session: AuthSession,
+  assessment: { assessorId: string; escalated: boolean },
+  reviewerRoleKey?: string,
+): void {
+  if (!canReviewNicheAssessment(session, assessment, reviewerRoleKey)) {
+    throw new AuthorizationError(
+      `User ${session.userId} cannot review this niche assessment`,
+    );
+  }
+}

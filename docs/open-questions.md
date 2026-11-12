@@ -88,3 +88,9 @@ message point back here.
 **Needs:** A decision from Simon on which of the three interpretations (or
 another) is intended, before the reassignment half of this rule can be
 built.
+
+## Niche Brand Assessment decisions D1-D10 (resolved)
+
+All ten product decisions for the Niche Brand Assessment are settled and recorded in
+[niche-brand-assessment.md](niche-brand-assessment.md). Nothing is open there. (Still open
+elsewhere: the Tier T weight, Pauline's approval role, stale-approval reminders.)

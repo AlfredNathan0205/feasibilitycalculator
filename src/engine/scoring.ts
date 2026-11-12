@@ -26,6 +26,8 @@ export interface RuleSetPayload {
   thresholds: { autoApproveAbove: number; declineAtOrBelow: number };
   deadlineWindowDays: number;
   routingTable: Record<string, { role: string; enabled: boolean }>;
+  /** Niche Brand Assessment switches (niche spec §6.6). Absent = defaults. */
+  nicheAssessment?: { allowManualFineFragrance: boolean };
 }
 
 export interface ScoringInputs {

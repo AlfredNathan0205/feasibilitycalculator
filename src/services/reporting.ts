@@ -15,6 +15,7 @@
 import { sql, type SQL } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema.js";
+import { todayLondon } from "../engine/niche-assessment.js";
 
 /**
  * The "Account Manager of record" for a brief: the person it was submitted on
@@ -306,6 +307,64 @@ export async function getMonthlyActivity(
   return rows as unknown as MonthlyActivityRow[];
 }
 
+export interface NicheSummary {
+  /** Brands by the band of their current (approved, unexpired) assessment. */
+  assessmentsByBand: Array<{ band: string; count: number }>;
+  awaitingReview: number;
+  /** Current assessments expiring within 30 days. */
+  expiringSoon: Array<{ brandName: string; reference: string; validUntil: string }>;
+  /** Brief outcomes split by niche band, the manual fine fragrance path, or neither. */
+  briefOutcomesByNiche: Array<{ path: string; finalStatus: string; count: number }>;
+}
+
+export async function getNicheSummary(
+  db: PostgresJsDatabase<typeof schema>,
+  filter?: ReportFilter,
+  today: string = todayLondon(),
+): Promise<NicheSummary> {
+  const soon = new Date(`${today}T00:00:00Z`);
+  soon.setUTCDate(soon.getUTCDate() + 30);
+  const soonIso = soon.toISOString().slice(0, 10);
+  const byBand = await db.execute(sql`
+    SELECT band, count(*)::int AS count FROM (
+      SELECT DISTINCT ON (a.brand_id) a.band
+      FROM niche_assessments a JOIN niche_brands nb ON nb.id = a.brand_id
+      WHERE a.status = 'approved' AND a.valid_until >= ${today} AND nb.active
+      ORDER BY a.brand_id, a.reviewed_at DESC
+    ) t GROUP BY band ORDER BY band
+  `);
+  const [awaiting] = (await db.execute(
+    sql`SELECT count(*)::int AS n FROM niche_assessments WHERE status = 'submitted'`,
+  )) as unknown as Array<{ n: number }>;
+  const expiring = await db.execute(sql`
+    SELECT nb.name AS "brandName", a.reference, a.valid_until::text AS "validUntil"
+    FROM niche_assessments a JOIN niche_brands nb ON nb.id = a.brand_id
+    WHERE a.status = 'approved' AND nb.active
+      AND a.valid_until >= ${today} AND a.valid_until <= ${soonIso}
+      AND NOT EXISTS (SELECT 1 FROM niche_assessments n WHERE n.supersedes_id = a.id)
+    ORDER BY a.valid_until
+  `);
+  const outcomes = await db.execute(sql`
+    SELECT
+      CASE
+        WHEN d.niche_snapshot IS NOT NULL THEN d.niche_snapshot->>'band'
+        WHEN b.fine_fragrance_manual_flag THEN 'manual_fine_fragrance'
+        ELSE 'none'
+      END AS path,
+      d.final_status AS "finalStatus",
+      count(*)::int AS count
+    FROM briefs b JOIN decisions d ON d.brief_id = b.id
+    WHERE true ${amFilter(filter)}
+    GROUP BY 1, 2 ORDER BY 1, 2
+  `);
+  return {
+    assessmentsByBand: byBand as unknown as NicheSummary["assessmentsByBand"],
+    awaitingReview: awaiting?.n ?? 0,
+    expiringSoon: expiring as unknown as NicheSummary["expiringSoon"],
+    briefOutcomesByNiche: outcomes as unknown as NicheSummary["briefOutcomesByNiche"],
+  };
+}
+
 export interface DashboardSummary {
   volumeOutcomeMixByMonth: VolumeOutcomeMixRow[];
   volumeByTier: VolumeByDimensionRow[];
@@ -317,6 +376,7 @@ export interface DashboardSummary {
   monthlyActivity: MonthlyActivityRow[];
   briefsByAccountManager: BriefsByAccountManagerRow[];
   accountManagers: AccountManagerOption[];
+  niche: NicheSummary;
 }
 
 /** `filter` narrows every panel about briefs. Approval rate by role is about
@@ -337,6 +397,7 @@ export async function getDashboardSummary(
     monthlyActivity,
     briefsByAccountManager,
     accountManagers,
+    niche,
   ] = await Promise.all([
     getVolumeOutcomeMixByMonth(db, filter),
     getVolumeByTier(db, filter),
@@ -348,6 +409,7 @@ export async function getDashboardSummary(
     getMonthlyActivity(db, filter),
     getBriefsByAccountManager(db),
     listAccountManagersWithBriefs(db),
+    getNicheSummary(db, filter),
   ]);
   return {
     volumeOutcomeMixByMonth,
@@ -360,6 +422,7 @@ export async function getDashboardSummary(
     monthlyActivity,
     briefsByAccountManager,
     accountManagers,
+    niche,
   };
 }
 
@@ -383,12 +446,46 @@ export async function getExportableBriefRows(
       d.computed_score AS "computedScore",
       d.commercial_decision AS "commercialDecision",
       d.final_status AS "finalStatus",
-      d.approval_code AS "approvalCode"
+      d.approval_code AS "approvalCode",
+      nb.name AS "nicheBrand",
+      d.niche_snapshot->>'reference' AS "nicheAssessmentReference",
+      d.niche_snapshot->>'band' AS "nicheBand",
+      d.niche_snapshot->>'score' AS "nicheScore",
+      b.niche_route AS "nicheRoute",
+      b.niche_route_rationale AS "nicheRouteRationale",
+      b.fine_fragrance_manual_flag AS "manualFineFragrancePath"
     FROM briefs b
     JOIN decisions d ON d.brief_id = b.id
+    LEFT JOIN niche_brands nb ON nb.id = b.niche_brand_id
     JOIN users u ON u.id = b.submitted_by
     JOIN users am ON am.id = ${AM_OF_RECORD}
     WHERE true ${amFilter(filter)}
     ORDER BY b.submitted_at DESC
   `);
+}
+
+/** One row per assessment, one column per criterion key (Yes/No), across all framework versions. */
+export async function getNicheAssessmentExportRows(
+  db: PostgresJsDatabase<typeof schema>,
+) {
+  const rows = await db.execute(sql`
+    SELECT a.reference, nb.name AS brand, f.version AS "frameworkVersion", a.status,
+      a.assessment_date::text AS "assessmentDate", assessor.display_name AS assessor,
+      a.score, a.band, reviewer.display_name AS reviewer, a.reviewed_at AS "reviewedAt",
+      a.valid_until::text AS "validUntil", a.review_comment AS "reviewComment", a.answers
+    FROM niche_assessments a
+    JOIN niche_brands nb ON nb.id = a.brand_id
+    JOIN niche_frameworks f ON f.id = a.framework_id
+    JOIN users assessor ON assessor.id = a.assessor_id
+    LEFT JOIN users reviewer ON reviewer.id = a.reviewed_by
+    ORDER BY a.created_at DESC
+  `);
+  const list = rows as unknown as Array<
+    Record<string, unknown> & { answers: Record<string, string> }
+  >;
+  const keys = [...new Set(list.flatMap((r) => Object.keys(r.answers ?? {})))].sort();
+  return list.map(({ answers, ...rest }) => ({
+    ...rest,
+    ...Object.fromEntries(keys.map((k) => [k, answers?.[k] ?? ""])),
+  }));
 }
