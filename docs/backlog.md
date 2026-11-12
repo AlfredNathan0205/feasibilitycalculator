@@ -70,7 +70,7 @@ Agreed order: build capabilities first, then migrate to CPL's Azure.
 - [x] **Shared database pool (`src/lib/db.ts`).** Every page and route
       used to build its own `postgres()` pool per request and never close
       it; 20 copies of `getDb()` are now one cached pool per process
-      (`DB_POOL_MAX`, default 5). This was the cause of the "too many
+      (`DB_POOL_MAX`, default 3). This was the cause of the "too many
       clients" failures seen in earlier e2e runs and would have hit
       Azure Database for PostgreSQL's connection cap in production.
       After the full unit + e2e run, the DB held 3 connections.

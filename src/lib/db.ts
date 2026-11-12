@@ -20,7 +20,7 @@ type Db = PostgresJsDatabase<typeof schema>;
  * Idle sockets are recycled quickly and connecting fails fast, so a frozen
  * serverless instance does not keep a dead connection.
  *
- * Pool size: DB_POOL_MAX (default 5). Keep it small on serverless, where
+ * Pool size: DB_POOL_MAX (default 3). Keep it small on serverless, where
  * every warm instance holds its own pool.
  */
 const globalForDb = globalThis as unknown as { __cplDb?: Db };
@@ -61,8 +61,29 @@ function withTimeout<T>(p: PromiseLike<T>, ms: number): Promise<T> {
   });
 }
 
+/**
+ * Supabase's pooler listens on 6543 (transaction mode) and 5432 (session
+ * mode). Transaction mode, which multiplexes many clients over few backend
+ * connections, was silently losing query replies for this app; session mode
+ * gives each connection its own backend. Set DB_POOLER_MODE=transaction to go
+ * back to the URL's own port.
+ */
+export function resolveDatabaseUrl(databaseUrl: string): string {
+  if (process.env.DB_POOLER_MODE === "transaction") return databaseUrl;
+  try {
+    const url = new URL(databaseUrl);
+    if (url.hostname.endsWith(".pooler.supabase.com") && url.port === "6543") {
+      url.port = "5432";
+      return url.toString();
+    }
+  } catch {
+    /* not a URL we understand: use it as given */
+  }
+  return databaseUrl;
+}
+
 function createClient(databaseUrl: string): Sql {
-  const max = Number.parseInt(process.env.DB_POOL_MAX ?? "5", 10) || 5;
+  const max = Number.parseInt(process.env.DB_POOL_MAX ?? "3", 10) || 3;
   // max_pipeline is a real postgres.js option but missing from its typings.
   const options = {
     max,
@@ -72,7 +93,7 @@ function createClient(databaseUrl: string): Sql {
     max_lifetime: 120,
     connect_timeout: 10,
   } as postgres.Options<Record<string, postgres.PostgresType>>;
-  return postgres(databaseUrl, options);
+  return postgres(resolveDatabaseUrl(databaseUrl), options);
 }
 
 /**

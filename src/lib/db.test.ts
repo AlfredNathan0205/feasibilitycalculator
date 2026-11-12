@@ -38,3 +38,22 @@ describeIfDb("getDb stall guard", () => {
     expect(Date.now() - started).toBeGreaterThanOrEqual(900);
   });
 });
+
+describe("resolveDatabaseUrl", () => {
+  it("moves the Supabase pooler from transaction to session mode", async () => {
+    const { resolveDatabaseUrl } = await import("./db.js");
+    expect(
+      resolveDatabaseUrl(
+        "postgresql://u:p@aws-0-eu-west-2.pooler.supabase.com:6543/postgres",
+      ),
+    ).toBe("postgresql://u:p@aws-0-eu-west-2.pooler.supabase.com:5432/postgres");
+  });
+  it("leaves other URLs alone", async () => {
+    const { resolveDatabaseUrl } = await import("./db.js");
+    const local = "postgresql://cpl:cpl@localhost:5432/cpl";
+    expect(resolveDatabaseUrl(local)).toBe(local);
+    expect(resolveDatabaseUrl("postgresql://u:p@db.x.supabase.co:6543/postgres")).toBe(
+      "postgresql://u:p@db.x.supabase.co:6543/postgres",
+    );
+  });
+});
