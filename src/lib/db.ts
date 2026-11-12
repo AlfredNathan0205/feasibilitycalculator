@@ -5,67 +5,40 @@ import * as schema from "../db/schema.js";
 type Db = PostgresJsDatabase<typeof schema>;
 
 /**
- * One shared connection pool per server process.
+ * One shared connection pool per server process, cached on globalThis so
+ * Next's dev-mode module reloads and warm serverless instances reuse it
+ * instead of opening a new pool per request (managed Postgres has hard
+ * connection caps).
  *
- * Previously every page and route built its own `postgres()` pool on every
- * request and never closed it, which exhausts Postgres's connection limit
- * ("sorry, too many clients already") under any real load — and managed
- * Postgres (Supabase, Azure Database for PostgreSQL) has hard connection
- * caps far below what a busy day of requests would open. The pool is cached
- * on globalThis so Next's dev-mode module reloads don't leak a new one each
- * time either.
- *
- * prepare: false because Supabase's pooler (port 6543) runs in transaction
- * mode, where named prepared statements are not supported and pipelined
- * extended-protocol messages can be rejected ("invalid message format").
- *
- * Serverless instances are frozen between requests and the pooler silently
- * drops idle client sockets; a frozen pool then writes into a dead socket and
- * the request hangs until the platform's 300 s timeout. So connections are
- * recycled quickly (idle_timeout / max_lifetime) and connecting fails fast
- * (connect_timeout) instead of waiting forever.
+ * Supabase's pooler (port 6543) runs in transaction mode. Two consequences,
+ * both of which caused production page hangs and "invalid message format"
+ * errors on the dashboard (which fires ~25 queries at once):
+ *  - prepare: false, because named prepared statements are not supported;
+ *  - max_pipeline: 1, because postgres.js otherwise pipelines many queries
+ *    down one connection and the pooler mishandles that, leaving requests
+ *    waiting until the platform's 300 s timeout.
+ * Idle sockets are recycled quickly and connecting fails fast, so a frozen
+ * serverless instance does not keep a dead connection.
  *
  * Pool size: DB_POOL_MAX (default 5). Keep it small on serverless, where
  * every warm instance holds its own pool.
  */
-const globalForDb = globalThis as unknown as {
-  __cplDb?: Db;
-  __cplSql?: ReturnType<typeof postgres>;
-  __cplLastUse?: number;
-};
-
-/**
- * If the instance has been idle longer than this, it may have been frozen and
- * its pooled sockets silently dropped by the pooler, so build a new pool
- * rather than risk writing into a dead socket.
- */
-const STALE_AFTER_MS = 3000;
+const globalForDb = globalThis as unknown as { __cplDb?: Db };
 
 export function getDb(): Db {
-  const now = Date.now();
-  const stale =
-    globalForDb.__cplLastUse !== undefined &&
-    now - globalForDb.__cplLastUse > STALE_AFTER_MS;
-  globalForDb.__cplLastUse = now;
-  if (globalForDb.__cplDb && !stale) return globalForDb.__cplDb;
-
+  if (globalForDb.__cplDb) return globalForDb.__cplDb;
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL must be set");
-  // A request that started on the old pool may still be issuing queries, so
-  // close it after a delay instead of immediately.
-  const old = globalForDb.__cplSql;
-  if (old) {
-    setTimeout(() => void old.end({ timeout: 5 }).catch(() => {}), 60_000).unref?.();
-  }
   const max = Number.parseInt(process.env.DB_POOL_MAX ?? "5", 10) || 5;
-  const sql = postgres(databaseUrl, {
+  // max_pipeline is a real postgres.js option but missing from its typings.
+  const options = {
     max,
     prepare: false,
+    max_pipeline: 1,
     idle_timeout: 5,
     max_lifetime: 120,
     connect_timeout: 10,
-  });
-  globalForDb.__cplSql = sql;
-  globalForDb.__cplDb = drizzle(sql, { schema });
+  } as postgres.Options<Record<string, postgres.PostgresType>>;
+  globalForDb.__cplDb = drizzle(postgres(databaseUrl, options), { schema });
   return globalForDb.__cplDb;
 }
