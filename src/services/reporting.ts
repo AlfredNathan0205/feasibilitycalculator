@@ -386,6 +386,49 @@ export async function getDashboardSummary(
   db: PostgresJsDatabase<typeof schema>,
   filter?: ReportFilter,
 ): Promise<DashboardSummary> {
+  // Each query is timed and the whole batch is bounded: if the connection
+  // layer stalls, fail in 25 s with the names of the stuck queries instead of
+  // hanging until the platform's 300 s timeout.
+  const pending = new Set<string>();
+  const t0 = Date.now();
+  const timed = <T>(name: string, p: Promise<T>): Promise<T> => {
+    pending.add(name);
+    return p.finally(() => {
+      pending.delete(name);
+      console.log(`[dashboard] ${name} done in ${Date.now() - t0} ms`);
+    });
+  };
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const watchdog = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      const stuck = [...pending].join(", ");
+      console.error(`[dashboard] stalled after 25 s; still waiting on: ${stuck}`);
+      reject(new Error(`Dashboard queries stalled (waiting on: ${stuck})`));
+    }, 25_000);
+  });
+  const run = async () => {
+    const batch = await Promise.all([
+      timed("volumeOutcomeMixByMonth", getVolumeOutcomeMixByMonth(db, filter)),
+      timed("volumeByTier", getVolumeByTier(db, filter)),
+      timed("volumeByRequirementType", getVolumeByRequirementType(db, filter)),
+      timed("approvalRateByRole", getApprovalRateByRole(db)),
+      timed("scoreDistribution", getScoreDistribution(db, 25, filter)),
+      timed("preApprovalUsage", getPreApprovalUsageBySubmitter(db, filter)),
+      timed("shortDeadlineVolumeByMonth", getShortDeadlineVolumeByMonth(db, filter)),
+      timed("monthlyActivity", getMonthlyActivity(db, filter)),
+      timed("briefsByAccountManager", getBriefsByAccountManager(db)),
+      timed("accountManagers", listAccountManagersWithBriefs(db)),
+    ]);
+    // After the parallel batch, so the dashboard never opens more concurrent queries than before.
+    const niche = await timed("niche", getNicheSummary(db, filter));
+    return [batch, niche] as const;
+  };
+  let batch, niche;
+  try {
+    [batch, niche] = await Promise.race([run(), watchdog]);
+  } finally {
+    clearTimeout(timer);
+  }
   const [
     volumeOutcomeMixByMonth,
     volumeByTier,
@@ -397,20 +440,7 @@ export async function getDashboardSummary(
     monthlyActivity,
     briefsByAccountManager,
     accountManagers,
-  ] = await Promise.all([
-    getVolumeOutcomeMixByMonth(db, filter),
-    getVolumeByTier(db, filter),
-    getVolumeByRequirementType(db, filter),
-    getApprovalRateByRole(db),
-    getScoreDistribution(db, 25, filter),
-    getPreApprovalUsageBySubmitter(db, filter),
-    getShortDeadlineVolumeByMonth(db, filter),
-    getMonthlyActivity(db, filter),
-    getBriefsByAccountManager(db),
-    listAccountManagersWithBriefs(db),
-  ]);
-  // After the parallel batch, so the dashboard never opens more concurrent queries than before.
-  const niche = await getNicheSummary(db, filter);
+  ] = batch;
   return {
     volumeOutcomeMixByMonth,
     volumeByTier,

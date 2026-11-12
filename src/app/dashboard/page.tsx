@@ -12,7 +12,9 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ am?: string }>;
 }) {
+  const started = Date.now();
   const session = await auth();
+  console.log(`[dashboard] auth done in ${Date.now() - started} ms`);
 
   if (!session) {
     return (
