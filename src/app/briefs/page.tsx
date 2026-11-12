@@ -33,6 +33,25 @@ function pageHref(params: SearchParams, page: number) {
   return `/briefs?${usp.toString()}`;
 }
 
+function filterHref(params: SearchParams, status: string | undefined) {
+  const usp = new URLSearchParams();
+  if (params.q) usp.set("q", params.q);
+  if (status) usp.set("status", status);
+  if (params.tier) usp.set("tier", params.tier);
+  if (params.am) usp.set("am", params.am);
+  const qs = usp.toString();
+  return qs ? `/briefs?${qs}` : "/briefs";
+}
+
+const DATE = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+const isPastDue = (d: Date | string) => new Date(d).getTime() < Date.now();
+const personName = (n: string | null | undefined) =>
+  n ? n.replace(/\s*\([^)]*\)\s*$/, "") : "—";
+
 export default async function BriefsPage({
   searchParams,
 }: {
@@ -73,7 +92,6 @@ export default async function BriefsPage({
   return (
     <AppShell session={session}>
       <div className="container-wide">
-        <div className="eyebrow">{seesAll ? "ALL BRIEFS" : "BRIEFS"}</div>
         <div className="page-header">
           <div>
             <h1 style={{ marginBottom: "0.2em" }}>Briefs</h1>
@@ -86,7 +104,30 @@ export default async function BriefsPage({
           </div>
         </div>
 
-        <form method="get" className="card" style={{ marginBottom: "1.25rem" }}>
+        <div className="chips" role="group" aria-label="Status">
+          {[
+            { v: undefined, t: "All" },
+            { v: "pending", t: "Pending" },
+            { v: "approved", t: "Approved" },
+            { v: "declined", t: "Declined" },
+          ].map((c) => (
+            <a
+              key={c.t}
+              href={filterHref(params, c.v)}
+              className={`chip${filters.status === c.v ? " chip-active" : ""}`}
+              aria-current={filters.status === c.v ? "true" : undefined}
+            >
+              {c.t}
+            </a>
+          ))}
+        </div>
+
+        <form
+          method="get"
+          className="card filter-bar"
+          style={{ marginBottom: "1.25rem" }}
+        >
+          {filters.status && <input type="hidden" name="status" value={filters.status} />}
           <div
             style={{
               display: "flex",
@@ -98,17 +139,6 @@ export default async function BriefsPage({
             <div style={{ flex: "1 1 220px" }}>
               <label htmlFor="q">Customer or PV reference</label>
               <input id="q" name="q" type="search" defaultValue={params.q ?? ""} />
-            </div>
-            <div>
-              <label htmlFor="status">Status</label>
-              <select id="status" name="status" defaultValue={filters.status ?? ""}>
-                <option value="">Any</option>
-                {STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s[0]!.toUpperCase() + s.slice(1)}
-                  </option>
-                ))}
-              </select>
             </div>
             {accountManagers.length > 0 && (
               <div>
@@ -145,10 +175,12 @@ export default async function BriefsPage({
 
         {result.rows.length === 0 ? (
           <div className="card">
-            <p style={{ margin: 0 }}>No briefs match.</p>
+            <p style={{ margin: 0 }}>
+              No briefs match these filters. <a href="/briefs">Clear filters</a>
+            </p>
           </div>
         ) : (
-          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+          <div className="card" style={{ padding: 0, overflowX: "auto" }}>
             <table className="data-table data-table-flush">
               <thead>
                 <tr>
@@ -169,42 +201,51 @@ export default async function BriefsPage({
                     <td style={{ fontWeight: 500 }}>
                       <a href={`/briefs/${b.id}`}>{b.customerReference}</a>
                     </td>
-                    <td>{b.tier}</td>
+                    <td>
+                      <span className="tier-badge">{b.tier}</span>
+                    </td>
                     <td className="num">
                       £{Number(b.valuePotentialGbp).toLocaleString("en-GB")}
                     </td>
                     <td>
-                      {b.onBehalfOfName ?? b.submitterName ?? "—"}
+                      {personName(b.onBehalfOfName ?? b.submitterName)}
                       {b.onBehalfOfName && (
-                        <span className="helptext" style={{ marginLeft: "0.5em" }}>
-                          (by {b.submitterName})
-                        </span>
+                        <span className="cell-sub">by {personName(b.submitterName)}</span>
                       )}
                     </td>
                     <td style={{ color: "var(--cpl-ink-soft)" }}>
-                      {new Date(b.submittedAt).toLocaleDateString("en-GB")}
-                    </td>
-                    <td style={{ color: "var(--cpl-ink-soft)" }}>
-                      {new Date(b.deadline).toLocaleDateString("en-GB")}
-                    </td>
-                    <td className="num">{Number(b.computedScore).toFixed(1)}</td>
-                    <td>
-                      <StatusPill status={b.finalStatus} />
-                      {b.outstandingRequirements > 0 && (
-                        <span className="helptext" style={{ marginLeft: "0.5em" }}>
-                          {b.outstandingRequirements} outstanding
-                        </span>
-                      )}
+                      {DATE.format(new Date(b.submittedAt))}
                     </td>
                     <td
                       style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "0.8125rem",
-                        color: "var(--cpl-ink-soft)",
-                        whiteSpace: "nowrap",
+                        color:
+                          b.finalStatus === "pending" && isPastDue(b.deadline)
+                            ? "var(--cpl-red)"
+                            : "var(--cpl-ink-soft)",
                       }}
                     >
-                      {b.approvalCode ?? "—"}
+                      {DATE.format(new Date(b.deadline))}
+                    </td>
+                    <td className="num">
+                      {Number(b.computedScore).toLocaleString("en-GB", {
+                        maximumFractionDigits: 1,
+                      })}
+                    </td>
+                    <td>
+                      <StatusPill status={b.finalStatus} />
+                      {b.outstandingRequirements > 0 && (
+                        <span className="cell-sub">
+                          {b.outstandingRequirements} sign-off
+                          {b.outstandingRequirements === 1 ? "" : "s"} outstanding
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      {b.approvalCode ? (
+                        <code className="code-chip">{b.approvalCode}</code>
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -228,6 +269,8 @@ export default async function BriefsPage({
               </a>
             )}
             <span className="helptext">
+              Showing {(result.page - 1) * result.pageSize + 1}–
+              {Math.min(result.page * result.pageSize, result.total)} of {result.total} ·
               Page {result.page} of {totalPages}
             </span>
             {result.page < totalPages && (

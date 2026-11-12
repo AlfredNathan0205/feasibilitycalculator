@@ -721,3 +721,86 @@ label {
   background: var(--cpl-purple);
   color: #fff;
 }
+
+/* ── Briefs list ── */
+.chips {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+.chip {
+  padding: 0.35em 0.95em;
+  border-radius: 999px;
+  border: 1px solid var(--cpl-border-strong);
+  background: #fff;
+  color: var(--cpl-ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.chip:hover {
+  color: var(--cpl-ink);
+  border-color: var(--cpl-ink-soft);
+}
+.chip-active,
+.chip-active:hover {
+  background: var(--cpl-purple);
+  border-color: var(--cpl-purple);
+  color: #fff;
+}
+.filter-bar {
+  padding: 0.9rem 1.1rem;
+}
+.cell-sub {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--cpl-ink-soft);
+  font-weight: 400;
+  margin-top: 0.1rem;
+}
+.tier-badge {
+  display: inline-block;
+  min-width: 1.9em;
+  text-align: center;
+  padding: 0.1em 0.5em;
+  border-radius: 6px;
+  background: var(--cpl-purple-tint);
+  color: var(--cpl-purple-ink);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+.code-chip {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 0.15em 0.55em;
+  border-radius: 6px;
+  background: #f1f0f6;
+  color: var(--cpl-ink);
+}
+.data-table-flush td:first-child {
+  min-width: 14rem;
+  max-width: 22rem;
+  overflow-wrap: anywhere;
+}
+.data-table-flush thead th {
+  position: sticky;
+  top: 0;
+  background: #faf9fd;
+}
+.data-table-flush td:not(:first-child) {
+  white-space: nowrap;
+}
+.filter-bar select {
+  min-width: 6.5rem;
+}
+.filter-bar select[id="tier"] {
+  min-width: 7rem;
+}
+.data-table-flush th,
+.data-table-flush td {
+  padding: 0.75em 1rem;
+}
+.data-table-flush td:first-child {
+  min-width: 12rem;
+  max-width: 16rem;
+}
