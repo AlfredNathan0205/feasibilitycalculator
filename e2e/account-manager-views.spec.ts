@@ -45,7 +45,7 @@ test("Admin can filter briefs and the dashboard by Account Manager; the General 
 
   // Dashboard: month-by-month resource table and the per-Account-Manager table.
   await page.goto("/dashboard");
-  await expect(page.getByRole("heading", { name: /Month by month/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Briefs per month/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "By Account Manager" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Export CSV" })).toBeVisible();
 
@@ -60,7 +60,7 @@ test("Admin can filter briefs and the dashboard by Account Manager; the General 
   // General Manager: dashboard yes, exports no.
   await signInAs(page, "gm@cpl.example");
   await page.goto("/dashboard");
-  await expect(page.getByRole("heading", { name: /Month by month/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Briefs per month/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "Export CSV" })).toHaveCount(0);
   await page.goto("/briefs");
   await expect(page.getByLabel("Account Manager")).toBeVisible();

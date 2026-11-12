@@ -46,7 +46,7 @@ async function fillNicheBrief(
   await page.locator("#deadline").fill(farFutureDeadline());
   await page
     .getByRole("radiogroup", { name: /niche brand/i })
-    .getByLabel("Yes")
+    .getByLabel("Yes", { exact: true })
     .check();
   await page.locator("#nicheBrandText").fill(brandName);
   if (route) {
@@ -140,7 +140,7 @@ test("A brand with no current assessment warns and is scored as a standard brief
   await page.waitForLoadState("networkidle");
   await page
     .getByRole("radiogroup", { name: /niche brand/i })
-    .getByLabel("Yes")
+    .getByLabel("Yes", { exact: true })
     .check();
   await page.locator("#nicheBrandText").fill(brand);
   await expect(page.getByText(/No current Niche Brand Assessment/i)).toBeVisible();

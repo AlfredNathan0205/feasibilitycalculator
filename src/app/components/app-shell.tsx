@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { signOut } from "../../auth.js";
+import { NavLink } from "./nav-link.js";
 
 export function AppShell({
   session,
@@ -17,6 +18,13 @@ export function AppShell({
   }
 
   const displayName = session.user?.name ?? session.user?.email ?? "User";
+  const cleanName = displayName.replace(/\s*\([^)]*\)\s*$/, "");
+  const initials = cleanName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join("");
   const roleLabel = session.accessRoles.map((r) => r.replace(/_/g, " ")).join(", ");
 
   return (
@@ -26,28 +34,27 @@ export function AppShell({
           <a href="/" className="shell-brand">
             <Image
               src="/cpl-logo-muted.png"
-              alt="CPL Aromas"
-              width={28}
-              height={28}
-              style={{ display: "block" }}
+              alt=""
+              width={34}
+              height={34}
+              className="shell-brand-logo"
               priority
             />
-            <div>
-              <div className="shell-brand-eyebrow">CPL AROMAS</div>
-              <div className="shell-brand-name">Feasibility Calculator</div>
-            </div>
+            <span className="shell-brand-text">
+              <span className="shell-brand-name">Feasibility Calculator</span>
+              <span className="shell-brand-sub">CPL Aromas</span>
+            </span>
           </a>
-          <div className="shell-brand-accent" />
 
           <nav className="shell-nav">
-            <a href="/briefs" className="shell-nav-link">
+            <NavLink href="/briefs" icon="briefs">
               Briefs
-            </a>
+            </NavLink>
             {(session.accessRoles.includes("account_manager") ||
               session.accessRoles.includes("sales_coordinator")) && (
-              <a href="/briefs/new" className="shell-nav-link">
+              <NavLink href="/briefs/new" icon="new">
                 New brief
-              </a>
+              </NavLink>
             )}
             {(session.accessRoles.includes("account_manager") ||
               session.accessRoles.includes("sales_coordinator") ||
@@ -55,52 +62,59 @@ export function AppShell({
               session.accessRoles.includes("admin") ||
               (session.accessRoles.includes("approver") &&
                 session.approvalAuthorityRoles?.includes("commercial_director"))) && (
-              <a href="/niche" className="shell-nav-link">
+              <NavLink href="/niche" icon="niche">
                 Niche brands
-              </a>
+              </NavLink>
             )}
             {(session.accessRoles.includes("approver") ||
               session.accessRoles.includes("admin")) && (
-              <a href="/approvals" className="shell-nav-link">
+              <NavLink href="/approvals" icon="approvals">
                 Approvals
-              </a>
+              </NavLink>
             )}
             {(session.accessRoles.includes("admin") ||
               session.accessRoles.includes("auditor") ||
               (session.accessRoles.includes("approver") &&
                 (session.approvalAuthorityRoles?.includes("general_manager") ||
                   session.approvalAuthorityRoles?.includes("commercial_director")))) && (
-              <a href="/dashboard" className="shell-nav-link">
+              <NavLink href="/dashboard" icon="dashboard">
                 Dashboard
-              </a>
+              </NavLink>
             )}
             {session.accessRoles.includes("admin") && (
-              <a href="/admin/rule-sets" className="shell-nav-link">
+              <NavLink href="/admin/rule-sets" icon="rules">
                 Rule sets
-              </a>
+              </NavLink>
             )}
             {session.accessRoles.includes("admin") && (
-              <a href="/admin/niche-frameworks" className="shell-nav-link">
+              <NavLink href="/admin/niche-frameworks" icon="frameworks">
                 Niche frameworks
-              </a>
+              </NavLink>
             )}
             {session.accessRoles.includes("admin") && (
-              <a href="/admin/people" className="shell-nav-link">
+              <NavLink href="/admin/people" icon="people">
                 People and roles
-              </a>
+              </NavLink>
             )}
             {(session.accessRoles.includes("auditor") ||
               session.accessRoles.includes("admin")) && (
-              <a href="/verify" className="shell-nav-link">
+              <NavLink href="/verify" icon="verify">
                 Verify a code
-              </a>
+              </NavLink>
             )}
           </nav>
         </div>
 
         <div className="shell-footer">
-          <div className="shell-user-name">{displayName}</div>
-          <div className="shell-user-role">{roleLabel || "No role"}</div>
+          <div className="shell-user">
+            <span className="shell-avatar" aria-hidden="true">
+              {initials}
+            </span>
+            <span className="shell-user-text">
+              <span className="shell-user-name">{cleanName}</span>
+              <span className="shell-user-role">{roleLabel || "No role"}</span>
+            </span>
+          </div>
           <form
             action={async () => {
               "use server";

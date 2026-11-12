@@ -11,6 +11,7 @@ test("create brand, assess, submit, review and approve", async ({ page }) => {
 
   await signInAs(page, "am@cpl.example");
   await page.goto("/niche/brands/new");
+  await page.waitForLoadState("networkidle");
   await page.locator("#name").fill(brand);
   await page.getByRole("button", { name: /create brand/i }).click();
   await expect(page.getByRole("heading", { name: brand })).toBeVisible();

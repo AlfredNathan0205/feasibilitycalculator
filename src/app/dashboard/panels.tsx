@@ -1,12 +1,21 @@
 import type { DashboardSummary } from "../../services/reporting.js";
 import { NICHE_BAND_LABELS } from "../components/labels.js";
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({
+  title,
+  note,
+  children,
+}: {
+  title: string;
+  note?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="card">
+    <section className="card panel">
       <h2>{title}</h2>
+      {note && <p className="panel-note">{note}</p>}
       {children}
-    </div>
+    </section>
   );
 }
 
@@ -24,54 +33,118 @@ function SimpleTable({
   rows: Record<string, unknown>[];
 }) {
   if (rows.length === 0) {
-    return (
-      <p className="helptext" style={{ margin: 0 }}>
-        No data yet.
-      </p>
-    );
+    return <p className="panel-empty">Nothing to show yet.</p>;
   }
   return (
-    <table className="data-table">
-      <thead>
-        <tr>
-          {columns.map((c) => (
-            <th key={c.key} className={c.num ? "num" : undefined}>
-              {c.label}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row, i) => (
-          <tr key={i}>
+    <div className="table-scroll">
+      <table className="data-table">
+        <thead>
+          <tr>
             {columns.map((c) => (
-              <td key={c.key} className={c.num ? "num" : undefined}>
-                {c.render
-                  ? c.render(row[c.key])
-                  : c.format
-                    ? c.format(row[c.key])
-                    : String(row[c.key] ?? "")}
-              </td>
+              <th key={c.key} className={c.num ? "num" : undefined}>
+                {c.label}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i}>
+              {columns.map((c) => (
+                <td key={c.key} className={c.num ? "num" : undefined}>
+                  {c.render
+                    ? c.render(row[c.key])
+                    : c.format
+                      ? c.format(row[c.key])
+                      : String(row[c.key] ?? "")}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
-/** Plain horizontal bar built from divs — matches the app's existing
- * restrained styling rather than pulling in a charting library for a
- * handful of simple distributions. */
 function BarRow({ label, count, max }: { label: string; count: number; max: number }) {
-  const pct = max > 0 ? Math.round((count / max) * 100) : 0;
+  const pct = max > 0 ? Math.max(2, Math.round((count / max) * 100)) : 0;
   return (
     <div className="bar-row">
-      <span className="bar-row-label">{label}</span>
-      <span className="bar-track">
-        <span className="bar-fill" style={{ width: `${pct}%` }} />
+      <span className="bar-row-label" title={label}>
+        {label}
       </span>
-      <span className="bar-value">{count}</span>
+      <span className="bar-track">
+        <span className="bar-fill" style={{ width: `${count > 0 ? pct : 0}%` }} />
+      </span>
+      <span className="bar-value">{count.toLocaleString("en-GB")}</span>
+    </div>
+  );
+}
+
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+function monthLabel(m: string) {
+  const [y, mo] = m.split("-");
+  return `${MONTHS[Number(mo) - 1] ?? mo} ${String(y).slice(2)}`;
+}
+
+const STATUS_ORDER = ["approved", "pending", "declined"] as const;
+
+/** Briefs per month, stacked by outcome. Plain divs: no charting library for four series. */
+function OutcomeColumns({ rows }: { rows: DashboardSummary["volumeOutcomeMixByMonth"] }) {
+  const months = [...new Set(rows.map((r) => r.month))].sort();
+  if (months.length === 0) return <p className="panel-empty">Nothing to show yet.</p>;
+  const data = months.map((m) => {
+    const by: Record<string, number> = {};
+    for (const r of rows) if (r.month === m) by[r.finalStatus] = r.count;
+    const total = STATUS_ORDER.reduce((s, k) => s + (by[k] ?? 0), 0);
+    return { m, by, total };
+  });
+  const max = Math.max(1, ...data.map((d) => d.total));
+  return (
+    <div>
+      <div className="columns" role="img" aria-label="Briefs per month by outcome">
+        {data.map((d) => (
+          <div className="column" key={d.m}>
+            <span className="column-total">{d.total.toLocaleString("en-GB")}</span>
+            <div className="column-stack" style={{ height: `${(d.total / max) * 100}%` }}>
+              {[...STATUS_ORDER]
+                .reverse()
+                .map((k) =>
+                  (d.by[k] ?? 0) > 0 ? (
+                    <span
+                      key={k}
+                      className={`seg seg-${k}`}
+                      style={{ flexGrow: d.by[k] }}
+                      title={`${monthLabel(d.m)}: ${d.by[k]} ${k}`}
+                    />
+                  ) : null,
+                )}
+            </div>
+            <span className="column-label">{monthLabel(d.m)}</span>
+          </div>
+        ))}
+      </div>
+      <div className="legend">
+        {STATUS_ORDER.map((k) => (
+          <span key={k}>
+            <i className={`seg-${k}`} /> {k[0]!.toUpperCase() + k.slice(1)}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -91,180 +164,100 @@ export function DashboardPanels({
     ...summary.shortDeadlineVolumeByMonth.map((r) => r.count),
   );
 
-  const totalBriefs = summary.volumeByTier.reduce((s, r) => s + r.count, 0);
-  const totalApproved = summary.volumeOutcomeMixByMonth
-    .filter((r) => r.finalStatus === "approved")
-    .reduce((s, r) => s + r.count, 0);
-  const totalAll = summary.volumeOutcomeMixByMonth.reduce((s, r) => s + r.count, 0);
-  const approvalRate = totalAll > 0 ? Math.round((totalApproved / totalAll) * 100) : 0;
-  const totalRequirements = summary.volumeByRequirementType.reduce(
-    (s, r) => s + r.count,
+  const byStatus = (s: string) =>
+    summary.volumeOutcomeMixByMonth
+      .filter((r) => r.finalStatus === s)
+      .reduce((n, r) => n + r.count, 0);
+  const approved = byStatus("approved");
+  const pending = byStatus("pending");
+  const declined = byStatus("declined");
+  const total = approved + pending + declined;
+  const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
+  const totalValue = summary.monthlyActivity.reduce(
+    (n, r) => n + Number(r.valuePotentialGbp),
     0,
   );
+  const gbp = (n: number) =>
+    n >= 1_000_000
+      ? `£${(n / 1_000_000).toFixed(1)}m`
+      : n >= 1_000
+        ? `£${Math.round(n / 1_000).toLocaleString("en-GB")}k`
+        : `£${n}`;
 
   return (
     <>
       <div className="kpi-strip">
         <div className="kpi-card">
-          <div className="kpi-label">Total briefs</div>
-          <div className="kpi-value">{totalBriefs}</div>
-          <div className="kpi-caption">all time</div>
+          <div className="kpi-label">Briefs</div>
+          <div className="kpi-value">{total.toLocaleString("en-GB")}</div>
+          <div className="kpi-caption">{gbp(totalValue)} total value potential</div>
         </div>
         <div className="kpi-card">
-          <div className="kpi-label">Approval rate</div>
-          <div className="kpi-value">{approvalRate}%</div>
-          <div className="kpi-caption">of all decisions</div>
+          <div className="kpi-label">Approved</div>
+          <div className="kpi-value">{pct(approved)}%</div>
+          <div className="kpi-caption">{approved.toLocaleString("en-GB")} briefs</div>
         </div>
         <div className="kpi-card">
-          <div className="kpi-label">Requirements raised</div>
-          <div className="kpi-value">{totalRequirements}</div>
-          <div className="kpi-caption">by type</div>
+          <div className="kpi-label">Waiting on sign-off</div>
+          <div className="kpi-value">{pending.toLocaleString("en-GB")}</div>
+          <div className="kpi-caption">{pct(pending)}% of briefs</div>
         </div>
         <div className="kpi-card">
-          <div className="kpi-label">Score buckets</div>
-          <div className="kpi-value">{summary.scoreDistribution.length}</div>
-          <div className="kpi-caption">distribution bands</div>
+          <div className="kpi-label">Declined</div>
+          <div className="kpi-value">{declined.toLocaleString("en-GB")}</div>
+          <div className="kpi-caption">{pct(declined)}% of briefs</div>
         </div>
       </div>
-      <div className="panel-grid">
-        <div className="panel-grid-full">
-          <Panel title="Month by month: briefs and the resource they draw on">
-            <p className="helptext" style={{ marginTop: 0 }}>
-              Sign-offs raised in the month a brief was submitted. Marketing, PPD and GCMS
-              show how much of each team&rsquo;s time was asked for; Creative covers both
-              creative sign-offs.
-            </p>
-            <SimpleTable
-              columns={[
-                { key: "month", label: "Month" },
-                { key: "briefs", label: "Briefs", num: true },
-                {
-                  key: "valuePotentialGbp",
-                  label: "Value potential",
-                  num: true,
-                  format: (v) => `£${Number(v).toLocaleString("en-GB")}`,
-                },
-                { key: "marketing", label: "Marketing", num: true },
-                { key: "ppd", label: "PPD", num: true },
-                { key: "gcms", label: "GCMS", num: true },
-                { key: "creative", label: "Creative", num: true },
-                { key: "shortDeadline", label: "Short deadline", num: true },
-              ]}
-              rows={summary.monthlyActivity as unknown as Record<string, unknown>[]}
-            />
-          </Panel>
-        </div>
 
-        {!filtered && (
-          <div className="panel-grid-full">
-            <Panel title="By Account Manager">
-              <p className="helptext" style={{ marginTop: 0 }}>
-                Counted against the Account Manager a brief was raised for. Outstanding
-                sign-offs are those still waiting on an approver.
-              </p>
-              <SimpleTable
-                columns={[
-                  {
-                    key: "accountManagerName",
-                    label: "Account Manager",
-                    render: (v) => <span style={{ fontWeight: 500 }}>{String(v)}</span>,
-                  },
-                  { key: "total", label: "Briefs", num: true },
-                  { key: "approved", label: "Approved", num: true },
-                  { key: "pending", label: "Pending", num: true },
-                  { key: "declined", label: "Declined", num: true },
-                  { key: "outstandingSignOffs", label: "Sign-offs waiting", num: true },
-                  {
-                    key: "valuePotentialGbp",
-                    label: "Value potential",
-                    num: true,
-                    format: (v) => `£${Number(v).toLocaleString("en-GB")}`,
-                  },
-                  {
-                    key: "accountManagerId",
-                    label: "",
-                    render: (v) => (
-                      <span>
-                        <a href={`/dashboard?am=${String(v)}`}>Dashboard</a>
-                        {" · "}
-                        <a href={`/briefs?am=${String(v)}`}>Briefs</a>
-                      </span>
-                    ),
-                  },
-                ]}
-                rows={
-                  summary.briefsByAccountManager as unknown as Record<string, unknown>[]
-                }
-              />
-            </Panel>
-          </div>
-        )}
+      <div className="outcome-split" aria-hidden="true">
+        <span className="seg-approved" style={{ flexGrow: approved }} />
+        <span className="seg-pending" style={{ flexGrow: pending }} />
+        <span className="seg-declined" style={{ flexGrow: declined }} />
+      </div>
 
-        <Panel title="Volume by customer tier">
+      <div className="panel-grid panel-grid-2">
+        <Panel title="Briefs per month" note="By outcome. Hover a bar for the split.">
+          <OutcomeColumns rows={summary.volumeOutcomeMixByMonth} />
+        </Panel>
+        <Panel
+          title="Sign-offs asked of each team"
+          note="Raised in the month the brief was submitted. Creative covers both creative sign-offs."
+        >
+          <SimpleTable
+            columns={[
+              { key: "month", label: "Month", format: (v) => monthLabel(String(v)) },
+              { key: "briefs", label: "Briefs", num: true },
+              { key: "marketing", label: "Marketing", num: true },
+              { key: "ppd", label: "PPD", num: true },
+              { key: "gcms", label: "GCMS", num: true },
+              { key: "creative", label: "Creative", num: true },
+              { key: "shortDeadline", label: "Short deadline", num: true },
+            ]}
+            rows={summary.monthlyActivity as unknown as Record<string, unknown>[]}
+          />
+        </Panel>
+      </div>
+
+      <div className="panel-grid panel-grid-3">
+        <Panel title="Customer tier">
           {summary.volumeByTier.map((r) => (
             <BarRow key={r.dimension} label={r.dimension} count={r.count} max={tierMax} />
           ))}
         </Panel>
-
-        <Panel title="Volume by requirement type">
+        <Panel title="Sign-offs by type">
           {summary.volumeByRequirementType.map((r) => (
             <BarRow
               key={r.dimension}
-              label={r.dimension.replace(/_/g, " ")}
+              label={r.dimension.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase())}
               count={r.count}
               max={reqTypeMax}
             />
           ))}
         </Panel>
-
-        <Panel title="Outcome mix by month">
-          <SimpleTable
-            columns={[
-              { key: "month", label: "Month" },
-              {
-                key: "finalStatus",
-                label: "Status",
-                render: (v) => {
-                  const status = String(v);
-                  const cls =
-                    status === "approved"
-                      ? "status-approved"
-                      : status === "declined"
-                        ? "status-declined"
-                        : "status-pending";
-                  return <span className={`status-pill ${cls}`}>{status}</span>;
-                },
-              },
-              { key: "count", label: "Count", num: true },
-            ]}
-            rows={summary.volumeOutcomeMixByMonth as unknown as Record<string, unknown>[]}
-          />
-        </Panel>
-
-        <Panel title="Approval rate & time-to-decision by role">
-          <SimpleTable
-            columns={[
-              { key: "requiredRoleKey", label: "Role" },
-              { key: "approvedCount", label: "Approved", num: true },
-              { key: "rejectedCount", label: "Rejected", num: true },
-              {
-                key: "approvalRate",
-                label: "Approval rate",
-                num: true,
-                format: (v) => (v === null ? "—" : `${(Number(v) * 100).toFixed(0)}%`),
-              },
-              {
-                key: "medianHoursToDecision",
-                label: "Median time",
-                num: true,
-                format: (v) => (v === null ? "—" : `${Number(v).toFixed(1)}h`),
-              },
-            ]}
-            rows={summary.approvalRateByRole as unknown as Record<string, unknown>[]}
-          />
-        </Panel>
-
-        <Panel title="Score distribution vs. current thresholds">
+        <Panel
+          title="Score spread"
+          note="Decline at 30 or below, auto-approve above 115."
+        >
           {summary.scoreDistribution.map((b) => (
             <BarRow
               key={b.bucketLabel}
@@ -273,110 +266,177 @@ export function DashboardPanels({
               max={scoreMax}
             />
           ))}
-          <p className="helptext" style={{ marginTop: "0.6rem", marginBottom: 0 }}>
-            Current thresholds: decline ≤30, auto-approve &gt;115.
-          </p>
         </Panel>
+      </div>
 
-        <Panel title="Short-deadline volume over time">
-          <p className="helptext" style={{ marginTop: 0 }}>
-            The metric that motivated this whole project.
-          </p>
+      <div className="panel-grid panel-grid-2">
+        <Panel title="Approvers: speed and approval rate">
+          <SimpleTable
+            columns={[
+              {
+                key: "requiredRoleKey",
+                label: "Role",
+                format: (v) =>
+                  String(v)
+                    .replace(/_/g, " ")
+                    .replace(/^./, (c) => c.toUpperCase()),
+              },
+              { key: "approvedCount", label: "Approved", num: true },
+              { key: "rejectedCount", label: "Rejected", num: true },
+              {
+                key: "approvalRate",
+                label: "Rate",
+                num: true,
+                format: (v) => (v === null ? "—" : `${(Number(v) * 100).toFixed(0)}%`),
+              },
+              {
+                key: "medianHoursToDecision",
+                label: "Median time",
+                num: true,
+                format: (v) => (v === null ? "—" : `${Number(v).toFixed(1)} h`),
+              },
+            ]}
+            rows={summary.approvalRateByRole as unknown as Record<string, unknown>[]}
+          />
+        </Panel>
+        <Panel
+          title="Short-deadline briefs"
+          note="Briefs due inside the short-deadline window, by month submitted."
+        >
           {summary.shortDeadlineVolumeByMonth.length === 0 ? (
-            <p style={{ margin: 0 }}>None yet.</p>
+            <p className="panel-empty">None yet.</p>
           ) : (
             summary.shortDeadlineVolumeByMonth.map((r) => (
-              <BarRow key={r.month} label={r.month} count={r.count} max={deadlineMax} />
+              <BarRow
+                key={r.month}
+                label={monthLabel(r.month)}
+                count={r.count}
+                max={deadlineMax}
+              />
             ))
           )}
         </Panel>
+      </div>
 
-        <div className="panel-grid-full">
-          <Panel title="Pre-approval usage by submitter (revocations highlighted)">
-            <SimpleTable
-              columns={[
-                { key: "submitterName", label: "Submitter" },
-                { key: "preApprovalCount", label: "Pre-approvals declared", num: true },
-                {
-                  key: "revokedCount",
-                  label: "Revoked",
-                  num: true,
-                  render: (v) =>
-                    Number(v) > 0 ? (
-                      <span className="status-pill status-declined">{String(v)}</span>
-                    ) : (
-                      <span className="num" style={{ color: "var(--cpl-ink-soft)" }}>
-                        0
-                      </span>
-                    ),
-                },
-              ]}
-              rows={summary.preApprovalUsage as unknown as Record<string, unknown>[]}
-            />
-          </Panel>
-        </div>
-        <div className="panel-grid-full">
-          <Panel title="Niche brands">
-            <div className="kpi-strip" style={{ marginBottom: "1rem" }}>
-              <div className="kpi-card">
-                <div className="kpi-label">Awaiting review</div>
-                <div className="kpi-value">{summary.niche.awaitingReview}</div>
-                <div className="kpi-caption">
-                  <a href="/niche/review">review queue</a>
-                </div>
-              </div>
-              <div className="kpi-card">
-                <div className="kpi-label">Expiring in 30 days</div>
-                <div className="kpi-value">{summary.niche.expiringSoon.length}</div>
-                <div className="kpi-caption">current assessments</div>
+      <div className="panel-stack">
+        <Panel title="Niche brands">
+          <div className="kpi-strip" style={{ marginBottom: "1rem" }}>
+            <div className="kpi-card">
+              <div className="kpi-label">Awaiting review</div>
+              <div className="kpi-value">{summary.niche.awaitingReview}</div>
+              <div className="kpi-caption">
+                <a href="/niche/review">review queue</a>
               </div>
             </div>
-            <h3>Brands by current assessment outcome</h3>
-            <SimpleTable
-              columns={[
-                {
-                  key: "band",
-                  label: "Outcome",
-                  format: (v) => NICHE_BAND_LABELS[String(v)] ?? String(v),
-                },
-                { key: "count", label: "Brands", num: true },
-              ]}
-              rows={
-                summary.niche.assessmentsByBand as unknown as Record<string, unknown>[]
-              }
-            />
-            <h3>Expiring within 30 days</h3>
-            <SimpleTable
-              columns={[
-                { key: "brandName", label: "Brand" },
-                { key: "reference", label: "Assessment" },
-                { key: "validUntil", label: "Valid until" },
-              ]}
-              rows={summary.niche.expiringSoon as unknown as Record<string, unknown>[]}
-            />
-            <h3>Brief outcomes by niche path</h3>
-            <SimpleTable
-              columns={[
-                {
-                  key: "path",
-                  label: "Path",
-                  format: (v) =>
-                    v === "none"
-                      ? "Standard brief"
-                      : v === "manual_fine_fragrance"
-                        ? "Fine Fragrance pre-approved (not a niche brand)"
-                        : (NICHE_BAND_LABELS[String(v)] ?? String(v)),
-                },
-                { key: "finalStatus", label: "Outcome" },
-                { key: "count", label: "Briefs", num: true },
-              ]}
-              rows={
-                summary.niche.briefOutcomesByNiche as unknown as Record<string, unknown>[]
-              }
-            />
-          </Panel>
-        </div>
+            <div className="kpi-card">
+              <div className="kpi-label">Expiring in 30 days</div>
+              <div className="kpi-value">{summary.niche.expiringSoon.length}</div>
+              <div className="kpi-caption">current assessments</div>
+            </div>
+          </div>
+          <h3>Brands by current assessment outcome</h3>
+          <SimpleTable
+            columns={[
+              {
+                key: "band",
+                label: "Outcome",
+                format: (v) => NICHE_BAND_LABELS[String(v)] ?? String(v),
+              },
+              { key: "count", label: "Brands", num: true },
+            ]}
+            rows={summary.niche.assessmentsByBand as unknown as Record<string, unknown>[]}
+          />
+          <h3>Expiring within 30 days</h3>
+          <SimpleTable
+            columns={[
+              { key: "brandName", label: "Brand" },
+              { key: "reference", label: "Assessment" },
+              { key: "validUntil", label: "Valid until" },
+            ]}
+            rows={summary.niche.expiringSoon as unknown as Record<string, unknown>[]}
+          />
+          <h3>Brief outcomes by niche path</h3>
+          <SimpleTable
+            columns={[
+              {
+                key: "path",
+                label: "Path",
+                format: (v) =>
+                  v === "none"
+                    ? "Standard brief"
+                    : v === "manual_fine_fragrance"
+                      ? "Fine Fragrance pre-approved (not a niche brand)"
+                      : (NICHE_BAND_LABELS[String(v)] ?? String(v)),
+              },
+              { key: "finalStatus", label: "Outcome" },
+              { key: "count", label: "Briefs", num: true },
+            ]}
+            rows={
+              summary.niche.briefOutcomesByNiche as unknown as Record<string, unknown>[]
+            }
+          />
+        </Panel>
       </div>
+
+      {!filtered && (
+        <Panel
+          title="By Account Manager"
+          note="Counted against the Account Manager a brief was raised for."
+        >
+          <SimpleTable
+            columns={[
+              {
+                key: "accountManagerName",
+                label: "Account Manager",
+                render: (v) => <strong>{String(v)}</strong>,
+              },
+              { key: "total", label: "Briefs", num: true },
+              { key: "approved", label: "Approved", num: true },
+              { key: "pending", label: "Pending", num: true },
+              { key: "declined", label: "Declined", num: true },
+              { key: "outstandingSignOffs", label: "Sign-offs waiting", num: true },
+              {
+                key: "valuePotentialGbp",
+                label: "Value potential",
+                num: true,
+                format: (v) => `£${Number(v).toLocaleString("en-GB")}`,
+              },
+              {
+                key: "accountManagerId",
+                label: "",
+                render: (v) => (
+                  <span className="row-links">
+                    <a href={`/dashboard?am=${String(v)}`}>Dashboard</a>
+                    <a href={`/briefs?am=${String(v)}`}>Briefs</a>
+                  </span>
+                ),
+              },
+            ]}
+            rows={summary.briefsByAccountManager as unknown as Record<string, unknown>[]}
+          />
+        </Panel>
+      )}
+
+      <Panel title="Pre-approvals by submitter" note="Revocations are highlighted.">
+        <SimpleTable
+          columns={[
+            { key: "submitterName", label: "Submitter" },
+            { key: "preApprovalCount", label: "Declared", num: true },
+            {
+              key: "revokedCount",
+              label: "Revoked",
+              num: true,
+              render: (v) =>
+                Number(v) > 0 ? (
+                  <span className="status-pill status-declined">{String(v)}</span>
+                ) : (
+                  <span className="muted">0</span>
+                ),
+            },
+          ]}
+          rows={summary.preApprovalUsage as unknown as Record<string, unknown>[]}
+        />
+      </Panel>
     </>
   );
 }

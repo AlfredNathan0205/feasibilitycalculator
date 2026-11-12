@@ -640,11 +640,7 @@ export function BriefForm() {
                   <div className="field-group-label" id="niche-q">
                     Is this brief for a niche brand?
                   </div>
-                  <div
-                    role="radiogroup"
-                    aria-labelledby="niche-q"
-                    style={{ display: "flex", gap: "1rem" }}
-                  >
+                  <div role="radiogroup" aria-labelledby="niche-q" className="segmented">
                     {[
                       { v: true, t: "Yes" },
                       { v: false, t: "No" },

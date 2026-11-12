@@ -28,7 +28,7 @@ test("an expired assessment is shown as expired and no longer counts for a brief
   await page.waitForLoadState("networkidle");
   await page
     .getByRole("radiogroup", { name: /niche brand/i })
-    .getByLabel("Yes")
+    .getByLabel("Yes", { exact: true })
     .check();
   await page.locator("#nicheBrandText").fill(name);
   await expect(page.getByText(/No current Niche Brand Assessment/i)).toBeVisible();
