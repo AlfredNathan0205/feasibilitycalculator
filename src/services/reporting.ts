@@ -397,7 +397,6 @@ export async function getDashboardSummary(
     monthlyActivity,
     briefsByAccountManager,
     accountManagers,
-    niche,
   ] = await Promise.all([
     getVolumeOutcomeMixByMonth(db, filter),
     getVolumeByTier(db, filter),
@@ -409,8 +408,9 @@ export async function getDashboardSummary(
     getMonthlyActivity(db, filter),
     getBriefsByAccountManager(db),
     listAccountManagersWithBriefs(db),
-    getNicheSummary(db, filter),
   ]);
+  // After the parallel batch, so the dashboard never opens more concurrent queries than before.
+  const niche = await getNicheSummary(db, filter);
   return {
     volumeOutcomeMixByMonth,
     volumeByTier,

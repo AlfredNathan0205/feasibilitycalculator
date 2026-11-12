@@ -15,6 +15,10 @@ type Db = PostgresJsDatabase<typeof schema>;
  * on globalThis so Next's dev-mode module reloads don't leak a new one each
  * time either.
  *
+ * prepare: false because Supabase's pooler (port 6543) runs in transaction
+ * mode, where named prepared statements are not supported and pipelined
+ * extended-protocol messages can be rejected ("invalid message format").
+ *
  * Pool size: DB_POOL_MAX (default 5). Keep it small on serverless, where
  * every warm instance holds its own pool.
  */
@@ -25,6 +29,8 @@ export function getDb(): Db {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL must be set");
   const max = Number.parseInt(process.env.DB_POOL_MAX ?? "5", 10) || 5;
-  globalForDb.__cplDb = drizzle(postgres(databaseUrl, { max }), { schema });
+  globalForDb.__cplDb = drizzle(postgres(databaseUrl, { max, prepare: false }), {
+    schema,
+  });
   return globalForDb.__cplDb;
 }
